@@ -30,8 +30,18 @@ def main():
         print("🔍 Analyzing NixOS configuration...")
 
         # Determine paths
-        script_dir = Path(__file__).parent
-        config_dir = script_dir.parent  # nixos-config root
+        # If run from nixos-config directory, use current dir
+        # Otherwise try to find it in common locations
+        if len(sys.argv) > 1:
+            config_dir = Path(sys.argv[1])
+        elif (Path.cwd() / "flake.nix").exists() and (Path.cwd() / "modules").exists():
+            config_dir = Path.cwd()
+        elif (Path.home() / "nixos-config" / "flake.nix").exists():
+            config_dir = Path.home() / "nixos-config"
+        else:
+            logger.error("Could not find nixos-config directory. Please run from nixos-config or pass path as argument.")
+            return 1
+
         output_path = Path.home() / ".claude" / "CLAUDE.md"
 
         # Initialize generator
