@@ -56,10 +56,15 @@
             for script in update-system-claude-v2.py update-project-claude-v2.py; do
               cp $script $out/lib/
               name=$(basename $script -v2.py)
-              makeWrapper ${pythonEnv}/bin/python $out/bin/$name \
-                --add-flags "$out/lib/$script" \
-                --prefix PYTHONPATH : "$out/lib" \
-                --run "cd ~/nixos-config"
+
+              # Create wrapper shell script that changes directory first
+              cat > $out/bin/$name <<EOF
+#!/usr/bin/env bash
+cd ~/nixos-config 2>/dev/null || cd .
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/$script "\$@"
+EOF
+              chmod +x $out/bin/$name
             done
 
             # Create combined update script
