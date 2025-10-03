@@ -39,6 +39,7 @@
             python313
             python313Packages.jinja2
             python313Packages.pydantic
+            python313Packages.pydantic-core
           ];
 
           nativeBuildInputs = [ pkgs.makeWrapper ];
@@ -55,7 +56,7 @@
               name=$(basename $script -v2.py)
               makeWrapper ${pkgs.python313}/bin/python $out/bin/$name \
                 --add-flags "$out/lib/$script" \
-                --prefix PYTHONPATH : "$out/lib:${pkgs.python313Packages.jinja2}/${pkgs.python313.sitePackages}:${pkgs.python313Packages.pydantic}/${pkgs.python313.sitePackages}"
+                --prefix PYTHONPATH : "$out/lib:${pkgs.python313Packages.jinja2}/${pkgs.python313.sitePackages}:${pkgs.python313Packages.pydantic}/${pkgs.python313.sitePackages}:${pkgs.python313Packages.pydantic-core}/${pkgs.python313.sitePackages}"
             done
 
             # Create combined update script
