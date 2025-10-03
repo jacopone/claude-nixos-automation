@@ -57,10 +57,10 @@
               cp $script $out/lib/
               name=$(basename $script -v2.py)
 
-              # Create wrapper shell script that changes directory first
+              # Create wrapper shell script
+              # Note: These scripts must be run from ~/nixos-config directory
               cat > $out/bin/$name <<EOF
 #!/usr/bin/env bash
-cd "\$HOME/nixos-config" 2>/dev/null || cd .
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
 exec ${pythonEnv}/bin/python $out/lib/$script "\$@"
 EOF
