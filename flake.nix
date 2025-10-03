@@ -68,7 +68,7 @@ EOF
             done
 
             # Create combined update script
-            cat > $out/bin/update-claude-configs <<'EOF'
+            cat > $out/bin/update-claude-configs <<EOF
 #!/usr/bin/env bash
 set -e
 echo "🔄 Updating CLAUDE.md configurations..."
