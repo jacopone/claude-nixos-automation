@@ -96,19 +96,27 @@ class BaseGenerator:
         return Path.cwd()
 
     def create_backup(self, file_path: Path) -> Path | None:
-        """Create backup of existing file."""
+        """Create backup of existing file in .backups directory."""
         if not file_path.exists():
             return None
 
-        backup_path = file_path.with_suffix(
-            f'.backup-{datetime.now().strftime("%Y%m%d-%H%M%S")}'
-        )
+        # Create .backups directory next to the file
+        backups_dir = file_path.parent / ".backups"
+        backups_dir.mkdir(exist_ok=True)
+
+        # Create backup filename with timestamp
+        backup_filename = f"{file_path.name}.backup-{datetime.now().strftime('%Y%m%d-%H%M%S')}"
+        backup_path = backups_dir / backup_filename
 
         try:
             import shutil
 
             shutil.copy2(file_path, backup_path)
             logger.info(f"Created backup: {backup_path}")
+
+            # Cleanup old backups, keeping 5 most recent
+            self.cleanup_old_backups(file_path, keep_count=5)
+
             return backup_path
 
         except Exception as e:
@@ -208,10 +216,14 @@ class BaseGenerator:
             return {"exists": True, "error": str(e)}
 
     def cleanup_old_backups(self, file_path: Path, keep_count: int = 5):
-        """Remove old backup files, keeping only the most recent."""
+        """Remove old backup files from .backups directory, keeping only the most recent."""
         try:
+            backups_dir = file_path.parent / ".backups"
+            if not backups_dir.exists():
+                return
+
             backup_pattern = f"{file_path.name}.backup-*"
-            backup_files = list(file_path.parent.glob(backup_pattern))
+            backup_files = list(backups_dir.glob(backup_pattern))
 
             if len(backup_files) <= keep_count:
                 return
