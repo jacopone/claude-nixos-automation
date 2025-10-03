@@ -28,19 +28,21 @@
       };
 
       # Package the automation tools
-      packages.${system} = {
+      packages.${system} =
+        let
+          pythonEnv = pkgs.python313.withPackages (ps: with ps; [
+            jinja2
+            pydantic
+            pydantic-core
+            typing-extensions
+          ]);
+        in
+        {
         claude-automation = pkgs.stdenv.mkDerivation {
           pname = "claude-nixos-automation";
           version = "1.0.0";
 
           src = ./.;
-
-          buildInputs = with pkgs; [
-            python313
-            python313Packages.jinja2
-            python313Packages.pydantic
-            python313Packages.pydantic-core
-          ];
 
           nativeBuildInputs = [ pkgs.makeWrapper ];
 
@@ -54,9 +56,9 @@
             for script in update-system-claude-v2.py update-project-claude-v2.py; do
               cp $script $out/lib/
               name=$(basename $script -v2.py)
-              makeWrapper ${pkgs.python313}/bin/python $out/bin/$name \
+              makeWrapper ${pythonEnv}/bin/python $out/bin/$name \
                 --add-flags "$out/lib/$script" \
-                --prefix PYTHONPATH : "$out/lib:${pkgs.python313Packages.jinja2}/${pkgs.python313.sitePackages}:${pkgs.python313Packages.pydantic}/${pkgs.python313.sitePackages}:${pkgs.python313Packages.pydantic-core}/${pkgs.python313.sitePackages}"
+                --prefix PYTHONPATH : "$out/lib"
             done
 
             # Create combined update script
