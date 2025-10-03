@@ -58,7 +58,8 @@
               name=$(basename $script -v2.py)
               makeWrapper ${pythonEnv}/bin/python $out/bin/$name \
                 --add-flags "$out/lib/$script" \
-                --prefix PYTHONPATH : "$out/lib"
+                --prefix PYTHONPATH : "$out/lib" \
+                --run "cd ~/nixos-config"
             done
 
             # Create combined update script
