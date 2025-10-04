@@ -157,11 +157,52 @@ nix run .#update-all
 - ✅ Regenerates `CLAUDE.md` files (tool inventory, project context)
 
 #### 4. Discovering New Policies
+
+The system now includes **automatic policy versioning** with NEW badges!
+
+**Automated Detection:**
+- New policies are automatically marked with 🆕 badge in the example file
+- Header shows count: "🆕 **3 new policies** added since last update!"
+- Based on web scraping from:
+  - Anthropic official documentation
+  - GitHub community examples
+  - ClaudeLog database
+
+**Manual Comparison:**
 ```bash
 diff ~/.claude/CLAUDE-USER-POLICIES.md ~/.claude/CLAUDE-USER-POLICIES.md.example
 ```
 
 See what new policies are available, copy ones you want.
+
+#### 5. Interactive Setup (First-Time Users)
+
+For new users who want a guided setup experience:
+
+```bash
+nix run github:jacopone/claude-nixos-automation#setup-user-policies
+```
+
+This launches an **interactive CLI wizard** that:
+- ✅ Asks which policy categories you want to enable
+- ✅ Generates a customized file with only selected policies
+- ✅ Automatically uncomments your chosen policies
+- ✅ Creates backup of existing file if present
+- ✅ Uses questionary for beautiful CLI prompts
+
+**Example interaction:**
+```
+🤖 Claude Code User Policies - Interactive Setup
+================================================================
+
+📋 Select which policy categories to enable:
+
+? Enable Git Commit Policies? (--no-verify restrictions) (Y/n)
+? Enable System Limitation Warnings? (sudo restrictions) (Y/n)
+? Enable Documentation Standards? (no temporal markers) (Y/n)
+? Enable Code Quality Policies? (complexity limits) (y/N)
+...
+```
 
 ### Available Policy Categories
 
@@ -198,18 +239,39 @@ The templates include best practices for:
 - Planning requirements
 - Based on: Agile/SWE practices
 
-### Community Best Practices Integration
+### Community Best Practices Integration (NEW!)
 
-The example template (`CLAUDE-USER-POLICIES.md.example`) is generated with curated best practices from:
+The system now includes **automatic web scraping** to stay up-to-date with the latest best practices!
 
-**Current Sources (v2.0):**
+**Web Scraping Sources:**
+- 🌐 **Anthropic Official Docs** - `https://docs.anthropic.com/claude-code/best-practices`
+  - Automatically parses policy headings and descriptions
+  - Categorizes policies by content keywords
+  - Confidence score: 0.8 (official source)
+
+- 🐙 **GitHub Community Examples** - Searches for `.claude/CLAUDE.md` files
+  - GitHub code search API: `filename:CLAUDE.md path:.claude`
+  - Extracts patterns from real-world usage
+  - Confidence score: 0.6 (community patterns)
+
+- 📊 **ClaudeLog Database** - `https://claudelog.com/mechanics/custom-agents/`
+  - Aggregated best practices from Claude conversations
+  - Note: Currently placeholder, awaiting API access
+  - Confidence score: 0.7 (when available)
+
+**Scraping Features:**
+- Non-blocking (failures don't prevent generation)
+- Timeout protection (5 seconds per source)
+- Rate limit handling (GitHub API)
+- Automatic categorization and merging with curated policies
+- NEW badge detection based on scraped content
+
+**Curated Sources (Always Available):**
 - Anthropic official Claude Code documentation
 - 2025 AI coding workflow patterns
 - Technical writing standards
+- Security best practices
 - Proven patterns from real usage
-
-**Future Enhancement (Planned):**
-- Web scraping from official documentation
 - Community GitHub `.claude/CLAUDE.md` examples
 - ClaudeLog best practices database
 - Automatic updates from multiple sources

@@ -8,6 +8,7 @@ from datetime import datetime
 from pathlib import Path
 
 from ..schemas import GenerationResult
+from ..version_tracker import PolicyVersionTracker
 from .base_generator import BaseGenerator
 
 logger = logging.getLogger(__name__)
@@ -21,6 +22,7 @@ class UserPoliciesGenerator(BaseGenerator):
         super().__init__(template_dir)
         self.user_policies_file = Path.home() / ".claude" / "CLAUDE-USER-POLICIES.md"
         self.example_file = Path.home() / ".claude" / "CLAUDE-USER-POLICIES.md.example"
+        self.version_tracker = PolicyVersionTracker()
 
     def generate_example_template(self) -> GenerationResult:
         """Generate/update the example template (ALWAYS updated)."""
@@ -29,10 +31,24 @@ class UserPoliciesGenerator(BaseGenerator):
         # Fetch latest best practices from community/docs
         best_practices = self._fetch_community_best_practices()
 
+        # Detect new policies since last update
+        new_policies = self.version_tracker.detect_new_policies(best_practices)
+        if new_policies:
+            logger.info(f"Detected {len(new_policies)} new policies since last update")
+
+        # Mark policies as new in the data structure
+        best_practices_with_new = {}
+        for category, policies in best_practices.items():
+            best_practices_with_new[category] = [
+                self.version_tracker.mark_policy_as_new(p, new_policies)
+                for p in policies
+            ]
+
         context = {
             "timestamp": datetime.now(),
-            "best_practices": best_practices,
+            "best_practices": best_practices_with_new,
             "version": "2.0",
+            "new_count": len(new_policies),
         }
 
         try:
@@ -103,15 +119,16 @@ class UserPoliciesGenerator(BaseGenerator):
         Fetch latest best practices from community and official docs.
 
         Returns structured best practices organized by category.
-        In future versions, this could scrape actual URLs for latest practices.
+        Combines curated policies with web-scraped content from multiple sources.
         """
-        # For now, return curated best practices
-        # TODO: Add web scraping for live updates from:
-        # - https://docs.anthropic.com/claude-code/best-practices
-        # - https://claudelog.com/mechanics/custom-agents/
-        # - Community GitHub repos with .claude/CLAUDE.md examples
+        from ..scrapers import (
+            AnthropicDocsScraper,
+            ClaudeLogScraper,
+            GitHubExamplesScraper,
+        )
 
-        return {
+        # Start with curated best practices (always available)
+        curated_practices = {
             "git_policies": [
                 {
                     "name": "No --no-verify Without Permission",
@@ -203,6 +220,80 @@ class UserPoliciesGenerator(BaseGenerator):
                 },
             ],
         }
+
+        # Try to fetch from web sources (non-blocking)
+        scraped_policies = []
+
+        try:
+            # Scrape Anthropic official docs
+            anthropic_scraper = AnthropicDocsScraper(timeout=5)
+            anthropic_result = anthropic_scraper.scrape_best_practices()
+            if anthropic_result.success:
+                scraped_policies.extend(anthropic_result.policies)
+                logger.info(
+                    f"Scraped {len(anthropic_result.policies)} policies from Anthropic docs"
+                )
+            else:
+                logger.warning(
+                    f"Anthropic scraping failed: {', '.join(anthropic_result.errors)}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to scrape Anthropic docs: {e}")
+
+        try:
+            # Scrape GitHub examples
+            github_scraper = GitHubExamplesScraper(timeout=5)
+            github_result = github_scraper.scrape_examples(max_repos=5)
+            if github_result.success:
+                scraped_policies.extend(github_result.policies)
+                logger.info(
+                    f"Scraped {len(github_result.policies)} examples from GitHub"
+                )
+            else:
+                logger.warning(
+                    f"GitHub scraping failed: {', '.join(github_result.errors)}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to scrape GitHub: {e}")
+
+        try:
+            # Scrape ClaudeLog
+            claudelog_scraper = ClaudeLogScraper(timeout=5)
+            claudelog_result = claudelog_scraper.scrape_best_practices()
+            if claudelog_result.success:
+                scraped_policies.extend(claudelog_result.policies)
+                logger.info(
+                    f"Scraped {len(claudelog_result.policies)} policies from ClaudeLog"
+                )
+            else:
+                logger.warning(
+                    f"ClaudeLog scraping failed: {', '.join(claudelog_result.errors)}"
+                )
+        except Exception as e:
+            logger.warning(f"Failed to scrape ClaudeLog: {e}")
+
+        # Merge scraped policies into curated ones
+        if scraped_policies:
+            logger.info(f"Total scraped policies: {len(scraped_policies)}")
+            for policy in scraped_policies:
+                # Convert ScrapedPolicy to dict format
+                category_key = policy.category
+                if category_key not in curated_practices:
+                    curated_practices[category_key] = []
+
+                curated_practices[category_key].append(
+                    {
+                        "name": policy.name,
+                        "category": policy.category,
+                        "description": policy.description,
+                        "recommended": policy.confidence >= 0.7,
+                        "source": policy.source_url,
+                        "scraped": True,
+                        "confidence": policy.confidence,
+                    }
+                )
+
+        return curated_practices
 
     def should_generate_user_file(self) -> bool:
         """Check if user policies file needs to be generated."""

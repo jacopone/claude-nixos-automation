@@ -25,6 +25,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-user-policies";
         };
+        setup-user-policies = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/setup-user-policies-interactive";
+        };
         update-all = {
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-claude-configs";
@@ -39,6 +43,9 @@
             pydantic
             pydantic-core
             typing-extensions
+            requests
+            beautifulsoup4
+            questionary
           ]);
         in
         {
@@ -70,6 +77,15 @@ exec ${pythonEnv}/bin/python $out/lib/$script "\$@"
 EOF
               chmod +x $out/bin/$name
             done
+
+            # Copy and wrap interactive setup script
+            cp setup-user-policies-interactive.py $out/lib/
+            cat > $out/bin/setup-user-policies-interactive <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/setup-user-policies-interactive.py "\$@"
+EOF
+            chmod +x $out/bin/setup-user-policies-interactive
 
             # Create combined update script
             cat > $out/bin/update-claude-configs <<EOF
@@ -118,6 +134,7 @@ EOF
           echo "uv: $(uv --version)"
           echo ""
           echo "Available commands:"
+          echo "  nix run .#setup-user-policies  - 🎯 Interactive wizard for first-time setup"
           echo "  nix run .#update-user-policies - Update user policies (example + initial)"
           echo "  nix run .#update-system        - Update ~/.claude/CLAUDE.md"
           echo "  nix run .#update-project       - Update ./CLAUDE.md in nixos-config"

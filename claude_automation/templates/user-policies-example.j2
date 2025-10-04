@@ -4,6 +4,7 @@
 > Your actual policies are in: `CLAUDE-USER-POLICIES.md`
 > Compare: `diff CLAUDE-USER-POLICIES.md CLAUDE-USER-POLICIES.md.example`
 > Last updated: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+{% if new_count > 0 %}> 🆕 **{{ new_count }} new policies** added since last update!{% endif %}
 
 ---
 
@@ -22,7 +23,7 @@ Use this file as a reference for new policy ideas.
 ## {{ category.replace('_', ' ').title() }}
 
 {% for policy in policies %}
-### {{ policy.name }} {% if policy.recommended %}[✅ RECOMMENDED]{% else %}[🔧 OPTIONAL]{% endif %}
+### {{ policy.name }} {% if policy.get('is_new', False) %}🆕 {% endif %}{% if policy.recommended %}[✅ RECOMMENDED]{% else %}[🔧 OPTIONAL]{% endif %}
 
 **Description:** {{ policy.description }}
 **Source:** {{ policy.source }}
