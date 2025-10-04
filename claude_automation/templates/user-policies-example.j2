@@ -1,0 +1,164 @@
+# User-Defined Claude Code Policies - Example Template
+
+> **REFERENCE FILE** - Auto-updated on every rebuild with latest best practices
+> Your actual policies are in: `CLAUDE-USER-POLICIES.md`
+> Compare: `diff CLAUDE-USER-POLICIES.md CLAUDE-USER-POLICIES.md.example`
+> Last updated: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+
+---
+
+# 📖 ABOUT THIS FILE
+
+This file is automatically updated on every system rebuild to include:
+- ✅ Latest community best practices
+- ✅ New policy examples from official documentation
+- ✅ Proven patterns from real-world usage
+
+Your actual policies file (`CLAUDE-USER-POLICIES.md`) is NEVER overwritten.
+Use this file as a reference for new policy ideas.
+
+---
+{% for category, policies in best_practices.items() %}
+## {{ category.replace('_', ' ').title() }}
+
+{% for policy in policies %}
+### {{ policy.name }} {% if policy.recommended %}[✅ RECOMMENDED]{% else %}[🔧 OPTIONAL]{% endif %}
+
+**Description:** {{ policy.description }}
+**Source:** {{ policy.source }}
+{% if policy.get('platform') %}**Platform:** {{ policy.platform }}{% endif %}
+
+{% if policy.category == "Git Commit Policy" %}
+```markdown
+**NEVER use `git commit --no-verify` without explicit user permission.**
+
+When git hooks fail:
+1. **First attempt**: Fix the underlying issue (formatting, complexity, tests, security)
+2. **Second attempt**: Fix it again if still failing
+3. **After failed attempts**: Ask user if they want to use `--no-verify`
+4. **Only proceed with explicit user instruction**
+
+This is a critical policy - git hooks exist for quality and security enforcement.
+```
+
+{% elif policy.category == "System Limitations" %}
+```markdown
+**NEVER attempt to run `./rebuild-nixos` or `nixos-rebuild` commands directly.**
+
+These commands require sudo privileges which Claude Code cannot provide interactively. Instead:
+
+1. **When changes are made to NixOS configuration files**, inform the user that they need to run:
+   - `./rebuild-nixos` (preferred - has safety checks)
+   - OR `sudo nixos-rebuild switch --flake .`
+
+2. **What Claude Code CAN do:**
+   - ✅ Edit configuration files (flake.nix, modules/*, etc.)
+   - ✅ Run `nix flake check` to validate syntax
+   - ✅ Run `nix build .#package-name` to test individual packages
+   - ✅ Stage changes with `git add`
+```
+
+{% elif policy.category == "Documentation Standards" %}
+{% if policy.name == "No Temporal Markers" %}
+```markdown
+**No Temporal Markers**
+Never use time-based references that will become confusing or meaningless:
+- ❌ Avoid: "NEW", "NEW 2025", "Week 1", "Phase 2", "October 2025", "Recently added"
+- ❌ Avoid: "ENHANCED", "UPDATED", "DEPRECATED (coming soon)"
+- ✅ Instead: Describe what the code/feature does, not when it was added
+
+Example:
+# ❌ BAD
+# NEW 2025: Advanced authentication system
+class UserAuth:
+    pass
+
+# ✅ GOOD
+# JWT-based authentication with refresh tokens
+class UserAuth:
+    pass
+```
+
+{% elif policy.name == "No Hyperbolic Language" %}
+```markdown
+**No Hyperbolic Language**
+Avoid marketing speak and subjective qualifiers in technical documentation:
+- ❌ Avoid: "enterprise-grade", "comprehensive", "advanced", "cutting-edge"
+- ❌ Avoid: "robust", "powerful", "superior", "best-in-class", "revolutionary"
+- ❌ Avoid: "state-of-the-art", "world-class", "premium", "next-generation"
+- ❌ Avoid: "modern", "latest", "enhanced", "ultimate", "perfect"
+- ✅ Instead: Use factual, technical descriptions
+
+Example:
+// ❌ BAD
+// Enterprise-grade, comprehensive user management system
+class UserManager { }
+
+// ✅ GOOD
+// User management with JWT authentication and role-based access control
+class UserManager { }
+```
+
+{% elif policy.name == "Documentation Creation Policy" %}
+```markdown
+**ALWAYS ask before creating documentation files (.md, .txt, README, etc.)**
+
+Before creating any doc, propose to user:
+- **Filename** and **type** (Status/Architecture/Guide/Reference/Changelog)
+- **Purpose** (1-2 sentences explaining why it's needed)
+- **Alternative** (Could this be a section in existing file instead?)
+
+Wait for approval before writing.
+```
+{% endif %}
+
+{% elif policy.category == "Code Quality" %}
+```markdown
+**{{ policy.name }}:** {{ policy.description }}
+```
+
+{% elif policy.category == "Communication" %}
+```markdown
+**{{ policy.name }}:** {{ policy.description }}
+```
+
+{% elif policy.category == "Project Management" %}
+```markdown
+**Todo List Usage:**
+- Use TodoWrite for tasks with 3+ steps
+- Mark tasks in_progress before starting
+- Complete tasks immediately after finishing
+- Only one task in_progress at a time
+
+**Planning Requirements:**
+- Always plan before complex implementations
+- Break large tasks into smaller steps
+- Ask for clarification when requirements unclear
+```
+{% endif %}
+
+---
+{% endfor %}
+{% endfor %}
+
+## 🔗 Additional Resources
+
+**Official Documentation:**
+- Claude Code Best Practices: https://docs.anthropic.com/claude-code
+- 2025 AI Coding Workflows: https://skywork.ai/blog/claude-code-2-0-best-practices
+- Technical Writing Standards: https://developers.google.com/tech-writing
+
+**Community Resources:**
+- ClaudeLog: https://claudelog.com/mechanics/custom-agents/
+- Claude Code GitHub Examples: Search for `.claude/CLAUDE.md` in repos
+
+**How to Use:**
+1. Review new policies added to this example file
+2. Copy relevant sections to your `CLAUDE-USER-POLICIES.md`
+3. Uncomment sections you want to enable
+4. Delete sections you don't need
+
+---
+
+*Auto-generated by: claude-nixos-automation v{{ version }}*
+*Updated on every rebuild with latest best practices*

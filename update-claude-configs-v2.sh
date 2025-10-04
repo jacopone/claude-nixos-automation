@@ -15,7 +15,16 @@ cd "$CONFIG_DIR"
 echo "📁 Working directory: $PWD"
 echo
 
-# Use DevEnv-managed modern template-based system
+# FIRST: Update user policies (example file always, user file only if missing)
+echo "📝 Updating user-defined policies..."
+if (cd scripts && devenv shell python update-user-policies-v2.py); then
+    echo "✅ User policies files updated"
+else
+    echo "⚠️  Warning: User policies update failed (continuing...)"
+fi
+echo
+
+# THEN: Use DevEnv-managed modern template-based system
 echo "🛠️  Updating system-level tool inventory (~/.claude/CLAUDE.md)..."
 if (cd scripts && devenv shell python update-system-claude-v2.py); then
     echo "✅ System-level Claude configuration updated"
@@ -37,6 +46,8 @@ echo
 echo "🎉 All Claude Code configurations updated successfully!"
 echo
 echo "📊 Summary:"
+echo "   - User policies: ~/.claude/CLAUDE-USER-POLICIES.md (your custom policies, preserved)"
+echo "   - Example policies: ~/.claude/CLAUDE-USER-POLICIES.md.example (latest best practices)"
 echo "   - System-level: ~/.claude/CLAUDE.md (tool inventory for Claude Code)"
 echo "   - Project-level: ./CLAUDE.md (project guidance and context)"
 echo

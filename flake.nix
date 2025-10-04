@@ -21,6 +21,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-project-claude";
         };
+        update-user-policies = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-user-policies";
+        };
         update-all = {
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-claude-configs";
@@ -53,7 +57,7 @@
             cp -r claude_automation/* $out/lib/claude_automation/
 
             # Copy and wrap Python scripts
-            for script in update-system-claude-v2.py update-project-claude-v2.py; do
+            for script in update-system-claude-v2.py update-project-claude-v2.py update-user-policies-v2.py; do
               cp $script $out/lib/
               name=$(basename $script -v2.py)
 
@@ -72,8 +76,16 @@ EOF
 #!/usr/bin/env bash
 set -e
 echo "🔄 Updating CLAUDE.md configurations..."
+echo
+echo "📝 Updating user policies..."
+$out/bin/update-user-policies || echo "⚠️  Warning: User policies update failed"
+echo
+echo "🛠️  Updating system-level configuration..."
 $out/bin/update-system-claude
+echo
+echo "📋 Updating project-level configuration..."
 $out/bin/update-project-claude
+echo
 echo "✅ All CLAUDE.md configurations updated!"
 EOF
             chmod +x $out/bin/update-claude-configs
@@ -106,9 +118,10 @@ EOF
           echo "uv: $(uv --version)"
           echo ""
           echo "Available commands:"
-          echo "  nix run .#update-system   - Update ~/.claude/CLAUDE.md"
-          echo "  nix run .#update-project  - Update ./CLAUDE.md in nixos-config"
-          echo "  nix run .#update-all      - Update both files"
+          echo "  nix run .#update-user-policies - Update user policies (example + initial)"
+          echo "  nix run .#update-system        - Update ~/.claude/CLAUDE.md"
+          echo "  nix run .#update-project       - Update ./CLAUDE.md in nixos-config"
+          echo "  nix run .#update-all           - Update all files (recommended)"
         '';
       };
     };

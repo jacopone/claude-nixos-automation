@@ -1,0 +1,275 @@
+# User-Defined Claude Code Policies
+
+> **This file is NEVER regenerated after initial creation**
+> See `CLAUDE-USER-POLICIES.md.example` for latest template with new examples
+> Last manually updated: {{ timestamp.strftime('%Y-%m-%d') }}
+
+---
+
+# 📖 HOW TO USE THIS FILE
+
+Uncomment sections below that match your preferences. Each section includes:
+- ✅ Recommended for most users
+- 🔧 Optional customization
+- 📚 Based on 2025 best practices
+
+Delete sections you don't need. This is YOUR file.
+
+---
+
+## 🚫 Git Commit Policy [✅ RECOMMENDED]
+
+Prevents Claude from bypassing git hooks without your explicit permission.
+Based on: Security best practices + quality gate enforcement
+
+**Uncomment to enable:**
+
+<!--
+**NEVER use `git commit --no-verify` without explicit user permission.**
+
+When git hooks fail:
+1. **First attempt**: Fix the underlying issue (formatting, complexity, tests, security)
+2. **Second attempt**: Fix it again if still failing
+3. **After failed attempts**: Ask user if they want to use `--no-verify`
+4. **Only proceed with explicit user instruction**
+
+This is a critical policy - git hooks exist for quality and security enforcement.
+-->
+
+---
+
+## ⚠️ System Limitations [✅ RECOMMENDED FOR NIXOS]
+
+Claude Code cannot run sudo commands or interactive prompts.
+This prevents errors and sets clear expectations.
+
+**Uncomment to enable:**
+
+<!--
+**NEVER attempt to run `./rebuild-nixos` or `nixos-rebuild` commands directly.**
+
+These commands require sudo privileges which Claude Code cannot provide interactively. Instead:
+
+1. **When changes are made to NixOS configuration files**, inform the user that they need to run:
+   - `./rebuild-nixos` (preferred - has safety checks)
+   - OR `sudo nixos-rebuild switch --flake .`
+
+2. **What Claude Code CAN do:**
+   - ✅ Edit configuration files (flake.nix, modules/*, etc.)
+   - ✅ Run `nix flake check` to validate syntax
+   - ✅ Run `nix build .#package-name` to test individual packages
+   - ✅ Stage changes with `git add`
+-->
+
+---
+
+## 📄 Documentation Creation Policy [✅ RECOMMENDED FOR SWE]
+
+Prevents Claude from creating docs without asking first.
+Based on: Anthropic best practices + project management
+Source: https://docs.anthropic.com/claude-code/best-practices
+
+**Uncomment to enable:**
+
+<!--
+**ALWAYS ask before creating documentation files (.md, .txt, README, etc.)**
+
+Before creating any doc, propose to user:
+- **Filename** and **type** (Status/Architecture/Guide/Reference/Changelog)
+- **Purpose** (1-2 sentences explaining why it's needed)
+- **Alternative** (Could this be a section in existing file instead?)
+
+Wait for approval before writing.
+
+**Exception**: Only auto-create if explicitly requested or part of agreed plan.
+-->
+
+---
+
+## 📝 Documentation Standards [✅ RECOMMENDED FOR SWE]
+
+Prevents temporal markers and marketing language in technical docs.
+Based on: 2025 technical writing best practices
+
+**Uncomment to enable:**
+
+<!--
+### Core Principles
+
+**1. No Temporal Markers**
+Never use time-based references that will become confusing or meaningless:
+- ❌ Avoid: "NEW", "NEW 2025", "Week 1", "Phase 2", "October 2025", "Recently added"
+- ❌ Avoid: "ENHANCED", "UPDATED", "DEPRECATED (coming soon)"
+- ✅ Instead: Describe what the code/feature does, not when it was added
+
+**Examples:**
+```python
+# ❌ BAD - Temporal markers lose meaning over time
+# NEW 2025: Advanced authentication system
+# Week 3 implementation for user management
+class UserAuth:
+    pass
+
+# ✅ GOOD - Timeless, descriptive
+# JWT-based authentication with refresh tokens
+class UserAuth:
+    pass
+```
+
+**2. No Hyperbolic Language**
+Avoid marketing speak and subjective qualifiers in technical documentation:
+- ❌ Avoid: "enterprise-grade", "comprehensive", "advanced", "cutting-edge"
+- ❌ Avoid: "robust", "powerful", "superior", "best-in-class", "revolutionary"
+- ❌ Avoid: "state-of-the-art", "world-class", "premium", "next-generation"
+- ❌ Avoid: "modern", "latest", "enhanced", "ultimate", "perfect"
+- ✅ Instead: Use factual, technical descriptions
+
+**Examples:**
+```typescript
+// ❌ BAD - Hyperbolic, subjective
+// Enterprise-grade, comprehensive user management system
+// with cutting-edge authentication and advanced security
+class UserManager {
+  // Modern, powerful authentication method
+  async login(credentials: Credentials) { }
+}
+
+// ✅ GOOD - Factual, descriptive
+// User management with JWT authentication, role-based access control,
+// and password hashing using bcrypt
+class UserManager {
+  // Authenticate user and return JWT token
+  async login(credentials: Credentials) { }
+}
+```
+
+**3. Be Descriptive and Factual**
+Focus on technical details and behavior:
+```javascript
+// ❌ BAD
+// Enhanced data processing pipeline
+
+// ✅ GOOD
+// Processes CSV data in batches of 1000 rows,
+// validates against schema, transforms to JSON
+
+// ❌ BAD
+// Modern API client with advanced features
+
+// ✅ GOOD
+// HTTP client with automatic retry (3 attempts),
+// request/response logging, and timeout handling (30s)
+```
+
+**4. Comments Should Explain "Why", Not "What"**
+```python
+# ❌ BAD - States the obvious "what"
+# Loop through users
+for user in users:
+    process(user)
+
+# ✅ GOOD - Explains the "why"
+# Process users sequentially to avoid database connection pool exhaustion
+for user in users:
+    process(user)
+```
+
+**5. Configuration and Magic Numbers**
+Always explain non-obvious values:
+```javascript
+// ❌ BAD
+const TIMEOUT = 30000;
+const MAX_RETRIES = 3;
+
+// ✅ GOOD
+// API timeout in milliseconds. Based on p95 response time (22s) + buffer
+const API_TIMEOUT_MS = 30000;
+
+// Maximum retry attempts. Balance between user experience and server load
+const MAX_RETRY_ATTEMPTS = 3;
+```
+-->
+
+---
+
+## 🏗️ Code Quality Preferences [🔧 OPTIONAL]
+
+Your preferences for code generation and modification.
+Customize based on your project's needs.
+
+**Uncomment and customize:**
+
+<!--
+**Code Generation Guidelines:**
+- **ALWAYS prefer editing** existing files over creating new ones
+- **NO partial implementations** - complete features only
+- **NO over-engineering** - simple solutions first
+- **NO code duplication** - reuse existing functions
+- **Include tests** for all new functions
+- **Cyclomatic complexity** < 10 for all functions
+-->
+
+---
+
+## 💬 Communication Style [🔧 OPTIONAL]
+
+How you want Claude to communicate.
+Based on: User preference + Anthropic guidelines
+
+**Uncomment your preference:**
+
+<!--
+**Concise Mode:**
+- Short, direct responses
+- No preamble or postamble
+- Get straight to the solution
+
+**Verbose Mode:**
+- Explain reasoning and tradeoffs
+- Provide context and alternatives
+- Educational approach
+-->
+
+---
+
+## 📊 Project Management [🔧 OPTIONAL]
+
+Todo list and planning preferences.
+Based on: Agile/SWE best practices
+
+**Uncomment to enable:**
+
+<!--
+**Todo List Usage:**
+- Use TodoWrite for tasks with 3+ steps
+- Mark tasks in_progress before starting
+- Complete tasks immediately after finishing
+- Only one task in_progress at a time
+
+**Planning Requirements:**
+- Always plan before complex implementations
+- Break large tasks into smaller steps
+- Ask for clarification when requirements unclear
+-->
+
+---
+
+## 🔗 Additional Resources
+
+**Official Documentation:**
+- Claude Code Best Practices: https://docs.anthropic.com/claude-code
+- 2025 AI Coding Workflows: https://skywork.ai/blog/claude-code-2-0-best-practices
+
+**Community Examples:**
+- This template: Based on proven patterns from real usage
+- SWE Guidelines: Adapted from industry standards
+
+**Template Maintenance:**
+- This file: Your customized policies (manually maintained)
+- `.example` file: Latest template with new examples (auto-updated on every rebuild)
+- Compare periodically: `diff CLAUDE-USER-POLICIES.md CLAUDE-USER-POLICIES.md.example`
+
+---
+
+*Generated by: claude-nixos-automation v{{ version }}*
+*Customize freely - this file is never regenerated*
