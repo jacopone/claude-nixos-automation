@@ -19,14 +19,43 @@ This file provides Claude Code with comprehensive information about all availabl
 - **Terminal**: Kitty (optimized for AI development)
 - **Package Management**: Nix Flakes + Home Manager
 
-## Available Command Line Tools
+## Available Tools
 
 {% for category, tools in tool_categories.items() %}
+{% if category.value == 'AI & MCP Tools' %}
+### 🤖 {{ category.value }}
+
+**This system is optimized for AI-assisted development with cutting-edge tools:**
+
+{% for tool in tools %}
+- **`{{ tool.name }}`** - {{ tool.description }}{% if tool.url %} ({{ tool.url }}){% endif %}
+
+{% endfor %}
+{% elif category.value == 'Modern CLI Tools' %}
+### ⚡ {{ category.value }}
+
+**ALWAYS use these modern alternatives instead of traditional POSIX commands:**
+
+{% for tool in tools %}
+- `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
+{% endfor %}
+
+{% elif category.value == 'System Support Packages' %}
+### 📦 {{ category.value }}
+
+**These are system libraries, fonts, and build dependencies (not directly invokable):**
+
+{% for tool in tools %}
+- `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
+{% endfor %}
+
+{% else %}
 ### {{ category.value }}
 {% for tool in tools %}
 - `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
 {% endfor %}
 
+{% endif %}
 {% endfor %}
 
 {% include 'shared/fish_abbreviations.j2' %}

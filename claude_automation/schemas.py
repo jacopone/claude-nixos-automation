@@ -13,10 +13,13 @@ from pydantic import BaseModel, Field, validator
 class ToolCategory(str, Enum):
     """Standard tool categories."""
 
+    AI_MCP_TOOLS = "AI & MCP Tools"
+    CLI_TOOLS = "Modern CLI Tools"
     DEVELOPMENT = "Development Tools"
     FILE_MANAGEMENT = "File Management & Search Tools"
     SYSTEM_MONITORING = "System Monitoring & Process Management"
     NETWORK_SECURITY = "Network & Security Tools"
+    SYSTEM_PACKAGES = "System Support Packages"
     OTHER = "Other Tools"
 
 

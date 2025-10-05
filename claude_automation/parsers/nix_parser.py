@@ -30,8 +30,71 @@ class BaseNixParser(ABC):
         """Categorize a tool based on its name and description."""
         desc_lower = (pkg_name + " " + description).lower()
 
-        # Development tools
+        # AI & MCP tools (check first - highest priority for showcase)
         if any(
+            word in desc_lower
+            for word in [
+                "mcp",
+                "agent",
+                "ai ",
+                "claude",
+                "gpt",
+                "gemini",
+                "anthropic",
+                "serena",
+                "aider",
+                "plandex",
+                "jules",
+                "coding agent",
+                "semantic",
+                "model context",
+            ]
+        ):
+            return ToolCategory.AI_MCP_TOOLS
+
+        # System packages (fonts, python packages, build tools without CLI)
+        elif (
+            any(
+                pattern in desc_lower
+                for pattern in [
+                    "font",
+                    "typeface",
+                    "python312packages",
+                    "pythonpackages",
+                ]
+            )
+            or pkg_name.endswith("_fonts")
+            or "Packages." in pkg_name
+        ):
+            return ToolCategory.SYSTEM_PACKAGES
+
+        # Modern CLI tools (replacements for POSIX commands)
+        elif any(
+            word in desc_lower
+            for word in [
+                "modern",
+                "replacement",
+                "alternative",
+                "instead of",
+                "better than",
+                "faster than",
+            ]
+        ) or pkg_name in [
+            "fd",
+            "rg",
+            "ripgrep",
+            "bat",
+            "eza",
+            "dust",
+            "duf",
+            "procs",
+            "bottom",
+            "choose",
+        ]:
+            return ToolCategory.CLI_TOOLS
+
+        # Development tools
+        elif any(
             word in desc_lower
             for word in [
                 "git",
@@ -47,6 +110,9 @@ class BaseNixParser(ABC):
                 "ide",
                 "vim",
                 "emacs",
+                "lint",
+                "format",
+                "test",
             ]
         ):
             return ToolCategory.DEVELOPMENT
@@ -164,6 +230,10 @@ class RegexNixParser(BaseNixParser):
             # Package only (no semicolon, no comment)
             r"^\s*([a-zA-Z0-9_.-]+)\s*$",
         ]
+        # Pattern for writeShellScriptBin: comment line followed by wrapper
+        self.shell_script_pattern = (
+            r'#\s*(.+?)\n\s*\(pkgs\.writeShellScriptBin\s+"([a-zA-Z0-9_-]+)"'
+        )
 
     def parse(self, file_path: Path) -> ParsingResult:
         """Parse Nix file using regex patterns."""
@@ -175,6 +245,21 @@ class RegexNixParser(BaseNixParser):
             warnings = []
             errors = []
 
+            # First, extract writeShellScriptBin entries (AI tools, wrappers)
+            shell_scripts = re.findall(self.shell_script_pattern, content, re.MULTILINE)
+            for description, tool_name in shell_scripts:
+                description = description.strip()
+                url = self._extract_url_from_comment(description)
+                category = self._categorize_tool(tool_name, description)
+
+                packages[tool_name] = ToolInfo(
+                    name=tool_name,
+                    description=description,
+                    category=category,
+                    url=url,
+                )
+
+            # Then process regular package entries
             lines = content.split("\n")
             in_packages_section = False
             bracket_depth = 0
@@ -292,6 +377,9 @@ class FallbackNixParser(BaseNixParser):
             packages = {}
             warnings = ["Using fallback parser - results may be incomplete"]
 
+            # Known tools set for validation
+            known_tools = self._get_known_tools()
+
             # Look for common package names
             package_pattern = r"\b([a-z][a-z0-9-]*[a-z0-9])\b"
             potential_packages = re.findall(package_pattern, content)
@@ -303,11 +391,15 @@ class FallbackNixParser(BaseNixParser):
                 if self._is_likely_package(pkg) and self._is_valid_package_name(pkg)
             ]
 
+            # Only add if it's a known tool (don't create "Package: name" artifacts)
             for pkg_name in likely_packages[:50]:  # Limit to prevent noise
-                category = self._categorize_tool(pkg_name, "")
-                packages[pkg_name] = ToolInfo(
-                    name=pkg_name, description=f"Package: {pkg_name}", category=category
-                )
+                if pkg_name in known_tools:  # Only add if it's in known_tools set
+                    category = self._categorize_tool(pkg_name, "")
+                    packages[pkg_name] = ToolInfo(
+                        name=pkg_name,
+                        description=f"Command-line tool: {pkg_name}",
+                        category=category,
+                    )
 
             return ParsingResult(
                 success=len(packages) > 0,
@@ -326,10 +418,9 @@ class FallbackNixParser(BaseNixParser):
                 parser_used="FallbackNixParser",
             )
 
-    def _is_likely_package(self, name: str) -> bool:
-        """Check if name looks like a real package."""
-        # Common CLI tools we expect to find
-        known_tools = {
+    def _get_known_tools(self) -> set[str]:
+        """Get set of known CLI tools."""
+        return {
             "git",
             "wget",
             "curl",
@@ -352,7 +443,30 @@ class FallbackNixParser(BaseNixParser):
             "ripgrep",
             "jq",
             "yq",
+            "rg",
+            "dust",
+            "duf",
+            "procs",
+            "bottom",
+            "lazygit",
+            "delta",
+            "fzf",
+            "broot",
+            "zoxide",
+            "starship",
+            "direnv",
+            "devenv",
+            "nmap",
+            "wireshark",
+            "httpie",
+            "gh",
+            "glow",
+            "just",
         }
+
+    def _is_likely_package(self, name: str) -> bool:
+        """Check if name looks like a real package."""
+        known_tools = self._get_known_tools()
 
         if name in known_tools:
             return True
@@ -414,7 +528,7 @@ class NixConfigParser:
             return False
 
         # Check for reasonable distribution of categories
-        categories = set(tool.category for tool in result.packages.values())
+        categories = {tool.category for tool in result.packages.values()}
         if len(categories) < 2:
             logger.warning("All packages in same category - might be parsing error")
 
