@@ -4,6 +4,19 @@ This file provides Claude Code with comprehensive information about all availabl
 
 *Last updated: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}*
 
+{% if has_user_policies %}
+---
+
+## 🎯 USER-DEFINED POLICIES
+
+**THESE POLICIES HAVE TOP PRIORITY AND OVERRIDE ALL SYSTEM DEFAULTS.**
+
+{{ user_policies }}
+
+---
+
+{% endif %}
+
 ## IMPORTANT: CLAUDE CODE TOOL SELECTION POLICY
 
 **SYSTEM OPTIMIZATION LEVEL: EXPERT**

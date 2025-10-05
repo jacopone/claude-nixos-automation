@@ -117,6 +117,10 @@ class SystemConfig(BaseModel):
     fish_abbreviations: list[FishAbbreviation] = Field(default_factory=list)
     tool_categories: dict[ToolCategory, list[ToolInfo]] = Field(default_factory=dict)
     git_status: GitStatus = Field(default_factory=GitStatus)
+    user_policies: str = Field(default="", description="User-defined policies content")
+    has_user_policies: bool = Field(
+        default=False, description="Whether user policies exist"
+    )
 
     @validator("package_count")
     def validate_package_count(cls, v):

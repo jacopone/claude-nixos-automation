@@ -111,12 +111,27 @@ class SystemGenerator(BaseGenerator):
         # Get git status
         git_status = self.get_current_git_status()
 
+        # Read user policies if they exist
+        user_policies_file = Path.home() / ".claude" / "CLAUDE-USER-POLICIES.md"
+        user_policies_content = ""
+        has_user_policies = False
+
+        if user_policies_file.exists():
+            try:
+                user_policies_content = user_policies_file.read_text(encoding="utf-8")
+                has_user_policies = True
+                logger.info(f"Read user policies from {user_policies_file}")
+            except Exception as e:
+                logger.warning(f"Failed to read user policies: {e}")
+
         return SystemConfig(
             timestamp=datetime.now(),
             package_count=len(all_packages),
             fish_abbreviations=fish_abbreviations,
             tool_categories=tool_categories,
             git_status=git_status,
+            user_policies=user_policies_content,
+            has_user_policies=has_user_policies,
         )
 
     def _organize_by_category(self, packages: dict) -> dict[ToolCategory, list]:
@@ -159,9 +174,11 @@ class SystemGenerator(BaseGenerator):
             "tool_categories": config.tool_categories,
             "git_status": config.git_status,
             "total_tools": config.total_tools,
+            "user_policies": config.user_policies,
+            "has_user_policies": config.has_user_policies,
             "generation_info": {
                 "generator": "SystemGenerator",
-                "version": "2.0.0",
+                "version": "2.1.0",
                 "template": "system-claude.j2",
             },
         }
