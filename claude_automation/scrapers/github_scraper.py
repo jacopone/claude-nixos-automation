@@ -3,7 +3,6 @@ Scraper for GitHub repositories with .claude/CLAUDE.md examples.
 """
 
 import logging
-from datetime import datetime
 
 import requests
 
@@ -19,12 +18,24 @@ class GitHubExamplesScraper:
 
     def __init__(self, timeout: int = 10):
         """Initialize scraper."""
+        import os
+
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update({
+        headers = {
             "Accept": "application/vnd.github+json",
             "User-Agent": "claude-nixos-automation/2.0",
-        })
+        }
+
+        # Add GitHub token if available (optional)
+        github_token = os.environ.get("GITHUB_TOKEN")
+        if github_token:
+            headers["Authorization"] = f"Bearer {github_token}"
+            logger.info("Using GitHub token for authentication")
+        else:
+            logger.info("No GitHub token found - using unauthenticated requests")
+
+        self.session.headers.update(headers)
 
     def scrape_examples(self, max_repos: int = 10) -> WebScrapingResult:
         """
@@ -49,6 +60,15 @@ class GitHubExamplesScraper:
                 params={"q": search_query, "per_page": max_repos},
                 timeout=self.timeout,
             )
+
+            if response.status_code == 401:
+                # Unauthorized - missing or invalid token
+                error_msg = "GitHub API authentication required. Set GITHUB_TOKEN environment variable for better results."
+                logger.warning(error_msg)
+                errors.append(error_msg)
+                return WebScrapingResult(
+                    success=False, policies=[], errors=errors, source="github"
+                )
 
             if response.status_code == 403:
                 # Rate limited

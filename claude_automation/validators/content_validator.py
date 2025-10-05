@@ -23,7 +23,7 @@ class ContentValidator:
         self.required_sections = [
             "CLAUDE CODE TOOL SELECTION POLICY",
             "System Information",
-            "Available Command Line Tools",
+            "Available Tools",  # Updated from "Available Command Line Tools"
         ]
 
         self.required_patterns = [

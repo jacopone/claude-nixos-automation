@@ -3,7 +3,6 @@ Scraper for Anthropic's official Claude Code best practices documentation.
 """
 
 import logging
-from datetime import datetime
 
 import requests
 from bs4 import BeautifulSoup
@@ -22,9 +21,9 @@ class AnthropicDocsScraper:
         """Initialize scraper with timeout."""
         self.timeout = timeout
         self.session = requests.Session()
-        self.session.headers.update({
-            "User-Agent": "claude-nixos-automation/2.0 (best-practices-aggregator)"
-        })
+        self.session.headers.update(
+            {"User-Agent": "claude-nixos-automation/2.0 (best-practices-aggregator)"}
+        )
 
     def scrape_best_practices(self) -> WebScrapingResult:
         """
@@ -49,7 +48,13 @@ class AnthropicDocsScraper:
             # This is a simplified parser - adjust based on actual page structure
             policies.extend(self._parse_documentation_policies(soup, url))
 
-            logger.info(f"Scraped {len(policies)} policies from Anthropic docs")
+            if len(policies) == 0:
+                logger.info(
+                    "No policies found in Anthropic docs (page structure may have changed). "
+                    "Using curated best practices instead."
+                )
+            else:
+                logger.info(f"Scraped {len(policies)} policies from Anthropic docs")
 
         except requests.RequestException as e:
             error_msg = f"Failed to scrape Anthropic docs: {e}"
