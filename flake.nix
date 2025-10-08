@@ -161,6 +161,9 @@ echo
 echo "📝 Updating user policies..."
 $out/bin/update-user-policies || echo "⚠️  Warning: User policies update failed"
 echo
+echo "🔒 Updating project permissions..."
+$out/bin/update-permissions "\$PWD" || echo "⚠️  Warning: Permissions update failed"
+echo
 echo "🛠️  Updating system-level configuration..."
 $out/bin/update-system-claude
 echo
