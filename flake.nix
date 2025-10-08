@@ -170,6 +170,9 @@ echo
 echo "📋 Updating project-level configuration..."
 $out/bin/update-project-claude
 echo
+echo "💻 Updating machine-specific context..."
+$out/bin/update-local-context "\$PWD" || echo "⚠️  Warning: Local context update failed"
+echo
 echo "✅ All CLAUDE.md configurations updated!"
 EOF
             chmod +x $out/bin/update-claude-configs

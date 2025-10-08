@@ -52,6 +52,14 @@ else
 fi
 echo
 
+echo "💻 Updating machine-specific context (.claude/CLAUDE.local.md)..."
+if (cd scripts && devenv shell python update-local-context-v2.py "$CONFIG_DIR"); then
+    echo "✅ Machine-specific context updated"
+else
+    echo "⚠️  Warning: Local context update failed (continuing...)"
+fi
+echo
+
 echo "🎉 All Claude Code configurations updated successfully!"
 echo
 echo "📊 Summary:"
@@ -60,6 +68,7 @@ echo "   - Example policies: ~/.claude/CLAUDE-USER-POLICIES.md.example (latest b
 echo "   - Project permissions: ./.claude/settings.local.json (auto-optimized per project type)"
 echo "   - System-level: ~/.claude/CLAUDE.md (tool inventory for Claude Code)"
 echo "   - Project-level: ./CLAUDE.md (project guidance and context)"
+echo "   - Machine context: ./.claude/CLAUDE.local.md (hardware, services, WIP notes - gitignored)"
 echo
 echo "💡 These files are now synchronized with your current NixOS configuration."
 echo "🔧 Generated using modern Jinja2 templates with Pydantic validation"
