@@ -33,6 +33,26 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-claude-configs";
         };
+        update-permissions = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-permissions";
+        };
+        update-directory-context = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-directory-context";
+        };
+        update-local-context = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-local-context";
+        };
+        update-slash-commands = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-slash-commands";
+        };
+        update-usage-analytics = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-usage-analytics";
+        };
       };
 
       # Package the automation tools
@@ -77,6 +97,51 @@ exec ${pythonEnv}/bin/python $out/lib/$script "\$@"
 EOF
               chmod +x $out/bin/$name
             done
+
+            # Copy and wrap permissions script
+            cp update-permissions-v2.py $out/lib/
+            cat > $out/bin/update-permissions <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-permissions-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-permissions
+
+            # Copy and wrap directory context script
+            cp update-directory-context-v2.py $out/lib/
+            cat > $out/bin/update-directory-context <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-directory-context-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-directory-context
+
+            # Copy and wrap local context script
+            cp update-local-context-v2.py $out/lib/
+            cat > $out/bin/update-local-context <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-local-context-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-local-context
+
+            # Copy and wrap slash commands script
+            cp update-slash-commands-v2.py $out/lib/
+            cat > $out/bin/update-slash-commands <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-slash-commands-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-slash-commands
+
+            # Copy and wrap usage analytics script
+            cp update-usage-analytics-v2.py $out/lib/
+            cat > $out/bin/update-usage-analytics <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-usage-analytics-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-usage-analytics
 
             # Copy and wrap interactive setup script
             cp setup-user-policies-interactive.py $out/lib/
@@ -132,13 +197,23 @@ EOF
           echo "🤖 Claude NixOS Automation - Development Environment"
           echo "Python: $(python --version)"
           echo "uv: $(uv --version)"
+          echo "pytest: $(pytest --version | head -1)"
           echo ""
           echo "Available commands:"
+          echo "  pytest                             - 🧪 Run test suite"
+          echo "  pytest -v                          - 🧪 Run tests (verbose)"
+          echo "  pytest tests/test_schemas.py       - 🧪 Run schema tests only"
+          echo ""
           echo "  nix run .#setup-user-policies  - 🎯 Interactive wizard for first-time setup"
           echo "  nix run .#update-user-policies - Update user policies (example + initial)"
-          echo "  nix run .#update-system        - Update ~/.claude/CLAUDE.md"
-          echo "  nix run .#update-project       - Update ./CLAUDE.md in nixos-config"
-          echo "  nix run .#update-all           - Update all files (recommended)"
+          echo "  nix run .#update-system            - Update ~/.claude/CLAUDE.md"
+          echo "  nix run .#update-project           - Update ./CLAUDE.md in nixos-config"
+          echo "  nix run .#update-permissions       - ✨ Generate permissions for project"
+          echo "  nix run .#update-directory-context - 📁 Generate directory CLAUDE.md files"
+          echo "  nix run .#update-local-context     - 💻 Generate machine-specific context"
+          echo "  nix run .#update-slash-commands    - ⚡ Generate slash commands for project"
+          echo "  nix run .#update-usage-analytics   - 📊 Generate usage analytics from history"
+          echo "  nix run .#update-all               - Update all files (recommended)"
         '';
       };
     };

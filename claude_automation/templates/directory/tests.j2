@@ -1,0 +1,66 @@
+# {{ directory_name }}/ - Test Suite
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Test suite and quality assurance
+- **Test files**: {{ file_count }} files
+- **Test types**: {{ primary_file_types|join(', ') if primary_file_types else 'pytest/jest' }}
+
+{% if key_files %}
+## Test Configuration
+
+{% for file in key_files %}
+- `{{ file }}`
+{% endfor %}
+{% endif %}
+
+## Testing Guidelines
+
+- **Coverage**: Aim for high code coverage (>80%)
+- **Naming**: Use descriptive test names (`test_feature_does_something`)
+- **Isolation**: Keep tests independent and isolated
+- **Fixtures**: Use fixtures for common setup/teardown
+- **Assertions**: One logical assertion per test
+
+## Test Structure
+
+```
+tests/
+├── unit/          # Unit tests (fast, isolated)
+├── integration/   # Integration tests (slower, with dependencies)
+└── fixtures/      # Test data and fixtures
+```
+
+## Running Tests
+
+```bash
+# Run all tests
+pytest
+
+# Run specific test file
+pytest {{ directory_path }}/test_example.py
+
+# Run with coverage
+pytest --cov={{ directory_path }}
+```
+
+{% if do_not_touch %}
+## Protected Files
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}
+
+## Best Practices
+
+- Write tests before or alongside code (TDD)
+- Test edge cases and error conditions
+- Mock external dependencies
+- Keep tests readable and maintainable
+- Use parametrize for similar test cases

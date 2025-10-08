@@ -1,0 +1,26 @@
+# {{ directory_name }}/ - Data
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Data files, fixtures, and samples
+- **Files**: {{ file_count }} data files
+
+## Data Guidelines
+
+- Document data format and schema
+- Keep data files version controlled (if small)
+- Use appropriate file formats (JSON, CSV, etc.)
+- Never commit sensitive data
+
+{% if do_not_touch %}
+## Protected Data
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}

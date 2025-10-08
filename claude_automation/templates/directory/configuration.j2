@@ -1,0 +1,35 @@
+# {{ directory_name }}/ - Configuration
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Configuration files and settings
+- **Files**: {{ file_count }} configuration files
+- **Formats**: {{ primary_file_types|join(', ') if primary_file_types else 'various' }}
+
+{% if key_files %}
+## Configuration Files
+
+{% for file in key_files %}
+- `{{ file }}`
+{% endfor %}
+{% endif %}
+
+## Configuration Guidelines
+
+- **Validation**: Validate config before applying
+- **Defaults**: Provide sensible defaults
+- **Documentation**: Comment complex settings
+- **Security**: Never commit secrets (use .env files)
+
+{% if do_not_touch %}
+## Protected Configurations
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}

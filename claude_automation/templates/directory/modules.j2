@@ -1,0 +1,35 @@
+# {{ directory_name }}/ - Modules
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Modular components and reusable functionality
+- **Modules**: {{ file_count }} files, {{ subdirectory_count }} subdirectories
+- **Types**: {{ primary_file_types|join(', ') if primary_file_types else 'various' }}
+
+{% if key_files %}
+## Module Index
+
+{% for file in key_files %}
+- `{{ file }}`
+{% endfor %}
+{% endif %}
+
+## Module Guidelines
+
+- **Independence**: Each module should be self-contained
+- **Interfaces**: Define clear public APIs
+- **Dependencies**: Minimize inter-module dependencies
+- **Documentation**: Document module purpose and usage
+
+{% if do_not_touch %}
+## Protected Modules
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}

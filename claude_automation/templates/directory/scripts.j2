@@ -1,0 +1,34 @@
+# {{ directory_name }}/ - Scripts
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Utility scripts and automation tools
+- **Scripts**: {{ file_count }} files
+
+{% if key_files %}
+## Available Scripts
+
+{% for file in key_files %}
+- `{{ file }}`
+{% endfor %}
+{% endif %}
+
+## Usage Guidelines
+
+- **Shebang**: Always include appropriate shebang line
+- **Documentation**: Add help text and usage examples
+- **Error handling**: Validate inputs and handle errors gracefully
+- **Permissions**: Set executable permissions (`chmod +x`)
+
+{% if do_not_touch %}
+## Protected Scripts
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}

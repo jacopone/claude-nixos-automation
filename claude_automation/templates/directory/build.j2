@@ -1,0 +1,32 @@
+# {{ directory_name }}/ - Build Artifacts
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## ⚠️ WARNING: Build Directory
+
+This directory contains auto-generated build artifacts.
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Build output (DO NOT EDIT MANUALLY)
+- **Files**: {{ file_count }} generated files
+
+## Important Notes
+
+- **DO NOT** manually edit files in this directory
+- **DO NOT** commit build artifacts to version control
+- Files here are regenerated during build process
+- Clean and rebuild if you encounter issues
+
+## Rebuilding
+
+```bash
+# Clean build artifacts
+rm -rf {{ directory_path }}
+
+# Rebuild
+[build command here]
+```
+
+This directory should be in `.gitignore`.

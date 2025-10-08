@@ -1,0 +1,94 @@
+# CLAUDE.local.md - Machine-Specific Context
+
+> **⚠️ GITIGNORED FILE**: This file contains machine-specific notes and should NOT be committed to version control.
+
+*Last updated: {{ timestamp }}*
+
+---
+
+## Machine Information
+
+- **Hostname**: `{{ hostname }}`
+- **CPU**: {{ cpu_info }}
+- **Memory**: {{ memory_total }}
+- **Disk Usage**: {{ disk_usage }}
+- **Project Path**: `{{ project_path }}`
+
+{% if running_services %}
+## Running Services
+
+{% for service in running_services %}
+- {{ service }}
+{% endfor %}
+{% else %}
+## Running Services
+
+No services detected. Common services include:
+- Docker containers
+- PostgreSQL/MySQL databases
+- Redis cache
+- Development servers (devenv, npm, etc.)
+{% endif %}
+
+{% if current_branches %}
+## Active Git Branches
+
+{% for branch in current_branches %}
+- `{{ branch }}`
+{% endfor %}
+{% else %}
+## Active Git Branches
+
+No git repository detected or no recent branches.
+{% endif %}
+
+---
+
+## Work in Progress
+
+> **Edit this section** to track current work, experiments, and temporary notes.
+> This helps Claude Code understand what you're currently working on.
+
+{% if wip_notes %}
+{% for note in wip_notes %}
+- {{ note }}
+{% endfor %}
+{% else %}
+- *(Add your WIP notes here)*
+- Example: "Testing new authentication flow"
+- Example: "Refactoring database queries for performance"
+{% endif %}
+
+## Experiments
+
+> **Edit this section** to document experimental features or techniques being tested.
+> These may or may not make it into the main codebase.
+
+{% if experiments %}
+{% for experiment in experiments %}
+- {{ experiment }}
+{% endfor %}
+{% else %}
+- *(Add experimental features here)*
+- Example: "Trying out new caching strategy with Redis"
+- Example: "Experimenting with async/await patterns"
+{% endif %}
+
+## Machine-Specific Notes
+
+> Add any notes specific to this development machine:
+> - Local environment quirks
+> - Special configurations
+> - Hardware limitations
+> - Development workflow preferences
+
+*(Add your machine-specific notes here)*
+
+---
+
+**Tips for maintaining this file:**
+- Update WIP section daily or when starting new work
+- Document experiments so Claude knows they're temporary
+- Note any local-only configurations or workarounds
+- Keep it concise - focus on what's relevant right now
+- This file regenerates with updated hardware/services info, but preserves your WIP/experiments sections

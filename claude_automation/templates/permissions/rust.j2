@@ -1,0 +1,116 @@
+{# Rust project permissions with cargo, clippy, rustfmt #}
+{
+  "permissions": {
+    "allow": [
+      {# Git operations #}
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git config:*)",
+
+      {# Rust toolchain and quality tools #}
+      "Bash(cargo:*)",
+      "Bash(cargo build:*)",
+      "Bash(cargo test:*)",
+      "Bash(cargo run:*)",
+      "Bash(cargo check:*)",
+      {% if 'clippy' in quality_tools %}
+      "Bash(cargo clippy:*)",
+      {% endif %}
+      {% if 'rustfmt' in quality_tools %}
+      "Bash(cargo fmt:*)",
+      "Bash(rustfmt:*)",
+      {% endif %}
+      "Bash(rustc:*)",
+      "Bash(rustup:*)",
+
+      {# Modern CLI tools #}
+      {% for tool in modern_cli_tools %}
+      "Bash({{ tool }}:*)",
+      {% endfor %}
+
+      {# File reading permissions #}
+      "Read({{ project_path }}/**)",
+      "Read(/home/{{ username }}/.claude/**)",
+      "Read(/home/{{ username }}/.cargo/**)",
+      "Read(/tmp/**)",
+
+      {# File writing permissions #}
+      "Write({{ project_path }}/src/**)",
+      "Write({{ project_path }}/tests/**)",
+      "Write({{ project_path }}/benches/**)",
+      "Write({{ project_path }}/examples/**)",
+      "Write({{ project_path }}/docs/**)",
+      "Write({{ project_path }}/*.md)",
+      "Write({{ project_path }}/*.rs)",
+      "Write({{ project_path }}/Cargo.toml)",
+      "Write({{ project_path }}/Cargo.lock)",
+
+      {# File editing permissions #}
+      "Edit({{ project_path }}/src/**)",
+      "Edit({{ project_path }}/tests/**)",
+      "Edit({{ project_path }}/benches/**)",
+      "Edit({{ project_path }}/examples/**)",
+      "Edit({{ project_path }}/docs/**)",
+      "Edit({{ project_path }}/*.md)",
+      "Edit({{ project_path }}/*.rs)",
+      "Edit({{ project_path }}/Cargo.toml)",
+
+      {# Web access #}
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:rust-lang.org)",
+      "WebFetch(domain:docs.rs)",
+      "WebFetch(domain:crates.io)",
+      "WebSearch",
+
+      {# Shell utilities #}
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(chmod:*)",
+      "Bash(tee:*)"
+    ],
+
+    "deny": [
+      {# Security-critical denials #}
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(git push --force:*)",
+
+      {# Sensitive paths #}
+      {% for path in sensitive_paths %}
+      "Write({{ path }}/**)",
+      "Edit({{ path }}/**)",
+      {% endfor %}
+
+      {# System configuration #}
+      "Write(/home/{{ username }}/.ssh/**)",
+      "Write(/home/{{ username }}/.config/**)",
+      "Edit(/home/{{ username }}/.ssh/**)",
+      "Edit(/home/{{ username }}/.config/**)",
+
+      {# Cargo build artifacts #}
+      "Write({{ project_path }}/target/**)"
+    ],
+
+    "ask": [
+      {# Operations requiring confirmation #}
+      "Bash(git push:*)",
+      "Bash(cargo publish:*)",
+      "Bash(cargo install:*)",
+      "Bash(./rebuild-nixos:*)",
+      "Bash(nixos-rebuild:*)"
+    ]
+  },
+
+  "hooks": {}
+}

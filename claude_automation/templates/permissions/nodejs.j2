@@ -1,0 +1,145 @@
+{# Node.js/TypeScript project permissions #}
+{
+  "permissions": {
+    "allow": [
+      {# Git operations #}
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git config:*)",
+
+      {# Node.js testing and quality tools #}
+      {% if 'jest' in quality_tools %}
+      "Bash(jest:*)",
+      "Bash(npm test:*)",
+      {% endif %}
+      {% if 'eslint' in quality_tools %}
+      "Bash(eslint:*)",
+      "Bash(npx eslint:*)",
+      {% endif %}
+      {% if 'prettier' in quality_tools %}
+      "Bash(prettier:*)",
+      "Bash(npx prettier:*)",
+      {% endif %}
+      {% if 'tsc' in quality_tools %}
+      "Bash(tsc:*)",
+      "Bash(npx tsc:*)",
+      {% endif %}
+      {% if 'jscpd' in quality_tools %}
+      "Bash(jscpd:*)",
+      "Bash(npx jscpd:*)",
+      {% endif %}
+
+      {# Node.js package managers #}
+      {% if 'npm' in package_managers %}
+      "Bash(npm run:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm run build:*)",
+      {% endif %}
+      {% if 'yarn' in package_managers %}
+      "Bash(yarn:*)",
+      "Bash(yarn run:*)",
+      {% endif %}
+      {% if 'pnpm' in package_managers %}
+      "Bash(pnpm:*)",
+      "Bash(pnpm run:*)",
+      {% endif %}
+
+      {# Node execution #}
+      "Bash(node:*)",
+      "Bash(npx:*)",
+
+      {# Modern CLI tools #}
+      {% for tool in modern_cli_tools %}
+      "Bash({{ tool }}:*)",
+      {% endfor %}
+
+      {# File reading permissions #}
+      "Read({{ project_path }}/**)",
+      "Read(/home/{{ username }}/.claude/**)",
+      "Read(/tmp/**)",
+
+      {# File writing permissions #}
+      "Write({{ project_path }}/src/**)",
+      "Write({{ project_path }}/tests/**)",
+      "Write({{ project_path }}/docs/**)",
+      "Write({{ project_path }}/*.md)",
+      "Write({{ project_path }}/*.js)",
+      "Write({{ project_path }}/*.ts)",
+      "Write({{ project_path }}/*.json)",
+      "Write({{ project_path }}/package.json)",
+      "Write({{ project_path }}/tsconfig.json)",
+
+      {# File editing permissions #}
+      "Edit({{ project_path }}/src/**)",
+      "Edit({{ project_path }}/tests/**)",
+      "Edit({{ project_path }}/docs/**)",
+      "Edit({{ project_path }}/*.md)",
+      "Edit({{ project_path }}/*.js)",
+      "Edit({{ project_path }}/*.ts)",
+      "Edit({{ project_path }}/*.json)",
+      "Edit({{ project_path }}/package.json)",
+      "Edit({{ project_path }}/tsconfig.json)",
+
+      {# Web access #}
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:nodejs.org)",
+      "WebFetch(domain:npmjs.com)",
+      "WebSearch",
+
+      {# Shell utilities #}
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(chmod:*)",
+      "Bash(tee:*)"
+    ],
+
+    "deny": [
+      {# Security-critical denials #}
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(git push --force:*)",
+
+      {# Sensitive paths #}
+      {% for path in sensitive_paths %}
+      "Write({{ path }}/**)",
+      "Edit({{ path }}/**)",
+      {% endfor %}
+
+      {# System configuration #}
+      "Write(/home/{{ username }}/.ssh/**)",
+      "Write(/home/{{ username }}/.config/**)",
+      "Edit(/home/{{ username }}/.ssh/**)",
+      "Edit(/home/{{ username }}/.config/**)",
+
+      {# Node modules and build artifacts #}
+      "Write({{ project_path }}/node_modules/**)",
+      "Write({{ project_path }}/dist/**)",
+      "Write({{ project_path }}/build/**)"
+    ],
+
+    "ask": [
+      {# Operations requiring confirmation #}
+      "Bash(git push:*)",
+      "Bash(npm install:*)",
+      "Bash(yarn install:*)",
+      "Bash(pnpm install:*)",
+      "Bash(npm publish:*)",
+      "Bash(./rebuild-nixos:*)",
+      "Bash(nixos-rebuild:*)"
+    ]
+  },
+
+  "hooks": {}
+}

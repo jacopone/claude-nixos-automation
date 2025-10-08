@@ -1,0 +1,32 @@
+{
+  "permissions": {
+    "allow": [
+      "Read(//home/guyfawkes/nixos-config/docs/automation/**)",
+      "Read(//home/guyfawkes/.claude/**)",
+      "Bash(bat:*)",
+      "Bash(git add:*)",
+      "Bash(git commit -m \"$(cat <<''EOF''\nfeat: merge user policies into system CLAUDE.md for guaranteed loading\n\nChanges:\n- SystemGenerator reads ~/.claude/CLAUDE-USER-POLICIES.md\n- Merges content into ~/.claude/CLAUDE.md at top with TOP PRIORITY marker\n- Add user_policies and has_user_policies to SystemConfig schema\n- Update system-claude.j2 template to include merged policies section\n- Remove obsolete ''check CLAUDE-USER-POLICIES.md'' instruction from policies.j2\n- Bump version to 2.1.0\n\nArchitecture:\n- Source: CLAUDE-USER-POLICIES.md (user-editable, never overwritten)\n- Artifact: CLAUDE.md (auto-generated, Claude reads this)\n- Generator merges on every rebuild\n\nRationale:\n- Single file = 100% guaranteed loading at initialization\n- No dependency on @import mechanism reliability\n- User policies clearly prioritized at document top\n- Clear separation: source vs artifact\n\nFixes: User policies were being suggested but not actually imported\n\n🤖 Generated with [Claude Code](https://claude.com/claude-code)\n\nCo-Authored-By: Claude <noreply@anthropic.com>\nEOF\n)\")",
+      "Bash(git push:*)",
+      "Bash(fd:*)",
+      "Bash(npm search:*)",
+      "Read(//home/guyfawkes/.cursor/**)",
+      "Read(//home/guyfawkes/.config/Code/User/globalStorage/saoudrizwan.claude-dev/settings/**)",
+      "WebSearch",
+      "Read(//home/guyfawkes/nixos-config/modules/core/**)",
+      "Read(//home/guyfawkes/nixos-config/users/guyfawkes/**)",
+      "Read(//home/guyfawkes/nixos-config/modules/home-manager/**)",
+      "Read(//home/guyfawkes/nixos-config/docs/**)",
+      "Read(//home/guyfawkes/**)",
+      "Bash(claude mcp add:*)",
+      "Bash(claude mcp:*)",
+      "Bash(npx:*)",
+      "Bash(mcp-nixos:*)",
+      "Read(//nix/store/3f1r40pbd1hxp1n6lpbl7rfgj222lh1y-mcp-nixos/bin/**)",
+      "Read(//nix/store/fhlxza6ygbip7zxv3k3xq8l7psyfq0rs-serena/bin/**)",
+      "Bash(timeout 5 bash -c 'echo \"\"{\\\"\"jsonrpc\\\"\":\\\"\"2.0\\\"\",\\\"\"id\\\"\":1,\\\"\"method\\\"\":\\\"\"initialize\\\"\",\\\"\"params\\\"\":{}}\"\" | mcp-nixos 2>&1')",
+      "Bash(fish:*)",
+      "WebFetch(domain:github.com)"
+    ]
+  },
+  "hooks": {}
+}

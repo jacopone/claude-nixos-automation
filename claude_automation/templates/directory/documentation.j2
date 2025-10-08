@@ -1,0 +1,53 @@
+# {{ directory_name }}/ - Documentation
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Project documentation
+- **Files**: {{ file_count }} documentation files
+- **Format**: {{ primary_file_types|join(', ') if primary_file_types else 'markdown' }}
+
+{% if key_files %}
+## Key Documentation
+
+{% for file in key_files %}
+- `{{ file }}`{% if file == 'README.md' %} - Main documentation entry point{% elif file == 'INDEX.md' %} - Documentation index{% elif file == 'OVERVIEW.md' %} - Project overview{% endif %}
+
+{% endfor %}
+{% endif %}
+
+## Documentation Guidelines
+
+- **Clarity**: Write for your target audience (users, developers, contributors)
+- **Structure**: Use clear headings and logical flow
+- **Examples**: Include code examples where helpful
+- **Maintenance**: Keep docs updated with code changes
+- **Links**: Use relative links for internal references
+
+## Writing Style
+
+- Use active voice
+- Be concise but complete
+- Include prerequisites where needed
+- Add diagrams for complex concepts
+- Use code blocks with language specification
+
+{% if do_not_touch %}
+## Protected Files
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}
+
+## Best Practices
+
+- Test all code examples
+- Review for broken links
+- Keep table of contents updated
+- Use consistent terminology
+- Add last-updated timestamps

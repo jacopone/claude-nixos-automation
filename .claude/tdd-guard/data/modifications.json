@@ -1,0 +1,11 @@
+{
+  "session_id": "1ce3f17f-d837-4889-957c-6f30f53b8d47",
+  "transcript_path": "/home/guyfawkes/.claude/projects/-home-guyfawkes-claude-nixos-automation/1ce3f17f-d837-4889-957c-6f30f53b8d47.jsonl",
+  "hook_event_name": "PreToolUse",
+  "tool_name": "Edit",
+  "tool_input": {
+    "file_path": "/home/guyfawkes/nixos-config/modules/home-manager/base.nix",
+    "old_string": "          echo \"🤖 AI Development Tools:\"\n          echo \"  ai        → aider (AI pair programming)\"\n          echo \"  aicode    → aider with Claude Sonnet\"\n          echo \"  aitui     → AI Project Orchestration TUI (Rich interface)\"",
+    "new_string": "          echo \"🤖 AI Development Tools:\"\n          echo \"  aitui     → AI Project Orchestration TUI (Rich interface)\""
+  }
+}

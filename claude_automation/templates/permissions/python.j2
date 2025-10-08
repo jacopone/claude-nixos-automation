@@ -1,0 +1,134 @@
+{# Python project permissions with pytest, ruff, uv, etc. #}
+{
+  "permissions": {
+    "allow": [
+      {# Git operations #}
+      "Bash(git status:*)",
+      "Bash(git diff:*)",
+      "Bash(git log:*)",
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git reset:*)",
+      "Bash(git restore:*)",
+      "Bash(git config:*)",
+
+      {# Python testing and quality tools #}
+      {% if 'pytest' in quality_tools %}
+      "Bash(pytest:*)",
+      "Bash(python3 -m pytest:*)",
+      {% endif %}
+      {% if 'ruff' in quality_tools %}
+      "Bash(ruff:*)",
+      "Bash(ruff check:*)",
+      "Bash(ruff format:*)",
+      {% endif %}
+      {% if 'black' in quality_tools %}
+      "Bash(black:*)",
+      {% endif %}
+      {% if 'lizard' in quality_tools %}
+      "Bash(lizard:*)",
+      {% endif %}
+      {% if 'radon' in quality_tools %}
+      "Bash(radon:*)",
+      {% endif %}
+
+      {# Python package managers #}
+      {% if 'uv' in package_managers %}
+      "Bash(uv:*)",
+      "Bash(uv run:*)",
+      "Bash(uv add:*)",
+      "Bash(uv sync:*)",
+      {% endif %}
+      {% if 'poetry' in package_managers %}
+      "Bash(poetry:*)",
+      "Bash(poetry run:*)",
+      {% endif %}
+
+      {# Python execution #}
+      "Bash(python3:*)",
+      "Bash(python:*)",
+      "Bash(PYTHONPATH={{ project_path }}/src timeout:*)",
+      "Bash(timeout:*)",
+
+      {# Modern CLI tools #}
+      {% for tool in modern_cli_tools %}
+      "Bash({{ tool }}:*)",
+      {% endfor %}
+
+      {# File reading permissions #}
+      "Read({{ project_path }}/**)",
+      "Read(/home/{{ username }}/.claude/**)",
+      "Read(/tmp/**)",
+
+      {# File writing permissions #}
+      "Write({{ project_path }}/src/**)",
+      "Write({{ project_path }}/tests/**)",
+      "Write({{ project_path }}/docs/**)",
+      "Write({{ project_path }}/*.md)",
+      "Write({{ project_path }}/*.py)",
+      "Write({{ project_path }}/pyproject.toml)",
+      "Write({{ project_path }}/requirements.txt)",
+
+      {# File editing permissions #}
+      "Edit({{ project_path }}/src/**)",
+      "Edit({{ project_path }}/tests/**)",
+      "Edit({{ project_path }}/docs/**)",
+      "Edit({{ project_path }}/*.md)",
+      "Edit({{ project_path }}/*.py)",
+      "Edit({{ project_path }}/pyproject.toml)",
+
+      {# Web access #}
+      "WebFetch(domain:docs.claude.com)",
+      "WebFetch(domain:github.com)",
+      "WebFetch(domain:docs.python.org)",
+      "WebFetch(domain:pypi.org)",
+      "WebSearch",
+
+      {# Shell utilities #}
+      "Bash(cat:*)",
+      "Bash(echo:*)",
+      "Bash(test:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(chmod:*)",
+      "Bash(tee:*)"
+    ],
+
+    "deny": [
+      {# Security-critical denials #}
+      "Bash(rm -rf:*)",
+      "Bash(sudo:*)",
+      "Bash(curl:*)",
+      "Bash(wget:*)",
+      "Bash(git push --force:*)",
+
+      {# Sensitive paths #}
+      {% for path in sensitive_paths %}
+      "Write({{ path }}/**)",
+      "Edit({{ path }}/**)",
+      {% endfor %}
+
+      {# System configuration #}
+      "Write(/home/{{ username }}/.ssh/**)",
+      "Write(/home/{{ username }}/.config/**)",
+      "Edit(/home/{{ username }}/.ssh/**)",
+      "Edit(/home/{{ username }}/.config/**)",
+
+      {# Python virtual environments #}
+      "Write({{ project_path }}/.venv/**)",
+      "Write({{ project_path }}/venv/**)"
+    ],
+
+    "ask": [
+      {# Operations requiring confirmation #}
+      "Bash(git push:*)",
+      "Bash(pip install:*)",
+      "Bash(uv pip install:*)",
+      "Bash(poetry install:*)",
+      "Bash(./rebuild-nixos:*)",
+      "Bash(nixos-rebuild:*)"
+    ]
+  },
+
+  "hooks": {}
+}

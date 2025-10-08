@@ -1,0 +1,35 @@
+# {{ directory_name }}/ - Directory Context
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: {{ purpose }}
+- **File count**: {{ file_count }}
+- **Subdirectories**: {{ subdirectory_count }}
+- **Primary file types**: {{ primary_file_types|join(', ') if primary_file_types else 'various' }}
+
+{% if key_files %}
+## Key Files
+
+{% for file in key_files %}
+- `{{ file }}`
+{% endfor %}
+{% endif %}
+
+{% if do_not_touch %}
+## Protected Files (Do Not Modify)
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}
+
+## Guidelines
+
+- Follow the project's coding standards
+- Maintain consistency with existing file structure
+- Update this CLAUDE.md if directory purpose changes

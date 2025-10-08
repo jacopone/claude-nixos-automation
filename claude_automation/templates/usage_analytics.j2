@@ -1,0 +1,65 @@
+{{ start_marker }}
+## 📊 Usage Analytics
+
+> **Auto-generated from Fish shell history** - Last updated: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
+
+### Command Usage Statistics
+
+- **Total commands analyzed**: {{ "{:,}".format(total_commands) }}
+- **Unique commands**: {{ unique_commands }}
+- **Analysis period**: All Fish shell history
+
+### Top {{ top_commands|length }} Most Used Commands
+
+{% for cmd in top_commands %}
+{%- set stats = command_stats[cmd] -%}
+{{ loop.index }}. **`{{ cmd }}`** - Used {{ stats.count }} times ({{ stats.category }})
+   - Last used: {{ stats.last_used.strftime('%Y-%m-%d %H:%M') }}
+{% endfor %}
+
+### Modern CLI Tools Usage
+
+{% if tool_usage %}
+Tools you actively use (tracked from history):
+
+{% for tool, count in tool_usage.items()|sort(attribute='1', reverse=True) %}
+- **{{ tool }}**: {{ count }} times
+{% endfor %}
+{% else %}
+No modern CLI tools tracked in recent history.
+{% endif %}
+
+### Workflow Patterns Detected
+
+{% if workflow_patterns %}
+{% for pattern in workflow_patterns %}
+- ✓ {{ pattern }}
+{% endfor %}
+{% else %}
+No specific workflow patterns detected yet. Keep using your tools!
+{% endif %}
+
+### Insights for Claude Code
+
+Based on your command usage:
+
+{% if 'git' in top_commands[:5] %}
+- **Git-heavy workflow**: You use git frequently. Claude Code can help with commit messages, code reviews, and git workflows.
+{% endif %}
+{% if 'eza' in tool_usage or 'bat' in tool_usage or 'rg' in tool_usage %}
+- **Modern CLI adoption**: You prefer modern tools over traditional Unix commands. Claude Code should recommend eza, bat, rg, etc.
+{% endif %}
+{% if 'nix' in top_commands[:10] or 'nixos-rebuild' in top_commands[:10] %}
+- **NixOS power user**: Frequent rebuilds suggest active system configuration. Claude Code should be aware of Nix/NixOS conventions.
+{% endif %}
+{% if 'aider' in tool_usage or 'claude-flow' in tool_usage %}
+- **AI-assisted development**: You're already using AI coding tools. Claude Code is a natural fit for your workflow.
+{% endif %}
+{% if command_stats|length > 100 %}
+- **Diverse command usage**: You use {{ command_stats|length }} unique commands, indicating broad CLI proficiency.
+{% endif %}
+
+---
+
+*This section auto-updates to help Claude Code understand your actual tool usage patterns.*
+{{ end_marker }}

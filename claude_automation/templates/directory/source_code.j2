@@ -1,0 +1,43 @@
+# {{ directory_name }}/ - Source Code
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Source code implementation
+- **Files**: {{ file_count }} files
+- **Languages**: {{ primary_file_types|join(', ') if primary_file_types else 'mixed' }}
+
+{% if key_files %}
+## Entry Points
+
+{% for file in key_files %}
+- `{{ file }}`{% if file == '__init__.py' %} - Python package initialization{% elif file == 'index.js' or file == 'index.ts' %} - Module entry point{% elif file == 'mod.rs' %} - Rust module root{% elif file.startswith('main.') %} - Application entry point{% endif %}
+
+{% endfor %}
+{% endif %}
+
+## Code Guidelines
+
+- **Style**: Follow project conventions and existing patterns
+- **Imports**: Organize imports logically (stdlib, third-party, local)
+- **Documentation**: Add docstrings for public APIs
+- **Testing**: Write tests for new functionality
+
+{% if do_not_touch %}
+## Do Not Modify
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}
+
+## Development Notes
+
+- Keep functions focused and single-purpose
+- Use meaningful variable and function names
+- Add type hints where applicable
+- Consider edge cases and error handling

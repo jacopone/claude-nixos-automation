@@ -1,0 +1,26 @@
+# {{ directory_name }}/ - Templates
+
+> {{ description }}
+
+*Auto-generated: {{ timestamp }}*
+
+## Directory Information
+
+- **Path**: `{{ directory_path }}`
+- **Purpose**: Template files for code generation
+- **Templates**: {{ file_count }} files
+
+## Template Guidelines
+
+- Keep templates generic and reusable
+- Use clear variable naming
+- Document template variables
+- Test generated output
+
+{% if do_not_touch %}
+## Protected Templates
+
+{% for pattern in do_not_touch %}
+- `{{ pattern }}`
+{% endfor %}
+{% endif %}
