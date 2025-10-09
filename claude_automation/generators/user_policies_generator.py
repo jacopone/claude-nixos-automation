@@ -241,7 +241,7 @@ class UserPoliciesGenerator(BaseGenerator):
             logger.warning(f"Failed to scrape Anthropic docs: {e}")
 
         try:
-            # Scrape GitHub examples
+            # Scrape GitHub examples (optional community feature)
             github_scraper = GitHubExamplesScraper(timeout=5)
             github_result = github_scraper.scrape_examples(max_repos=5)
             if github_result.success:
@@ -249,15 +249,16 @@ class UserPoliciesGenerator(BaseGenerator):
                 logger.info(
                     f"Scraped {len(github_result.policies)} examples from GitHub"
                 )
-            else:
-                logger.warning(
-                    f"GitHub scraping failed: {', '.join(github_result.errors)}"
+            elif github_result.errors:
+                # Only log if there are actual errors (not just missing token)
+                logger.info(
+                    f"GitHub scraping skipped: {', '.join(github_result.errors)}"
                 )
         except Exception as e:
-            logger.warning(f"Failed to scrape GitHub: {e}")
+            logger.info(f"GitHub scraping unavailable: {e}")
 
         try:
-            # Scrape ClaudeLog
+            # Scrape ClaudeLog (optional community feature)
             claudelog_scraper = ClaudeLogScraper(timeout=5)
             claudelog_result = claudelog_scraper.scrape_best_practices()
             if claudelog_result.success:
@@ -265,12 +266,13 @@ class UserPoliciesGenerator(BaseGenerator):
                 logger.info(
                     f"Scraped {len(claudelog_result.policies)} policies from ClaudeLog"
                 )
-            else:
-                logger.warning(
-                    f"ClaudeLog scraping failed: {', '.join(claudelog_result.errors)}"
+            elif claudelog_result.errors:
+                # Only log if there are actual errors
+                logger.info(
+                    f"ClaudeLog scraping skipped: {', '.join(claudelog_result.errors)}"
                 )
         except Exception as e:
-            logger.warning(f"Failed to scrape ClaudeLog: {e}")
+            logger.info(f"ClaudeLog scraping unavailable: {e}")
 
         # Merge scraped policies into curated ones
         if scraped_policies:

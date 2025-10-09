@@ -152,28 +152,96 @@ exec ${pythonEnv}/bin/python $out/lib/setup-user-policies-interactive.py "\$@"
 EOF
             chmod +x $out/bin/setup-user-policies-interactive
 
-            # Create combined update script
-            cat > $out/bin/update-claude-configs <<EOF
+            # Create combined update script with summary
+            cat > $out/bin/update-claude-configs <<'EOF'
 #!/usr/bin/env bash
-set -e
+
+# Track statistics
+declare -a COMPLETED=()
+declare -a WARNINGS=()
+START_TIME=\$(date +%s)
+
+# Helper to run and track
+run_step() {
+    local step_name="\$1"
+    local step_cmd="\$2"
+    local optional="''${3:-false}"
+
+    if eval "\$step_cmd" 2>&1; then
+        COMPLETED+=("\$step_name")
+        return 0
+    else
+        if [ "\$optional" = "true" ]; then
+            WARNINGS+=("\$step_name failed (non-critical)")
+            return 0
+        else
+            echo "❌ Failed: \$step_name"
+            return 1
+        fi
+    fi
+}
+
 echo "🔄 Updating CLAUDE.md configurations..."
 echo
+
 echo "📝 Updating user policies..."
-$out/bin/update-user-policies || echo "⚠️  Warning: User policies update failed"
+run_step "User policies" "$out/bin/update-user-policies" true
 echo
+
 echo "🔒 Updating project permissions..."
-$out/bin/update-permissions "\$PWD" || echo "⚠️  Warning: Permissions update failed"
+run_step "Project permissions" "$out/bin/update-permissions \"\$PWD\"" true
 echo
+
 echo "🛠️  Updating system-level configuration..."
-$out/bin/update-system-claude
+run_step "System CLAUDE.md" "$out/bin/update-system-claude"
 echo
+
 echo "📋 Updating project-level configuration..."
-$out/bin/update-project-claude
+run_step "Project CLAUDE.md" "$out/bin/update-project-claude"
 echo
+
 echo "💻 Updating machine-specific context..."
-$out/bin/update-local-context "\$PWD" || echo "⚠️  Warning: Local context update failed"
+run_step "Local context" "$out/bin/update-local-context \"\$PWD\"" true
 echo
-echo "✅ All CLAUDE.md configurations updated!"
+
+# Calculate duration
+END_TIME=\$(date +%s)
+DURATION=\$((END_TIME - START_TIME))
+
+# Print summary
+echo "╔════════════════════════════════════════════════════════╗"
+echo "║           Configuration Update Summary                 ║"
+echo "╚════════════════════════════════════════════════════════╝"
+echo
+echo "✅ Completed in \${DURATION}s:"
+for item in "\${COMPLETED[@]}"; do
+    echo "   • \$item"
+done
+
+if [ \${#WARNINGS[@]} -gt 0 ]; then
+    echo
+    echo "⚠️  Warnings:"
+    for warning in "\${WARNINGS[@]}"; do
+        echo "   • \$warning"
+    done
+fi
+
+echo
+echo "📝 Generated files:"
+echo "   • ~/.claude/CLAUDE.md (system tools)"
+echo "   • ~/.claude/CLAUDE-USER-POLICIES.md (your policies)"
+echo "   • ./CLAUDE.md (project context)"
+echo "   • ./.claude/settings.local.json (permissions)"
+echo "   • ./.claude/CLAUDE.local.md (machine state)"
+echo
+
+if [ \${#WARNINGS[@]} -eq 0 ]; then
+    echo "✅ All updates completed successfully!"
+else
+    echo "⚠️  Updates completed with \${#WARNINGS[@]} warning(s)"
+    echo "   Review logs for details if needed"
+fi
+echo
 EOF
             chmod +x $out/bin/update-claude-configs
           '';

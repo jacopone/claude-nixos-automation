@@ -4,6 +4,31 @@
 
 set -e
 
+# Track statistics
+declare -a COMPLETED=()
+declare -a WARNINGS=()
+START_TIME=$(date +%s)
+
+# Helper to run and track
+run_step() {
+    local step_name="$1"
+    local step_cmd="$2"
+    local optional="${3:-false}"
+
+    if eval "$step_cmd" 2>&1; then
+        COMPLETED+=("$step_name")
+        return 0
+    else
+        if [ "$optional" = "true" ]; then
+            WARNINGS+=("$step_name failed (non-critical)")
+            return 0
+        else
+            echo "❌ Failed: $step_name"
+            return 1
+        fi
+    fi
+}
+
 echo "🔄 Updating Claude Code configurations (v2.0)..."
 echo
 
@@ -15,67 +40,72 @@ cd "$CONFIG_DIR"
 echo "📁 Working directory: $PWD"
 echo
 
-# FIRST: Update user policies (example file always, user file only if missing)
+# Update user policies
 echo "📝 Updating user-defined policies..."
-if (cd scripts && devenv shell python update-user-policies-v2.py); then
-    echo "✅ User policies files updated"
-else
-    echo "⚠️  Warning: User policies update failed (continuing...)"
-fi
+run_step "User policies" "(cd scripts && devenv shell python update-user-policies-v2.py)" true
 echo
 
-# SECOND: Update project permissions (auto-detect project type and optimize)
+# Update permissions
 echo "🔒 Updating project permissions (.claude/settings.local.json)..."
-if (cd scripts && devenv shell python update-permissions-v2.py "$CONFIG_DIR"); then
-    echo "✅ Project permissions optimized"
-else
-    echo "⚠️  Warning: Permissions update failed (continuing...)"
-fi
+run_step "Project permissions" "(cd scripts && devenv shell python update-permissions-v2.py \"$CONFIG_DIR\")" true
 echo
 
-# THEN: Use DevEnv-managed modern template-based system
+# Update system-level CLAUDE.md
 echo "🛠️  Updating system-level tool inventory (~/.claude/CLAUDE.md)..."
-if (cd scripts && devenv shell python update-system-claude-v2.py); then
-    echo "✅ System-level Claude configuration updated"
-else
-    echo "❌ Failed to update system-level Claude config"
-    exit 1
-fi
+run_step "System CLAUDE.md" "(cd scripts && devenv shell python update-system-claude-v2.py)"
 echo
 
+# Update project-level CLAUDE.md
 echo "📋 Updating project-level CLAUDE.md (./CLAUDE.md)..."
-if (cd scripts && devenv shell python update-project-claude-v2.py); then
-    echo "✅ Project-level CLAUDE.md updated"
-else
-    echo "❌ Failed to update project-level CLAUDE.md"
-    exit 1
-fi
+run_step "Project CLAUDE.md" "(cd scripts && devenv shell python update-project-claude-v2.py)"
 echo
 
+# Update local context
 echo "💻 Updating machine-specific context (.claude/CLAUDE.local.md)..."
-if (cd scripts && devenv shell python update-local-context-v2.py "$CONFIG_DIR"); then
-    echo "✅ Machine-specific context updated"
-else
-    echo "⚠️  Warning: Local context update failed (continuing...)"
-fi
+run_step "Local context" "(cd scripts && devenv shell python update-local-context-v2.py \"$CONFIG_DIR\")" true
 echo
 
-echo "🎉 All Claude Code configurations updated successfully!"
+# Calculate duration
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
+
+# Print summary
+echo "╔════════════════════════════════════════════════════════╗"
+echo "║           Configuration Update Summary                 ║"
+echo "╚════════════════════════════════════════════════════════╝"
 echo
-echo "📊 Summary:"
-echo "   - User policies: ~/.claude/CLAUDE-USER-POLICIES.md (your custom policies, preserved)"
-echo "   - Example policies: ~/.claude/CLAUDE-USER-POLICIES.md.example (latest best practices)"
-echo "   - Project permissions: ./.claude/settings.local.json (auto-optimized per project type)"
-echo "   - System-level: ~/.claude/CLAUDE.md (tool inventory for Claude Code)"
-echo "   - Project-level: ./CLAUDE.md (project guidance and context)"
-echo "   - Machine context: ./.claude/CLAUDE.local.md (hardware, services, WIP notes - gitignored)"
+echo "✅ Completed in ${DURATION}s:"
+for item in "${COMPLETED[@]}"; do
+    echo "   • $item"
+done
+
+if [ ${#WARNINGS[@]} -gt 0 ]; then
+    echo
+    echo "⚠️  Warnings:"
+    for warning in "${WARNINGS[@]}"; do
+        echo "   • $warning"
+    done
+fi
+
 echo
-echo "💡 These files are now synchronized with your current NixOS configuration."
-echo "🔧 Generated using modern Jinja2 templates with Pydantic validation"
+echo "📝 Generated files:"
+echo "   • ~/.claude/CLAUDE.md (system tools)"
+echo "   • ~/.claude/CLAUDE-USER-POLICIES.md (your policies)"
+echo "   • ./CLAUDE.md (project context)"
+echo "   • ./.claude/settings.local.json (permissions)"
+echo "   • ./.claude/CLAUDE.local.md (machine state)"
+echo
+
+if [ ${#WARNINGS[@]} -eq 0 ]; then
+    echo "✅ All updates completed successfully!"
+else
+    echo "⚠️  Updates completed with ${#WARNINGS[@]} warning(s)"
+    echo "   Review logs for details if needed"
+fi
+echo
 
 # Show git status if in a git repo
 if git rev-parse --git-dir > /dev/null 2>&1; then
-    echo
     echo "📝 Git status:"
     git status --porcelain CLAUDE.md 2>/dev/null || echo "   No changes to project CLAUDE.md"
 fi

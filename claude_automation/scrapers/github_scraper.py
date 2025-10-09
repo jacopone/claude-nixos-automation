@@ -27,13 +27,13 @@ class GitHubExamplesScraper:
             "User-Agent": "claude-nixos-automation/2.0",
         }
 
-        # Add GitHub token if available (optional)
+        # Add GitHub token if available (optional - for better rate limits)
         github_token = os.environ.get("GITHUB_TOKEN")
         if github_token:
             headers["Authorization"] = f"Bearer {github_token}"
-            logger.info("Using GitHub token for authentication")
+            logger.debug("Using GitHub token for authentication")
         else:
-            logger.info("No GitHub token found - using unauthenticated requests")
+            logger.debug("No GitHub token (optional) - using unauthenticated requests")
 
         self.session.headers.update(headers)
 
@@ -62,12 +62,12 @@ class GitHubExamplesScraper:
             )
 
             if response.status_code == 401:
-                # Unauthorized - missing or invalid token
-                error_msg = "GitHub API authentication required. Set GITHUB_TOKEN environment variable for better results."
-                logger.warning(error_msg)
-                errors.append(error_msg)
+                # Unauthorized - missing or invalid token (optional feature)
+                logger.debug(
+                    "GitHub code search requires GITHUB_TOKEN (optional community feature)"
+                )
                 return WebScrapingResult(
-                    success=False, policies=[], errors=errors, source="github"
+                    success=False, policies=[], errors=[], source="github"
                 )
 
             if response.status_code == 403:

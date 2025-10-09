@@ -498,13 +498,15 @@ class NixConfigParser:
 
         for parser in self.parsers:
             try:
-                logger.info(f"Trying {parser.__class__.__name__}")
+                logger.debug(f"Trying {parser.__class__.__name__}")
                 result = parser.parse(file_path)
 
                 if result.success and self._validate_result(result):
                     # Merge any previous warnings
                     result.warnings.extend(all_warnings)
-                    logger.info(f"Successfully parsed with {parser.__class__.__name__}")
+                    logger.debug(
+                        f"Successfully parsed with {parser.__class__.__name__}"
+                    )
                     return result
 
                 all_errors.extend(result.errors)
@@ -530,7 +532,9 @@ class NixConfigParser:
         # Check for reasonable distribution of categories
         categories = {tool.category for tool in result.packages.values()}
         if len(categories) < 2:
-            logger.warning("All packages in same category - might be parsing error")
+            logger.debug(
+                f"Limited category diversity: {len(categories)} category found. This may be expected for specialized configs."
+            )
 
         return True
 
