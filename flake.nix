@@ -213,16 +213,16 @@ echo "╔═══════════════════════�
 echo "║           Configuration Update Summary                 ║"
 echo "╚════════════════════════════════════════════════════════╝"
 echo
-echo "✅ Completed in \${DURATION}s:"
-for item in "\${COMPLETED[@]}"; do
-    echo "   • \$item"
+echo "✅ Completed in ''${DURATION}s:"
+printf '%s\n' "''${COMPLETED[*]}" | while read -r item; do
+    [ -n "\$item" ] && echo "   • \$item"
 done
 
-if [ \${#WARNINGS[@]} -gt 0 ]; then
+if [ ''${#WARNINGS[*]} -gt 0 ]; then
     echo
     echo "⚠️  Warnings:"
-    for warning in "\${WARNINGS[@]}"; do
-        echo "   • \$warning"
+    printf '%s\n' "''${WARNINGS[*]}" | while read -r warning; do
+        [ -n "\$warning" ] && echo "   • \$warning"
     done
 fi
 
@@ -235,10 +235,10 @@ echo "   • ./.claude/settings.local.json (permissions)"
 echo "   • ./.claude/CLAUDE.local.md (machine state)"
 echo
 
-if [ \${#WARNINGS[@]} -eq 0 ]; then
+if [ ''${#WARNINGS[*]} -eq 0 ]; then
     echo "✅ All updates completed successfully!"
 else
-    echo "⚠️  Updates completed with \${#WARNINGS[@]} warning(s)"
+    echo "⚠️  Updates completed with ''${#WARNINGS[*]} warning(s)"
     echo "   Review logs for details if needed"
 fi
 echo
