@@ -159,23 +159,23 @@ EOF
 # Track statistics
 declare -a COMPLETED=()
 declare -a WARNINGS=()
-START_TIME=\$(date +%s)
+START_TIME=$(date +%s)
 
 # Helper to run and track
 run_step() {
-    local step_name="\$1"
-    local step_cmd="\$2"
+    local step_name="$1"
+    local step_cmd="$2"
     local optional="''${3:-false}"
 
-    if eval "\$step_cmd" 2>&1; then
-        COMPLETED+=("\$step_name")
+    if eval "$step_cmd" 2>&1; then
+        COMPLETED+=("$step_name")
         return 0
     else
-        if [ "\$optional" = "true" ]; then
-            WARNINGS+=("\$step_name failed (non-critical)")
+        if [ "$optional" = "true" ]; then
+            WARNINGS+=("$step_name failed (non-critical)")
             return 0
         else
-            echo "❌ Failed: \$step_name"
+            echo "❌ Failed: $step_name"
             return 1
         fi
     fi
@@ -189,7 +189,7 @@ run_step "User policies" "$out/bin/update-user-policies" true
 echo
 
 echo "🔒 Updating project permissions..."
-run_step "Project permissions" "$out/bin/update-permissions \"\$PWD\"" true
+run_step "Project permissions" "$out/bin/update-permissions \"$PWD\"" true
 echo
 
 echo "🛠️  Updating system-level configuration..."
@@ -201,12 +201,12 @@ run_step "Project CLAUDE.md" "$out/bin/update-project-claude"
 echo
 
 echo "💻 Updating machine-specific context..."
-run_step "Local context" "$out/bin/update-local-context \"\$PWD\"" true
+run_step "Local context" "$out/bin/update-local-context \"$PWD\"" true
 echo
 
 # Calculate duration
-END_TIME=\$(date +%s)
-DURATION=\$((END_TIME - START_TIME))
+END_TIME=$(date +%s)
+DURATION=$((END_TIME - START_TIME))
 
 # Print summary
 echo "╔════════════════════════════════════════════════════════╗"
@@ -215,14 +215,14 @@ echo "╚═══════════════════════�
 echo
 echo "✅ Completed in ''${DURATION}s:"
 printf '%s\n' "''${COMPLETED[*]}" | while read -r item; do
-    [ -n "\$item" ] && echo "   • \$item"
+    [ -n "$item" ] && echo "   • $item"
 done
 
 if [ ''${#WARNINGS[*]} -gt 0 ]; then
     echo
     echo "⚠️  Warnings:"
     printf '%s\n' "''${WARNINGS[*]}" | while read -r warning; do
-        [ -n "\$warning" ] && echo "   • \$warning"
+        [ -n "$warning" ] && echo "   • $warning"
     done
 fi
 
