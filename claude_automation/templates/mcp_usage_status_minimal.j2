@@ -1,0 +1,21 @@
+## 🔌 MCP Servers
+
+**Status**: {{ config.connected_servers|length }}/{{ config.total_configured_servers }} connected | Last checked: {{ timestamp }}
+
+{% if config.configured_servers %}
+{% for server in config.configured_servers %}
+**{{ server.name }}** {{ server.status.value|status_icon }} {{ server.status.value }}
+   - {{ server.description if server.description else server.type.value + " server" }}
+   - Scope: {{ server.config_location }}
+{% endfor %}
+{% else %}
+No MCP servers configured.
+{% endif %}
+
+{% if config.recommendations|selectattr('priority', 'equalto', 1)|list|length > 0 %}
+💡 **Action needed**: {{ config.recommendations|selectattr('priority', 'equalto', 1)|list|length }} high-priority recommendations available
+   Run rebuild to see details, or check `.claude/mcp-analytics.md` for full report
+{% endif %}
+
+---
+*MCP server status tracked automatically. Full analytics: `.claude/mcp-analytics.md`*
