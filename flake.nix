@@ -53,6 +53,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-usage-analytics";
         };
+        update-mcp-usage-analytics = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/update-mcp-usage-analytics";
+        };
       };
 
       # Package the automation tools
@@ -142,6 +146,15 @@ export PYTHONPATH="$out/lib:\$PYTHONPATH"
 exec ${pythonEnv}/bin/python $out/lib/update-usage-analytics-v2.py "\$@"
 EOF
             chmod +x $out/bin/update-usage-analytics
+
+            # Copy and wrap MCP usage analytics script
+            cp update-mcp-usage-analytics-v2.py $out/lib/
+            cat > $out/bin/update-mcp-usage-analytics <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/update-mcp-usage-analytics-v2.py "\$@"
+EOF
+            chmod +x $out/bin/update-mcp-usage-analytics
 
             # Copy and wrap interactive setup script
             cp setup-user-policies-interactive.py $out/lib/
@@ -287,6 +300,7 @@ EOF
           echo "  nix run .#update-local-context     - 💻 Generate machine-specific context"
           echo "  nix run .#update-slash-commands    - ⚡ Generate slash commands for project"
           echo "  nix run .#update-usage-analytics   - 📊 Generate usage analytics from history"
+          echo "  nix run .#update-mcp-usage-analytics - 🔌 Generate MCP server usage analytics"
           echo "  nix run .#update-all               - Update all files (recommended)"
         '';
       };

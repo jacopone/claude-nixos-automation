@@ -513,3 +513,155 @@ class UsageAnalyticsConfig(BaseModel):
     def unique_commands(self) -> int:
         """Get count of unique commands."""
         return len(self.command_stats)
+
+
+class MCPServerType(str, Enum):
+    """MCP server type."""
+
+    NPM = "npm"
+    PYTHON = "python"
+    BINARY = "binary"
+    BUILTIN = "builtin"
+    UNKNOWN = "unknown"
+
+
+class MCPServerStatus(str, Enum):
+    """MCP server connection status."""
+
+    CONNECTED = "connected"
+    DISCONNECTED = "disconnected"
+    ERROR = "error"
+    NOT_INSTALLED = "not_installed"
+    UNKNOWN = "unknown"
+
+
+class MCPServerInfo(BaseModel):
+    """Information about an MCP server."""
+
+    name: str = Field(..., description="Server name")
+    type: MCPServerType = Field(..., description="Server type")
+    command: str = Field(..., description="Command to start server")
+    args: list[str] = Field(default_factory=list, description="Command arguments")
+    status: MCPServerStatus = Field(
+        default=MCPServerStatus.UNKNOWN, description="Connection status"
+    )
+    description: str = Field("", description="Server description")
+    is_configured: bool = Field(False, description="Whether server is configured")
+    config_location: str = Field(
+        "", description="Where server is configured (global/project)"
+    )
+
+    @validator("name")
+    def validate_name(cls, v):
+        """Validate server name format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Server name cannot be empty")
+        return v.strip()
+
+
+class MCPToolUsage(BaseModel):
+    """Usage statistics for an MCP tool."""
+
+    server_name: str = Field(..., description="MCP server name")
+    tool_name: str = Field(..., description="Tool name within server")
+    invocation_count: int = Field(0, ge=0, description="Number of invocations")
+    success_count: int = Field(0, ge=0, description="Number of successful invocations")
+    error_count: int = Field(0, ge=0, description="Number of failed invocations")
+    last_used: datetime | None = Field(None, description="Last usage timestamp")
+    avg_duration_ms: float | None = Field(None, description="Average execution time")
+
+    @validator("server_name")
+    def validate_server_name(cls, v):
+        """Validate server name format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Server name cannot be empty")
+        return v.strip()
+
+    @validator("tool_name")
+    def validate_tool_name(cls, v):
+        """Validate tool name format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Tool name cannot be empty")
+        return v.strip()
+
+    @property
+    def success_rate(self) -> float:
+        """Calculate success rate percentage."""
+        total = self.success_count + self.error_count
+        if total == 0:
+            return 0.0
+        return (self.success_count / total) * 100.0
+
+
+class MCPUsageRecommendation(BaseModel):
+    """Recommendation for MCP server usage."""
+
+    server_name: str = Field(..., description="Server name")
+    recommendation_type: str = Field(
+        ..., description="Type: remove_unused, install_missing, fix_errors, optimize"
+    )
+    reason: str = Field(..., description="Reason for recommendation")
+    action: str = Field(..., description="Suggested action")
+    priority: int = Field(..., ge=1, le=3, description="Priority (1=high, 3=low)")
+
+
+class MCPUsageAnalyticsConfig(BaseModel):
+    """Configuration for MCP usage analytics generation."""
+
+    project_path: Path = Field(..., description="Project root directory")
+    global_mcp_config: Path | None = Field(
+        None, description="Global MCP config path (~/.claude.json)"
+    )
+    project_mcp_config: Path | None = Field(
+        None, description="Project MCP config path (.claude/mcp.json)"
+    )
+    configured_servers: list[MCPServerInfo] = Field(
+        default_factory=list, description="All configured MCP servers"
+    )
+    tool_usage: list[MCPToolUsage] = Field(
+        default_factory=list, description="Tool usage statistics"
+    )
+    recommendations: list[MCPUsageRecommendation] = Field(
+        default_factory=list, description="Usage recommendations"
+    )
+    analysis_period_days: int = Field(30, ge=1, description="Analysis period in days")
+    timestamp: datetime = Field(default_factory=datetime.now)
+
+    @validator("project_path")
+    def validate_project_path(cls, v):
+        """Validate project path exists."""
+        if not v.exists():
+            raise ValueError(f"Project path does not exist: {v}")
+        if not v.is_dir():
+            raise ValueError(f"Path is not a directory: {v}")
+        return v
+
+    @property
+    def claude_file(self) -> Path:
+        """Get CLAUDE.md path for analytics output."""
+        return self.project_path / "CLAUDE.md"
+
+    @property
+    def total_configured_servers(self) -> int:
+        """Get count of configured servers."""
+        return len(self.configured_servers)
+
+    @property
+    def total_invocations(self) -> int:
+        """Get total MCP tool invocations."""
+        return sum(usage.invocation_count for usage in self.tool_usage)
+
+    @property
+    def connected_servers(self) -> list[MCPServerInfo]:
+        """Get list of successfully connected servers."""
+        return [
+            s for s in self.configured_servers if s.status == MCPServerStatus.CONNECTED
+        ]
+
+    @property
+    def unused_servers(self) -> list[MCPServerInfo]:
+        """Get servers that are configured but never used."""
+        used_servers = {
+            usage.server_name for usage in self.tool_usage if usage.invocation_count > 0
+        }
+        return [s for s in self.configured_servers if s.name not in used_servers]
