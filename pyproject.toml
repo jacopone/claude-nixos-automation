@@ -71,3 +71,24 @@ ignore = [
     "B008",  # do not perform function calls in argument defaults
     "C901",  # too complex
 ]
+
+[tool.mypy]
+python_version = "3.13"
+warn_return_any = true
+warn_unused_configs = true
+disallow_untyped_defs = false  # Start lenient for existing code
+check_untyped_defs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+strict_optional = true
+exclude = [
+    ".devenv",
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "__pycache__",
+    "result",
+    "tests",  # Don't require type hints in tests
+]

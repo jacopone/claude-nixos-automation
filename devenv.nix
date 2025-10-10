@@ -22,6 +22,7 @@
     python313Packages.pytest
     # Code quality tools
     python313Packages.black
+    python313Packages.mypy
     ruff
     # Git tools
     git
@@ -137,6 +138,12 @@ else:
       enable = true;
       files = "\\.py$";
       excludes = [ ".devenv/" "result" ];
+    };
+
+    mypy = {
+      enable = true;
+      files = "\\.py$";
+      excludes = [ ".devenv/" "result" "tests/" ];
     };
   };
 
