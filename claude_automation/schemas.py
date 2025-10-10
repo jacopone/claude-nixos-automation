@@ -570,6 +570,17 @@ class MCPToolUsage(BaseModel):
     last_used: datetime | None = Field(None, description="Last usage timestamp")
     avg_duration_ms: float | None = Field(None, description="Average execution time")
 
+    # Token usage tracking
+    input_tokens: int = Field(0, ge=0, description="Total input tokens consumed")
+    output_tokens: int = Field(0, ge=0, description="Total output tokens generated")
+    cache_read_tokens: int = Field(0, ge=0, description="Total cache read tokens")
+    cache_creation_tokens: int = Field(
+        0, ge=0, description="Total cache creation tokens"
+    )
+
+    # Scope tracking
+    scope: str = Field("unknown", description="Server scope: global, project, or both")
+
     @validator("server_name")
     def validate_server_name(cls, v):
         """Validate server name format."""
@@ -591,6 +602,43 @@ class MCPToolUsage(BaseModel):
         if total == 0:
             return 0.0
         return (self.success_count / total) * 100.0
+
+    @property
+    def total_tokens(self) -> int:
+        """Calculate total tokens consumed (input + output + cache)."""
+        return self.input_tokens + self.output_tokens + self.cache_creation_tokens
+
+    @property
+    def avg_tokens_per_invocation(self) -> float:
+        """Calculate average tokens per invocation."""
+        if self.invocation_count == 0:
+            return 0.0
+        return self.total_tokens / self.invocation_count
+
+    @property
+    def estimated_cost_usd(self) -> float:
+        """
+        Estimate cost in USD based on Claude Sonnet 4.5 pricing.
+        Input: $3 per 1M tokens
+        Output: $15 per 1M tokens
+        Cache read: $0.30 per 1M tokens
+        Cache write: $3.75 per 1M tokens
+        """
+        input_cost = (self.input_tokens / 1_000_000) * 3.0
+        output_cost = (self.output_tokens / 1_000_000) * 15.0
+        cache_read_cost = (self.cache_read_tokens / 1_000_000) * 0.30
+        cache_write_cost = (self.cache_creation_tokens / 1_000_000) * 3.75
+        return input_cost + output_cost + cache_read_cost + cache_write_cost
+
+    @property
+    def roi_score(self) -> float:
+        """
+        Calculate ROI score: invocations per 1000 tokens.
+        Higher score = better value (more invocations for fewer tokens).
+        """
+        if self.total_tokens == 0:
+            return 0.0
+        return (self.invocation_count / self.total_tokens) * 1000
 
 
 class MCPUsageRecommendation(BaseModel):

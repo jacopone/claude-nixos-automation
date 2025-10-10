@@ -38,18 +38,35 @@ No MCP servers configured.
 
 {% if config.tool_usage %}
 **Total MCP invocations**: {{ config.total_invocations }}
+**Total tokens consumed**: {{ "{:,}".format(config.tool_usage|sum(attribute='total_tokens')|int) }}
+**Estimated total cost**: ${{ "%.4f"|format(config.tool_usage|sum(attribute='estimated_cost_usd')) }}
 
-{% for usage in config.tool_usage|sort(attribute='invocation_count', reverse=True) %}
-**{{ usage.server_name }}.{{ usage.tool_name }}**
-   - Invocations: {{ usage.invocation_count }}
-   - Success rate: {{ "%.1f"|format(usage.success_rate) }}%
-{% if usage.last_used %}   - Last used: {{ usage.last_used.strftime('%Y-%m-%d %H:%M') }}
+{% for usage in config.tool_usage|sort(attribute='total_tokens', reverse=True) %}
+#### {{ usage.server_name }}.{{ usage.tool_name }} ({{ usage.scope }} scope)
+
+**Usage Metrics:**
+- Invocations: {{ usage.invocation_count }}
+- Success rate: {{ "%.1f"|format(usage.success_rate) }}%
+{% if usage.last_used %}- Last used: {{ usage.last_used.strftime('%Y-%m-%d %H:%M') }}
 {% endif %}
+
+**Token Consumption:**
+- Total tokens: {{ "{:,}".format(usage.total_tokens) }} (Input: {{ "{:,}".format(usage.input_tokens) }}, Output: {{ "{:,}".format(usage.output_tokens) }})
+- Cache tokens: {{ "{:,}".format(usage.cache_read_tokens) }} reads, {{ "{:,}".format(usage.cache_creation_tokens) }} writes
+- Avg tokens/invocation: {{ "%.0f"|format(usage.avg_tokens_per_invocation) }}
+
+**Cost Analysis:**
+- Estimated cost: ${{ "%.4f"|format(usage.estimated_cost_usd) }}
+- ROI score: {{ "%.2f"|format(usage.roi_score) }} invocations per 1K tokens
+{% if usage.roi_score > 10.0 %}- 💚 **High efficiency** - Excellent value for tokens consumed
+{% elif usage.roi_score < 1.0 %}- ⚠️  **Low efficiency** - Consider reviewing usage patterns
+{% endif %}
+
 {% endfor %}
 {% else %}
-Usage tracking not yet implemented. MCP tool invocations are not currently logged.
+No MCP usage data available for the analysis period.
 
-**Future Enhancement**: Parse Claude Code session logs to extract MCP usage statistics.
+**Note**: MCP usage tracking requires Claude Code session logs in `~/.claude/projects/`.
 {% endif %}
 
 {% if config.recommendations %}

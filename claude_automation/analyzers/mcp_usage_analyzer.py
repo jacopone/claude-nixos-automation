@@ -11,6 +11,7 @@ This analyzer:
 import json
 import logging
 import subprocess
+from datetime import UTC, datetime
 from pathlib import Path
 
 from claude_automation.schemas import (
@@ -190,52 +191,309 @@ class MCPUsageAnalyzer:
         self, servers: list[MCPServerInfo], days: int
     ) -> list[MCPToolUsage]:
         """
-        Analyze MCP tool usage from logs.
+        Analyze MCP tool usage from Claude Code session logs.
 
-        NOTE: This is currently a placeholder that returns empty usage data.
-        Future enhancement: Parse Claude Code logs to extract actual MCP invocations.
+        Parses .jsonl session logs to extract MCP tool invocations and token usage.
         """
-        usage = []
+        from collections import defaultdict
+        from datetime import timedelta
 
-        # Placeholder: In a full implementation, we would:
-        # 1. Find Claude Code session logs
-        # 2. Parse logs for MCP tool invocations
-        # 3. Extract: server name, tool name, timestamp, success/failure
-        # 4. Aggregate statistics
-
-        logger.debug(
-            f"Usage analysis not yet implemented (would analyze last {days} days)"
+        usage_data = defaultdict(
+            lambda: {
+                "server_name": "",
+                "tool_name": "",
+                "invocation_count": 0,
+                "success_count": 0,
+                "error_count": 0,
+                "last_used": None,
+                "input_tokens": 0,
+                "output_tokens": 0,
+                "cache_read_tokens": 0,
+                "cache_creation_tokens": 0,
+                "scope": "unknown",
+            }
         )
 
-        # Return empty usage for now
-        return usage
+        # Find Claude Code session logs
+        claude_projects_dir = Path.home() / ".claude" / "projects"
+        if not claude_projects_dir.exists():
+            logger.debug(f"Claude projects directory not found: {claude_projects_dir}")
+            return []
+
+        # Calculate cutoff date for analysis period (timezone-aware)
+
+        cutoff_date = datetime.now(UTC) - timedelta(days=days)
+
+        # Scan all project directories for session logs
+        log_files = []
+        for project_dir in claude_projects_dir.iterdir():
+            if project_dir.is_dir():
+                for log_file in project_dir.glob("*.jsonl"):
+                    log_files.append(log_file)
+
+        if not log_files:
+            logger.debug("No Claude Code session logs found")
+            return []
+
+        logger.info(f"Found {len(log_files)} session log files to analyze")
+
+        # Parse session logs
+        for log_file in log_files:
+            try:
+                self._parse_session_log(log_file, cutoff_date, usage_data)
+            except Exception as e:
+                logger.warning(f"Failed to parse log file {log_file}: {e}")
+
+        # Determine scope for each server
+        global_servers = {
+            s.name for s in servers if "global" in s.config_location.lower()
+        }
+        project_servers = {
+            s.name for s in servers if "project" in s.config_location.lower()
+        }
+
+        # Convert to MCPToolUsage objects
+        usage_list = []
+        for _key, data in usage_data.items():
+            server_name = data["server_name"]
+
+            # Determine scope
+            scope = "unknown"
+            if server_name in global_servers and server_name in project_servers:
+                scope = "both"
+            elif server_name in global_servers:
+                scope = "global"
+            elif server_name in project_servers:
+                scope = "project"
+
+            usage_list.append(
+                MCPToolUsage(
+                    server_name=data["server_name"],
+                    tool_name=data["tool_name"],
+                    invocation_count=data["invocation_count"],
+                    success_count=data["success_count"],
+                    error_count=data["error_count"],
+                    last_used=data["last_used"],
+                    input_tokens=data["input_tokens"],
+                    output_tokens=data["output_tokens"],
+                    cache_read_tokens=data["cache_read_tokens"],
+                    cache_creation_tokens=data["cache_creation_tokens"],
+                    scope=scope,
+                )
+            )
+
+        logger.info(f"Analyzed {len(usage_list)} unique MCP tool invocations")
+        return usage_list
+
+    def _parse_session_log(
+        self, log_file: Path, cutoff_date: datetime, usage_data: dict
+    ) -> None:
+        """Parse a single session log file for MCP invocations."""
+        with open(log_file) as f:
+            for line_num, line in enumerate(f, 1):
+                try:
+                    if not line.strip():
+                        continue
+
+                    data = json.loads(line)
+
+                    # Extract timestamp
+                    timestamp_str = data.get("timestamp")
+                    if not timestamp_str:
+                        continue
+
+                    # Parse timestamp (ISO 8601 format)
+                    timestamp = datetime.fromisoformat(
+                        timestamp_str.replace("Z", "+00:00")
+                    )
+
+                    # Skip if outside analysis period
+                    if timestamp < cutoff_date:
+                        continue
+
+                    # Extract message content
+                    message = data.get("message", {})
+                    content = message.get("content", [])
+
+                    if not isinstance(content, list):
+                        continue
+
+                    # Look for MCP tool invocations
+                    for item in content:
+                        if not isinstance(item, dict):
+                            continue
+
+                        tool_name = item.get("name", "")
+                        if not tool_name.startswith("mcp__"):
+                            continue
+
+                        # Parse MCP tool name: mcp__server__tool
+                        parts = tool_name.split("__")
+                        if len(parts) < 3:
+                            continue
+
+                        server_name = parts[1]
+                        tool_only = "__".join(parts[2:])
+
+                        # Create unique key for this server+tool
+                        key = f"{server_name}__{tool_only}"
+
+                        # Initialize if first time seeing this tool
+                        if (
+                            key not in usage_data
+                            or usage_data[key]["invocation_count"] == 0
+                        ):
+                            usage_data[key]["server_name"] = server_name
+                            usage_data[key]["tool_name"] = tool_only
+
+                        # Update invocation count
+                        usage_data[key]["invocation_count"] += 1
+
+                        # Update last used
+                        if (
+                            usage_data[key]["last_used"] is None
+                            or timestamp > usage_data[key]["last_used"]
+                        ):
+                            usage_data[key]["last_used"] = timestamp
+
+                        # Determine success/failure
+                        item_type = item.get("type", "")
+                        if item_type == "tool_result":
+                            is_error = item.get("isError", False)
+                            if is_error:
+                                usage_data[key]["error_count"] += 1
+                            else:
+                                usage_data[key]["success_count"] += 1
+
+                    # Extract token usage from message
+                    usage = message.get("usage", {})
+                    if usage and isinstance(usage, dict):
+                        # Check if this message contains MCP tool invocations
+                        has_mcp_tools = any(
+                            isinstance(item, dict)
+                            and item.get("name", "").startswith("mcp__")
+                            for item in content
+                        )
+
+                        if has_mcp_tools:
+                            # Attribute tokens to all MCP tools in this message
+                            mcp_tools_in_message = [
+                                item.get("name", "")
+                                for item in content
+                                if isinstance(item, dict)
+                                and item.get("name", "").startswith("mcp__")
+                            ]
+
+                            for tool_name in mcp_tools_in_message:
+                                parts = tool_name.split("__")
+                                if len(parts) < 3:
+                                    continue
+
+                                server_name = parts[1]
+                                tool_only = "__".join(parts[2:])
+                                key = f"{server_name}__{tool_only}"
+
+                                # Add token usage
+                                usage_data[key]["input_tokens"] += usage.get(
+                                    "input_tokens", 0
+                                )
+                                usage_data[key]["output_tokens"] += usage.get(
+                                    "output_tokens", 0
+                                )
+                                usage_data[key]["cache_read_tokens"] += usage.get(
+                                    "cache_read_input_tokens", 0
+                                )
+                                usage_data[key]["cache_creation_tokens"] += usage.get(
+                                    "cache_creation_input_tokens", 0
+                                )
+
+                except json.JSONDecodeError as e:
+                    logger.debug(f"Failed to parse JSON in {log_file}:{line_num}: {e}")
+                except Exception as e:
+                    logger.debug(f"Error processing line {line_num} in {log_file}: {e}")
 
     def _generate_recommendations(
         self,
         servers: list[MCPServerInfo],
         usage: list[MCPToolUsage],
     ) -> list[MCPUsageRecommendation]:
-        """Generate recommendations based on configuration and usage."""
+        """Generate recommendations based on configuration, usage, and token costs."""
         recommendations = []
 
-        # Recommendation 1: Remove unused servers
+        # Build usage lookup by server name
+        usage_by_server = {}
+        for tool_usage in usage:
+            server_name = tool_usage.server_name
+            if server_name not in usage_by_server:
+                usage_by_server[server_name] = []
+            usage_by_server[server_name].append(tool_usage)
+
+        # Recommendation 1: Unused servers (no usage data)
         used_server_names = {u.server_name for u in usage if u.invocation_count > 0}
         for server in servers:
             if (
                 server.name not in used_server_names
                 and server.status == MCPServerStatus.CONNECTED
             ):
+                scope_info = server.config_location.split()[
+                    0
+                ].lower()  # 'global' or 'project'
                 recommendations.append(
                     MCPUsageRecommendation(
                         server_name=server.name,
                         recommendation_type="review_unused",
-                        reason=f"Server '{server.name}' is configured and connected but usage data unavailable",
-                        action=f"Review if '{server.name}' is needed. Connection status: ✓ Connected",
+                        reason=f"Server '{server.name}' is connected but has no recorded usage",
+                        action=f"Consider disabling '{server.name}' if not needed ({scope_info} scope)",
                         priority=3,  # Low priority - just informational
                     )
                 )
 
-        # Recommendation 2: Fix connection errors
+        # Recommendation 2: Low ROI servers (high token cost, low invocations)
+        for tool_usage in usage:
+            if tool_usage.invocation_count > 0 and tool_usage.roi_score < 1.0:
+                # ROI < 1.0 means less than 1 invocation per 1000 tokens
+                cost_str = f"${tool_usage.estimated_cost_usd:.4f}"
+                recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=tool_usage.server_name,
+                        recommendation_type="optimize",
+                        reason=f"Server '{tool_usage.server_name}' has low ROI: {tool_usage.invocation_count} invocations for {tool_usage.total_tokens:,} tokens (est. {cost_str})",
+                        action=f"Review usage patterns. Consider if '{tool_usage.server_name}' is cost-effective ({tool_usage.scope} scope)",
+                        priority=2,  # Medium priority
+                    )
+                )
+
+        # Recommendation 3: High-value servers (highlight efficient tools)
+        for tool_usage in usage:
+            if tool_usage.invocation_count >= 5 and tool_usage.roi_score > 10.0:
+                # ROI > 10.0 means more than 10 invocations per 1000 tokens
+                cost_str = f"${tool_usage.estimated_cost_usd:.4f}"
+                recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=tool_usage.server_name,
+                        recommendation_type="highlight_value",
+                        reason=f"Server '{tool_usage.server_name}' provides excellent value: {tool_usage.invocation_count} invocations for only {tool_usage.total_tokens:,} tokens (est. {cost_str})",
+                        action=f"Keep '{tool_usage.server_name}' enabled. High efficiency tool ({tool_usage.scope} scope)",
+                        priority=3,  # Low priority - positive feedback
+                    )
+                )
+
+        # Recommendation 4: High token consumers (awareness)
+        for tool_usage in usage:
+            if tool_usage.total_tokens > 100_000:
+                cost_str = f"${tool_usage.estimated_cost_usd:.2f}"
+                avg_tokens = int(tool_usage.avg_tokens_per_invocation)
+                recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=tool_usage.server_name,
+                        recommendation_type="high_usage",
+                        reason=f"Server '{tool_usage.server_name}' consumed {tool_usage.total_tokens:,} tokens (est. {cost_str})",
+                        action=f"Frequent user: {tool_usage.invocation_count} calls, ~{avg_tokens:,} tokens/call ({tool_usage.scope} scope)",
+                        priority=3,  # Low priority - informational
+                    )
+                )
+
+        # Recommendation 5: Fix connection errors
         for server in servers:
             if server.status == MCPServerStatus.ERROR:
                 recommendations.append(
@@ -243,12 +501,12 @@ class MCPUsageAnalyzer:
                         server_name=server.name,
                         recommendation_type="fix_errors",
                         reason=f"Server '{server.name}' has connection errors",
-                        action=f"Check server configuration and ensure '{server.command}' is available",
+                        action=f"Check configuration and ensure '{server.command}' is available",
                         priority=1,  # High priority
                     )
                 )
 
-        # Recommendation 3: Report disconnected servers
+        # Recommendation 6: Report disconnected servers
         for server in servers:
             if server.status == MCPServerStatus.DISCONNECTED:
                 recommendations.append(
@@ -261,7 +519,7 @@ class MCPUsageAnalyzer:
                     )
                 )
 
-        # Recommendation 4: Suggest common servers if none configured
+        # Recommendation 7: Suggest common servers if none configured
         if len(servers) == 0:
             recommendations.append(
                 MCPUsageRecommendation(
