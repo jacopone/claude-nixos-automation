@@ -69,6 +69,35 @@ No MCP usage data available for the analysis period.
 **Note**: MCP usage tracking requires Claude Code session logs in `~/.claude/projects/`.
 {% endif %}
 
+### Session Utilization
+
+{% if config.server_utilization %}
+**Total sessions analyzed**: {{ config.server_utilization[0].total_sessions if config.server_utilization else 0 }}
+
+This section shows how efficiently each MCP server uses context tokens across sessions. Global servers load in ALL sessions (consuming overhead tokens), even when not used.
+
+{% for util in config.server_utilization|sort(attribute='utilization_rate') %}
+#### {{ util.server_name }} ({{ util.scope }} scope)
+
+**Session Metrics:**
+- Utilization rate: {{ "%.1f"|format(util.utilization_rate) }}% ({{ util.used_sessions }}/{{ util.loaded_sessions }} sessions)
+- Efficiency: {{ util.efficiency_score|upper }}
+{% if util.scope == 'global' or util.scope == 'both' %}- ⚠️  Loads in ALL sessions ({{ util.loaded_sessions }} sessions)
+{% endif %}
+
+**Overhead Analysis:**
+- Estimated overhead: ~{{ "{:,}".format(util.estimated_overhead_tokens) }} tokens per session
+- Total wasted overhead: ~{{ "{:,}".format(util.total_wasted_overhead) }} tokens ({{ util.wasted_sessions }} unused sessions)
+{% if util.efficiency_score == 'poor' and util.scope == 'global' %}- 🔴 **Action needed**: Consider moving to project-level config to reduce waste
+{% elif util.efficiency_score == 'fair' and util.scope == 'global' %}- 🟡 **Review recommended**: Low utilization for global scope
+{% elif util.efficiency_score == 'excellent' %}- 💚 **Well utilized**: Good fit for {{ util.scope }} scope
+{% endif %}
+
+{% endfor %}
+{% else %}
+No session utilization data available. Enable session tracking to see server efficiency metrics.
+{% endif %}
+
 {% if config.recommendations %}
 ### Recommendations
 

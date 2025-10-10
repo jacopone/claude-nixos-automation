@@ -641,6 +641,81 @@ class MCPToolUsage(BaseModel):
         return (self.invocation_count / self.total_tokens) * 1000
 
 
+class MCPSessionStats(BaseModel):
+    """Statistics for a single MCP session."""
+
+    session_id: str = Field(..., description="Session identifier (filename UUID)")
+    project_path: str = Field("", description="Project path if detectable")
+    start_time: datetime | None = Field(None, description="Session start timestamp")
+    end_time: datetime | None = Field(None, description="Session end timestamp")
+    servers_used: list[str] = Field(
+        default_factory=list, description="MCP servers invoked in this session"
+    )
+    total_tokens: int = Field(0, ge=0, description="Total tokens in session")
+    mcp_invocation_count: int = Field(
+        0, ge=0, description="Number of MCP tool invocations"
+    )
+
+    @validator("session_id")
+    def validate_session_id(cls, v):
+        """Validate session ID format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Session ID cannot be empty")
+        return v.strip()
+
+
+class MCPServerSessionUtilization(BaseModel):
+    """Session utilization metrics for an MCP server."""
+
+    server_name: str = Field(..., description="MCP server name")
+    scope: str = Field(..., description="Server scope (global/project)")
+    total_sessions: int = Field(0, ge=0, description="Total sessions analyzed")
+    loaded_sessions: int = Field(
+        0, ge=0, description="Sessions where server was loaded"
+    )
+    used_sessions: int = Field(0, ge=0, description="Sessions where server was invoked")
+    estimated_overhead_tokens: int = Field(
+        0, ge=0, description="Estimated overhead tokens per session"
+    )
+
+    @validator("server_name")
+    def validate_server_name(cls, v):
+        """Validate server name format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Server name cannot be empty")
+        return v.strip()
+
+    @property
+    def utilization_rate(self) -> float:
+        """Calculate utilization rate percentage (used / loaded)."""
+        if self.loaded_sessions == 0:
+            return 0.0
+        return (self.used_sessions / self.loaded_sessions) * 100.0
+
+    @property
+    def wasted_sessions(self) -> int:
+        """Calculate number of sessions where server was loaded but not used."""
+        return self.loaded_sessions - self.used_sessions
+
+    @property
+    def total_wasted_overhead(self) -> int:
+        """Calculate total wasted overhead tokens."""
+        return self.wasted_sessions * self.estimated_overhead_tokens
+
+    @property
+    def efficiency_score(self) -> str:
+        """Get human-readable efficiency score."""
+        rate = self.utilization_rate
+        if rate >= 80:
+            return "excellent"
+        elif rate >= 50:
+            return "good"
+        elif rate >= 20:
+            return "fair"
+        else:
+            return "poor"
+
+
 class MCPUsageRecommendation(BaseModel):
     """Recommendation for MCP server usage."""
 
@@ -674,6 +749,14 @@ class MCPUsageAnalyticsConfig(BaseModel):
     )
     analysis_period_days: int = Field(30, ge=1, description="Analysis period in days")
     timestamp: datetime = Field(default_factory=datetime.now)
+
+    # Session-level analytics
+    session_stats: list[MCPSessionStats] = Field(
+        default_factory=list, description="Per-session statistics"
+    )
+    server_utilization: list[MCPServerSessionUtilization] = Field(
+        default_factory=list, description="Per-server session utilization metrics"
+    )
 
     @validator("project_path")
     def validate_project_path(cls, v):
