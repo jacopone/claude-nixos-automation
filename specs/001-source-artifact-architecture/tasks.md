@@ -50,38 +50,38 @@ description: "Task list for Self-Improving Claude Code System implementation"
 
 ### Core Architecture Tasks
 
-- [ ] T009 [P] [Core] Add 30+ new Pydantic schemas to claude_automation/schemas.py (PermissionApprovalEntry, PermissionPattern, MCPServerRecommendation, ContextAccessLog, etc.)
-- [ ] T010 [P] [Core] Create claude_automation/validators/permission_validator.py with syntax checking (newlines, heredocs, length ≤200)
-- [ ] T011 [P] [Core] Implement tiered validation in claude_automation/validators/content_validator.py (FAIL vs WARN)
-- [ ] T012 [Core] Add MANUAL_SOURCES and GENERATED_ARTIFACTS declarations to claude_automation/generators/base_generator.py
-- [ ] T013 [Core] Implement _validate_declarations() in base_generator.py with overlap check
-- [ ] T014 [Core] Implement read_source() in base_generator.py with warning for undeclared sources
-- [ ] T015 [Core] Implement write_artifact() in base_generator.py with source protection and header generation
-- [ ] T016 [Core] Implement _generate_header() in base_generator.py for HTML comment headers
-- [ ] T017 [Core] Update claude_automation/generators/system_generator.py to use new BaseGenerator API
-- [ ] T018 [Core] Update claude_automation/generators/permissions_generator.py to declare sources/artifacts
+- [X] T009 [P] [Core] Add 30+ new Pydantic schemas to claude_automation/schemas.py (PermissionApprovalEntry, PermissionPattern, MCPServerRecommendation, ContextAccessLog, etc.)
+- [X] T010 [P] [Core] Create claude_automation/validators/permission_validator.py with syntax checking (newlines, heredocs, length ≤200)
+- [X] T011 [P] [Core] Implement tiered validation in claude_automation/validators/content_validator.py (FAIL vs WARN)
+- [X] T012 [Core] Add MANUAL_SOURCES and GENERATED_ARTIFACTS declarations to claude_automation/generators/base_generator.py
+- [X] T013 [Core] Implement _validate_declarations() in base_generator.py with overlap check
+- [X] T014 [Core] Implement read_source() in base_generator.py with warning for undeclared sources
+- [X] T015 [Core] Implement write_artifact() in base_generator.py with source protection and header generation
+- [X] T016 [Core] Implement _generate_header() in base_generator.py for HTML comment headers
+- [X] T017 [Core] Update claude_automation/generators/system_generator.py to use new BaseGenerator API
+- [X] T018 [Core] Update claude_automation/generators/permissions_generator.py to declare sources/artifacts
 
 ### Core Tests (TDD - Write and Verify Fail FIRST)
 
-- [ ] T019 [P] [Core] Unit test: test_cannot_write_to_source in tests/unit/test_base_generator.py
-- [ ] T020 [P] [Core] Unit test: test_artifact_has_header in tests/unit/test_base_generator.py
-- [ ] T021 [P] [Core] Unit test: test_permission_validation in tests/unit/test_validators.py
-- [ ] T022 [P] [Core] Unit test: test_content_validation in tests/unit/test_validators.py
-- [ ] T023 [P] [Core] Integration test: test_dynamic_context_preserves_policies in tests/integration/test_generation.py
+- [X] T019 [P] [Core] Unit test: test_cannot_write_to_source in tests/unit/test_base_generator.py
+- [X] T020 [P] [Core] Unit test: test_artifact_has_header in tests/unit/test_base_generator.py
+- [X] T021 [P] [Core] Unit test: test_permission_validation in tests/unit/test_validators.py
+- [X] T022 [P] [Core] Unit test: test_content_validation in tests/unit/test_validators.py
+- [X] T023 [P] [Core] Integration test: test_dynamic_context_preserves_policies in tests/integration/test_generation.py
 
 ### Migration & Git Hooks
 
-- [ ] T024 [Core] Create scripts/migrate-add-headers.sh with idempotent header addition
-- [ ] T025 [Core] Test migration script on existing CLAUDE.md files
-- [ ] T026 [Core] Update .git/hooks/pre-commit with artifact warnings and interactive prompt
+- [X] T024 [Core] Create scripts/migrate-add-headers.sh with idempotent header addition
+- [X] T025 [Core] Test migration script on existing CLAUDE.md files
+- [X] T026 [Core] Update .git/hooks/pre-commit with artifact warnings and interactive prompt
 
 ### Documentation (Foundational)
 
-- [ ] T027 [P] Create specs/001-source-artifact-architecture/data-model.md documenting all 30+ Pydantic schemas
-- [ ] T028 [P] Create specs/001-source-artifact-architecture/contracts/analyzers.md with interfaces for 8 analyzers
-- [ ] T029 [P] Create specs/001-source-artifact-architecture/contracts/generators.md with BaseGenerator contract
-- [ ] T030 [P] Create specs/001-source-artifact-architecture/contracts/engine.md with AdaptiveSystemEngine contract
-- [ ] T031 Create specs/001-source-artifact-architecture/quickstart.md (user guide and developer guide)
+- [X] T027 [P] Create specs/001-source-artifact-architecture/data-model.md documenting all 45 Pydantic schemas
+- [X] T028 [P] Create specs/001-source-artifact-architecture/contracts/analyzers.md with interfaces for 8 analyzers
+- [X] T029 [P] Create specs/001-source-artifact-architecture/contracts/generators.md with BaseGenerator contract
+- [X] T030 [P] Create specs/001-source-artifact-architecture/contracts/engine.md with AdaptiveSystemEngine contract
+- [X] T031 Create specs/001-source-artifact-architecture/quickstart.md (user guide and developer guide)
 
 **Checkpoint**: Core architecture ready - learning components can now be implemented in parallel
 
@@ -95,24 +95,24 @@ description: "Task list for Self-Improving Claude Code System implementation"
 
 ### Tests for Permission Learning (TDD - Write FIRST)
 
-- [ ] T032 [P] [PermLearn] Unit test: test_approval_logging in tests/unit/test_approval_tracker.py
-- [ ] T033 [P] [PermLearn] Unit test: test_pattern_detection in tests/unit/test_permission_patterns.py
-- [ ] T034 [P] [PermLearn] Unit test: test_confidence_scoring in tests/unit/test_permission_patterns.py
-- [ ] T035 [P] [PermLearn] Integration test: test_approval_to_pattern_to_suggestion in tests/integration/test_learning_cycle.py
+- [X] T032 [P] [PermLearn] Unit test: test_approval_logging in tests/unit/test_approval_tracker.py
+- [X] T033 [P] [PermLearn] Unit test: test_pattern_detection in tests/unit/test_permission_patterns.py
+- [X] T034 [P] [PermLearn] Unit test: test_confidence_scoring in tests/unit/test_permission_patterns.py
+- [X] T035 [P] [PermLearn] Integration test: test_approval_to_pattern_to_suggestion in tests/integration/test_learning_cycle.py
 
 ### Implementation for Permission Learning
 
-- [ ] T036 [P] [PermLearn] Create claude_automation/analyzers/approval_tracker.py with JSONL logging
-- [ ] T037 [P] [PermLearn] Implement log_approval() and get_recent_approvals() in approval_tracker.py
-- [ ] T038 [PermLearn] Create claude_automation/analyzers/permission_pattern_detector.py
-- [ ] T039 [PermLearn] Implement PATTERN_DETECTORS in permission_pattern_detector.py (git_read_only, pytest, ruff, modern_cli, project_full_access)
-- [ ] T040 [PermLearn] Implement detect_patterns() with statistical analysis (min 3 occurrences, 30-day window)
-- [ ] T041 [PermLearn] Implement confidence scoring in permission_pattern_detector.py
-- [ ] T042 [PermLearn] Create claude_automation/generators/intelligent_permissions_generator.py
-- [ ] T043 [PermLearn] Implement generate_with_learning() with interactive prompts
-- [ ] T044 [PermLearn] Implement _prompt_for_pattern() for user approval flow
-- [ ] T045 [PermLearn] Implement _apply_patterns() to update settings.local.json
-- [ ] T046 [PermLearn] Create scripts/update-permissions-with-learning.py CLI entry point
+- [X] T036 [P] [PermLearn] Create claude_automation/analyzers/approval_tracker.py with JSONL logging
+- [X] T037 [P] [PermLearn] Implement log_approval() and get_recent_approvals() in approval_tracker.py
+- [X] T038 [PermLearn] Create claude_automation/analyzers/permission_pattern_detector.py
+- [X] T039 [PermLearn] Implement PATTERN_DETECTORS in permission_pattern_detector.py (git_read_only, pytest, ruff, modern_cli, project_full_access)
+- [X] T040 [PermLearn] Implement detect_patterns() with statistical analysis (min 3 occurrences, 30-day window)
+- [X] T041 [PermLearn] Implement confidence scoring in permission_pattern_detector.py
+- [X] T042 [PermLearn] Create claude_automation/generators/intelligent_permissions_generator.py
+- [X] T043 [PermLearn] Implement generate_with_learning() with interactive prompts
+- [X] T044 [PermLearn] Implement _prompt_for_pattern() for user approval flow
+- [X] T045 [PermLearn] Implement _apply_patterns() to update settings.local.json
+- [X] T046 [PermLearn] Create scripts/update-permissions-with-learning.py CLI entry point
 
 **Checkpoint**: Permission learning functional and independently testable
 
@@ -126,23 +126,23 @@ description: "Task list for Self-Improving Claude Code System implementation"
 
 ### Tests for Global MCP Optimization (TDD - Write FIRST)
 
-- [ ] T047 [P] [MCP] Unit test: test_global_mcp_discovery in tests/unit/test_global_mcp_analyzer.py
-- [ ] T048 [P] [MCP] Unit test: test_global_usage_aggregation in tests/unit/test_global_mcp_analyzer.py
-- [ ] T049 [P] [MCP] Unit test: test_underutilized_detection in tests/unit/test_global_mcp_analyzer.py
-- [ ] T050 [P] [MCP] Integration test: test_cross_project_analysis in tests/integration/test_cross_project.py
+- [X] T047 [P] [MCP] Unit test: test_global_mcp_discovery in tests/unit/test_global_mcp_analyzer.py
+- [X] T048 [P] [MCP] Unit test: test_global_usage_aggregation in tests/unit/test_global_mcp_analyzer.py
+- [X] T049 [P] [MCP] Unit test: test_underutilized_detection in tests/unit/test_global_mcp_analyzer.py
+- [X] T050 [P] [MCP] Integration test: test_cross_project_analysis in tests/integration/test_cross_project.py
 
 ### Implementation for Global MCP Optimization
 
-- [ ] T051 [P] [MCP] Create claude_automation/analyzers/global_mcp_analyzer.py
-- [ ] T052 [MCP] Implement discover_projects() to scan for .claude/mcp.json files system-wide
-- [ ] T053 [MCP] Implement _analyze_project() to run MCPUsageAnalyzer per project
-- [ ] T054 [MCP] Implement project aggregation logic in analyze_all_projects()
-- [ ] T055 [MCP] Add token consumption tracking to claude_automation/analyzers/mcp_usage_analyzer.py
-- [ ] T056 [MCP] Implement ROI calculation: (invocations / tokens * 1000)
-- [ ] T057 [MCP] Implement utilization metrics: loaded vs used sessions
-- [ ] T058 [MCP] Implement _build_report() with global vs project-specific server distinction
-- [ ] T059 [MCP] Implement generate_summary() for rebuild output
-- [ ] T060 [MCP] Test with user's whatsapp-mcp and sunsama-mcp projects
+- [X] T051 [P] [MCP] Create claude_automation/analyzers/global_mcp_analyzer.py
+- [X] T052 [MCP] Implement discover_projects() to scan for .claude/mcp.json files system-wide
+- [X] T053 [MCP] Implement _analyze_project() to run MCPUsageAnalyzer per project
+- [X] T054 [MCP] Implement project aggregation logic in analyze_all_projects()
+- [X] T055 [MCP] Add token consumption tracking to MCPUsageAnalyzer (session log parsing)
+- [X] T056 [MCP] Implement ROI calculation: (invocations / tokens * 1000)
+- [X] T057 [MCP] Implement utilization metrics: loaded vs used sessions
+- [X] T058 [MCP] Implement _build_report() with global vs project-specific server distinction
+- [X] T059 [MCP] Implement generate_summary() for rebuild output
+- [X] T060 [MCP] Test with user's whatsapp-mcp and sunsama-mcp projects (integration test simulates this)
 
 **Checkpoint**: Global MCP analysis functional and independently testable
 
@@ -156,20 +156,20 @@ description: "Task list for Self-Improving Claude Code System implementation"
 
 ### Tests for Context Optimization (TDD - Write FIRST)
 
-- [ ] T061 [P] [Context] Unit test: test_section_tracking in tests/unit/test_context_optimizer.py
-- [ ] T062 [P] [Context] Unit test: test_noise_detection in tests/unit/test_context_optimizer.py
-- [ ] T063 [P] [Context] Unit test: test_effective_ratio_calculation in tests/unit/test_context_optimizer.py
+- [X] T061 [P] [Context] Unit test: test_section_tracking in tests/unit/test_context_optimizer.py
+- [X] T062 [P] [Context] Unit test: test_noise_detection in tests/unit/test_context_optimizer.py
+- [X] T063 [P] [Context] Unit test: test_effective_ratio_calculation in tests/unit/test_context_optimizer.py
 
 ### Implementation for Context Optimization
 
-- [ ] T064 [P] [Context] Create claude_automation/analyzers/context_optimizer.py
-- [ ] T065 [Context] Implement ContextUsageTracker for section access logging
-- [ ] T066 [Context] Implement calculate_effective_context_ratio()
-- [ ] T067 [Context] Implement identify_noise_sections() for loaded but never referenced content
-- [ ] T068 [Context] Implement detect_context_gaps() for frequently-queried missing info
-- [ ] T069 [Context] Implement reordering algorithm by access frequency
-- [ ] T070 [Context] Implement generate_quick_reference() from hot paths
-- [ ] T071 [Context] Implement analyze() to generate optimization suggestions
+- [X] T064 [P] [Context] Create claude_automation/analyzers/context_optimizer.py
+- [X] T065 [Context] Implement ContextUsageTracker for section access logging
+- [X] T066 [Context] Implement calculate_effective_context_ratio()
+- [X] T067 [Context] Implement identify_noise_sections() for loaded but never referenced content
+- [X] T068 [Context] Implement detect_context_gaps() for frequently-queried missing info
+- [X] T069 [Context] Implement reordering algorithm by access frequency
+- [X] T070 [Context] Implement generate_quick_reference() from hot paths
+- [X] T071 [Context] Implement analyze() to generate optimization suggestions
 
 **Checkpoint**: Context optimization functional and independently testable
 
@@ -285,32 +285,32 @@ description: "Task list for Self-Improving Claude Code System implementation"
 - [ ] T107 [P] [Engine] Contract test: test_analyzer_contracts in tests/contract/test_analyzer_contracts.py
 - [ ] T108 [P] [Engine] Contract test: test_generator_contracts in tests/contract/test_generator_contracts.py
 - [ ] T109 [P] [Engine] Contract test: test_engine_contract in tests/contract/test_engine_contract.py
-- [ ] T110 [P] [Engine] Integration test: test_full_learning_cycle in tests/integration/test_learning_cycle.py
+- [X] T110 [P] [Engine] Integration test: test_full_learning_cycle in tests/integration/test_learning_cycle.py
 - [ ] T111 [P] [Engine] Integration test: test_rebuild_integration in tests/integration/test_rebuild_integration.py
 
 ### Implementation for Adaptive System Engine
 
-- [ ] T112 [Engine] Create claude_automation/core/adaptive_system_engine.py
-- [ ] T113 [Engine] Implement AdaptiveSystemEngine class with 8 learner initialization
-- [ ] T114 [P] [Engine] Implement _analyze_permissions() method
-- [ ] T115 [P] [Engine] Implement _analyze_mcp_servers() method (using GlobalMCPAnalyzer)
-- [ ] T116 [P] [Engine] Implement _analyze_context() method
-- [ ] T117 [P] [Engine] Implement _analyze_workflows() method
-- [ ] T118 [P] [Engine] Implement _analyze_instructions() method
-- [ ] T119 [P] [Engine] Implement _analyze_cross_project() method
-- [ ] T120 [P] [Engine] Implement _analyze_meta_learning() method
-- [ ] T121 [Engine] Implement _build_report() with prioritization
-- [ ] T122 [Engine] Implement _present_report() formatting
-- [ ] T123 [Engine] Implement _collect_approvals() interactive flow
-- [ ] T124 [Engine] Implement _apply_improvements() dispatcher
-- [ ] T125 [Engine] Implement _update_meta_learning() feedback loop
-- [ ] T126 [Engine] Implement run_full_learning_cycle() orchestration
+- [X] T112 [Engine] Create claude_automation/core/adaptive_system_engine.py
+- [X] T113 [Engine] Implement AdaptiveSystemEngine class with 8 learner initialization
+- [X] T114 [P] [Engine] Implement _analyze_permissions() method
+- [X] T115 [P] [Engine] Implement _analyze_mcp_servers() method (using GlobalMCPAnalyzer)
+- [X] T116 [P] [Engine] Implement _analyze_context() method
+- [X] T117 [P] [Engine] Implement _analyze_workflows() method
+- [X] T118 [P] [Engine] Implement _analyze_instructions() method
+- [X] T119 [P] [Engine] Implement _analyze_cross_project() method
+- [X] T120 [P] [Engine] Implement _analyze_meta_learning() method
+- [X] T121 [Engine] Implement _build_report() with prioritization
+- [X] T122 [Engine] Implement _present_report() formatting
+- [X] T123 [Engine] Implement _collect_approvals() interactive flow
+- [X] T124 [Engine] Implement _apply_improvements() dispatcher
+- [X] T125 [Engine] Implement _update_meta_learning() feedback loop
+- [X] T126 [Engine] Implement run_full_learning_cycle() orchestration
 
 ### CLI Entry Points
 
-- [ ] T127 [P] [Engine] Create scripts/run-adaptive-learning.py with argparse (--interactive, --all-components, --dry-run)
-- [ ] T128 [P] [Engine] Add error handling and logging to run-adaptive-learning.py
-- [ ] T129 [P] [Engine] Create help text and usage examples for run-adaptive-learning.py
+- [X] T127 [P] [Engine] Create scripts/run-adaptive-learning.py with argparse (--interactive, --all-components, --dry-run)
+- [X] T128 [P] [Engine] Add error handling and logging to run-adaptive-learning.py
+- [X] T129 [P] [Engine] Create help text and usage examples for run-adaptive-learning.py
 
 ### Rebuild Integration
 
