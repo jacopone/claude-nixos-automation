@@ -728,6 +728,42 @@ class MCPUsageRecommendation(BaseModel):
     priority: int = Field(..., ge=1, le=3, description="Priority (1=high, 3=low)")
 
 
+class GlobalMCPReport(BaseModel):
+    """Aggregated MCP analysis across all projects."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    total_projects: int = Field(0, ge=0, description="Number of projects scanned")
+    total_servers: int = Field(0, ge=0, description="Total unique MCP servers")
+    connected_servers: int = Field(
+        0, ge=0, description="Successfully connected servers"
+    )
+    global_servers: list[MCPServerInfo] = Field(
+        default_factory=list, description="Servers from global config"
+    )
+    project_servers: list[MCPServerInfo] = Field(
+        default_factory=list, description="Servers from project configs"
+    )
+    aggregated_usage: dict[str, MCPToolUsage] = Field(
+        default_factory=dict, description="Usage aggregated by server"
+    )
+    recommendations: list[MCPUsageRecommendation] = Field(
+        default_factory=list, description="Prioritized recommendations"
+    )
+    projects_scanned: list[str] = Field(
+        default_factory=list, description="Paths of scanned projects"
+    )
+
+    @property
+    def total_invocations(self) -> int:
+        """Total invocations across all servers."""
+        return sum(usage.invocation_count for usage in self.aggregated_usage.values())
+
+    @property
+    def total_tokens(self) -> int:
+        """Total tokens across all servers."""
+        return sum(usage.total_tokens for usage in self.aggregated_usage.values())
+
+
 class MCPUsageAnalyticsConfig(BaseModel):
     """Configuration for MCP usage analytics generation."""
 
@@ -796,3 +832,565 @@ class MCPUsageAnalyticsConfig(BaseModel):
             usage.server_name for usage in self.tool_usage if usage.invocation_count > 0
         }
         return [s for s in self.configured_servers if s.name not in used_servers]
+
+
+# ============================================================================
+# Permission Learning Schemas
+# ============================================================================
+
+
+class PermissionApprovalEntry(BaseModel):
+    """Log entry for a permission approval."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    permission: str = Field(..., description="Approved permission string")
+    session_id: str = Field(..., description="Claude Code session identifier")
+    project_path: str = Field(..., description="Project where approval occurred")
+    context: dict[str, Any] = Field(
+        default_factory=dict, description="Additional context metadata"
+    )
+
+    @validator("permission")
+    def validate_permission(cls, v):
+        """Validate permission format."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Permission cannot be empty")
+        if len(v) > 200:
+            raise ValueError("Permission too long (max 200 chars)")
+        if "\n" in v:
+            raise ValueError("Permission cannot contain newlines")
+        if "<<" in v or "EOF" in v:
+            raise ValueError("Permission cannot contain heredoc markers")
+        return v.strip()
+
+
+class PermissionPattern(BaseModel):
+    """Detected pattern in permission approvals."""
+
+    pattern_type: str = Field(
+        ...,
+        description="Type: git_read_only, git_all_safe, pytest, ruff, modern_cli, project_full_access",
+    )
+    occurrences: int = Field(..., ge=1, description="Number of times pattern observed")
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0-1)")
+    examples: list[str] = Field(
+        default_factory=list, description="Example approvals matching pattern"
+    )
+    detected_at: datetime = Field(default_factory=datetime.now)
+    time_window_days: int = Field(30, ge=1, description="Detection window in days")
+
+    @validator("pattern_type")
+    def validate_pattern_type(cls, v):
+        """Validate pattern type."""
+        valid_types = {
+            "git_read_only",
+            "git_all_safe",
+            "pytest",
+            "ruff",
+            "modern_cli",
+            "project_full_access",
+            "file_operations",
+            "test_execution",
+        }
+        if v not in valid_types:
+            raise ValueError(f"Invalid pattern type: {v}")
+        return v
+
+
+class PatternSuggestion(BaseModel):
+    """Suggestion to apply a detected pattern."""
+
+    description: str = Field(..., description="Human-readable description")
+    pattern: PermissionPattern = Field(..., description="Underlying pattern")
+    proposed_rule: str = Field(..., description="Proposed permission rule")
+    would_allow: list[str] = Field(
+        default_factory=list, description="Examples of what would be auto-allowed"
+    )
+    would_still_ask: list[str] = Field(
+        default_factory=list, description="Examples that would still require approval"
+    )
+    approved_examples: list[str] = Field(
+        default_factory=list, description="User's actual approvals that led to this"
+    )
+    impact_estimate: str = Field(
+        "", description="Estimated impact (e.g., '50% fewer prompts')"
+    )
+
+    @property
+    def confidence_percentage(self) -> int:
+        """Get confidence as percentage."""
+        return int(self.pattern.confidence * 100)
+
+
+# ============================================================================
+# Context Optimization Schemas
+# ============================================================================
+
+
+class ContextAccessLog(BaseModel):
+    """Log entry for CLAUDE.md section access."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    section_name: str = Field(
+        ..., description="Section accessed (e.g., 'Modern CLI Tools')"
+    )
+    tokens_in_section: int = Field(0, ge=0, description="Estimated tokens in section")
+    relevance_score: float = Field(
+        0.0, ge=0.0, le=1.0, description="How relevant was this section (0-1)"
+    )
+    session_id: str = Field(..., description="Session identifier")
+    query_context: str = Field("", description="What was Claude trying to do")
+
+    @validator("section_name")
+    def validate_section_name(cls, v):
+        """Validate section name."""
+        if not v or len(v.strip()) == 0:
+            raise ValueError("Section name cannot be empty")
+        return v.strip()
+
+
+class SectionUsage(BaseModel):
+    """Usage statistics for a CLAUDE.md section."""
+
+    section_name: str = Field(..., description="Section name")
+    total_loads: int = Field(0, ge=0, description="Times section was loaded")
+    total_references: int = Field(0, ge=0, description="Times actually referenced")
+    total_tokens: int = Field(0, ge=0, description="Total tokens in section")
+    avg_relevance: float = Field(
+        0.0, ge=0.0, le=1.0, description="Average relevance when used"
+    )
+    last_used: datetime | None = Field(None, description="Last usage timestamp")
+
+    @property
+    def utilization_rate(self) -> float:
+        """Calculate utilization rate (references / loads)."""
+        if self.total_loads == 0:
+            return 0.0
+        return self.total_references / self.total_loads
+
+    @property
+    def is_noise(self) -> bool:
+        """Check if section is noise (loaded but rarely used)."""
+        return self.total_loads > 5 and self.utilization_rate < 0.1
+
+
+class ContextOptimization(BaseModel):
+    """Optimization suggestion for CLAUDE.md."""
+
+    optimization_type: str = Field(
+        ..., description="Type: prune_section, reorder, add_quick_ref, add_missing"
+    )
+    section_name: str = Field(..., description="Section to optimize")
+    reason: str = Field(..., description="Why this optimization is suggested")
+    impact: str = Field(..., description="Expected impact")
+    token_savings: int = Field(0, ge=0, description="Estimated token savings")
+    priority: int = Field(..., ge=1, le=3, description="Priority (1=high, 3=low)")
+
+    @validator("optimization_type")
+    def validate_optimization_type(cls, v):
+        """Validate optimization type."""
+        valid_types = {"prune_section", "reorder", "add_quick_ref", "add_missing"}
+        if v not in valid_types:
+            raise ValueError(f"Invalid optimization type: {v}")
+        return v
+
+
+# ============================================================================
+# Workflow Detection Schemas
+# ============================================================================
+
+
+class SlashCommandLog(BaseModel):
+    """Log entry for slash command invocation."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    command: str = Field(..., description="Command invoked (e.g., '/speckit.specify')")
+    session_id: str = Field(..., description="Session identifier")
+    success: bool = Field(True, description="Whether command succeeded")
+    duration_ms: int | None = Field(None, description="Execution duration")
+    project_path: str = Field("", description="Project path if applicable")
+
+    @validator("command")
+    def validate_command(cls, v):
+        """Validate command format."""
+        if not v.startswith("/"):
+            raise ValueError("Command must start with /")
+        return v
+
+
+class WorkflowSequence(BaseModel):
+    """Detected sequence of slash commands."""
+
+    commands: list[str] = Field(..., description="Ordered list of commands")
+    occurrences: int = Field(..., ge=1, description="Times this sequence occurred")
+    completion_rate: float = Field(
+        0.0, ge=0.0, le=1.0, description="How often sequence completes"
+    )
+    avg_duration_ms: int | None = Field(None, description="Average total duration")
+    first_seen: datetime = Field(default_factory=datetime.now)
+    last_seen: datetime = Field(default_factory=datetime.now)
+
+    @validator("commands")
+    def validate_commands(cls, v):
+        """Validate command sequence."""
+        if len(v) < 2:
+            raise ValueError("Sequence must have at least 2 commands")
+        if not all(cmd.startswith("/") for cmd in v):
+            raise ValueError("All commands must start with /")
+        return v
+
+
+class WorkflowSuggestion(BaseModel):
+    """Suggestion to bundle workflow commands."""
+
+    description: str = Field(..., description="Workflow description")
+    sequence: WorkflowSequence = Field(..., description="Underlying sequence")
+    proposed_command: str = Field(..., description="Proposed bundled command name")
+    script_content: str = Field(..., description="Script implementation")
+    impact_estimate: str = Field("", description="Estimated time savings")
+
+    @validator("proposed_command")
+    def validate_proposed_command(cls, v):
+        """Validate proposed command."""
+        if not v.startswith("/"):
+            raise ValueError("Proposed command must start with /")
+        return v
+
+
+# ============================================================================
+# Instruction Tracking Schemas
+# ============================================================================
+
+
+class PolicyViolation(BaseModel):
+    """Record of a policy violation."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    policy_name: str = Field(..., description="Name of violated policy")
+    violation_type: str = Field(..., description="Type of violation")
+    session_id: str = Field(..., description="Session identifier")
+    details: str = Field("", description="Violation details")
+    severity: str = Field(..., description="Severity: low, medium, high")
+
+    @validator("severity")
+    def validate_severity(cls, v):
+        """Validate severity."""
+        if v not in {"low", "medium", "high"}:
+            raise ValueError("Severity must be: low, medium, or high")
+        return v
+
+
+class InstructionEffectiveness(BaseModel):
+    """Effectiveness metrics for an instruction/policy."""
+
+    policy_name: str = Field(..., description="Policy name")
+    total_sessions: int = Field(0, ge=0, description="Total sessions observed")
+    compliant_sessions: int = Field(0, ge=0, description="Compliant sessions")
+    violations: list[PolicyViolation] = Field(
+        default_factory=list, description="Recent violations"
+    )
+    effectiveness_score: float = Field(
+        0.0, ge=0.0, le=1.0, description="Compliance rate"
+    )
+    last_evaluated: datetime = Field(default_factory=datetime.now)
+
+    @property
+    def is_effective(self) -> bool:
+        """Check if policy is effective (>70% compliance)."""
+        return self.effectiveness_score >= 0.7
+
+    @property
+    def needs_improvement(self) -> bool:
+        """Check if policy needs rewording (<70% compliance)."""
+        return self.effectiveness_score < 0.7
+
+
+class InstructionImprovement(BaseModel):
+    """Suggested improvement for an instruction."""
+
+    policy_name: str = Field(..., description="Policy to improve")
+    current_wording: str = Field(..., description="Current instruction text")
+    suggested_wording: str = Field(..., description="Improved instruction text")
+    reason: str = Field(..., description="Why this improvement is needed")
+    effectiveness_data: InstructionEffectiveness = Field(
+        ..., description="Underlying effectiveness data"
+    )
+    priority: int = Field(..., ge=1, le=3, description="Priority (1=high, 3=low)")
+
+
+# ============================================================================
+# Cross-Project Schemas
+# ============================================================================
+
+
+class ProjectArchetype(BaseModel):
+    """Detected project archetype."""
+
+    archetype: str = Field(
+        ...,
+        description="Type: Python/pytest, TypeScript/vitest, Rust/cargo, NixOS, etc.",
+    )
+    indicators: list[str] = Field(
+        default_factory=list, description="Files/patterns that indicate this type"
+    )
+    confidence: float = Field(..., ge=0.0, le=1.0, description="Detection confidence")
+    detected_at: datetime = Field(default_factory=datetime.now)
+
+    @validator("archetype")
+    def validate_archetype(cls, v):
+        """Validate archetype."""
+        valid_archetypes = {
+            "Python/pytest",
+            "Python/unittest",
+            "TypeScript/vitest",
+            "TypeScript/jest",
+            "Rust/cargo",
+            "NixOS",
+            "Go/testing",
+            "Unknown",
+        }
+        if v not in valid_archetypes:
+            raise ValueError(f"Invalid archetype: {v}")
+        return v
+
+
+class CrossProjectPattern(BaseModel):
+    """Pattern learned from one project, applicable to others."""
+
+    pattern_type: str = Field(
+        ..., description="Type: permission, workflow, context, configuration"
+    )
+    source_project: str = Field(..., description="Project where pattern originated")
+    source_archetype: str = Field(..., description="Source project archetype")
+    pattern_data: dict[str, Any] = Field(
+        default_factory=dict, description="Pattern details"
+    )
+    applicability_score: float = Field(
+        ..., ge=0.0, le=1.0, description="How applicable to other projects"
+    )
+    learned_at: datetime = Field(default_factory=datetime.now)
+
+
+class TransferSuggestion(BaseModel):
+    """Suggestion to transfer pattern to another project."""
+
+    description: str = Field(..., description="Transfer description")
+    pattern: CrossProjectPattern = Field(..., description="Pattern to transfer")
+    target_project: str = Field(..., description="Target project path")
+    target_archetype: str = Field(..., description="Target project archetype")
+    compatibility_score: float = Field(
+        ..., ge=0.0, le=1.0, description="Compatibility with target"
+    )
+    action: str = Field(..., description="What would be applied")
+    examples: list[str] = Field(
+        default_factory=list, description="Examples from source project"
+    )
+
+
+# ============================================================================
+# Meta-Learning Schemas
+# ============================================================================
+
+
+class LearningMetrics(BaseModel):
+    """Metrics for learning system effectiveness."""
+
+    component: str = Field(
+        ...,
+        description="Component: permissions, mcp, context, workflows, instructions",
+    )
+    total_suggestions: int = Field(0, ge=0, description="Total suggestions made")
+    accepted: int = Field(0, ge=0, description="Suggestions accepted")
+    rejected: int = Field(0, ge=0, description="Suggestions rejected")
+    false_positives: int = Field(0, ge=0, description="Incorrect suggestions")
+    acceptance_rate: float = Field(0.0, ge=0.0, le=1.0, description="Acceptance rate")
+    false_positive_rate: float = Field(
+        0.0, ge=0.0, le=1.0, description="False positive rate"
+    )
+    last_updated: datetime = Field(default_factory=datetime.now)
+
+    @property
+    def is_healthy(self) -> bool:
+        """Check if learning is healthy (>50% acceptance, <20% false positives)."""
+        return self.acceptance_rate > 0.5 and self.false_positive_rate < 0.2
+
+
+class ThresholdAdjustment(BaseModel):
+    """Adjustment to detection thresholds."""
+
+    component: str = Field(..., description="Component being adjusted")
+    threshold_name: str = Field(..., description="Threshold parameter name")
+    old_value: float = Field(..., description="Previous value")
+    new_value: float = Field(..., description="New value")
+    reason: str = Field(..., description="Why adjustment was made")
+    adjusted_at: datetime = Field(default_factory=datetime.now)
+
+
+class LearningHealthReport(BaseModel):
+    """Health report for the learning system."""
+
+    overall_health: str = Field(..., description="Overall: excellent, good, fair, poor")
+    component_metrics: list[LearningMetrics] = Field(
+        default_factory=list, description="Metrics per component"
+    )
+    recent_adjustments: list[ThresholdAdjustment] = Field(
+        default_factory=list, description="Recent threshold adjustments"
+    )
+    recommendations: list[str] = Field(
+        default_factory=list, description="System recommendations"
+    )
+    generated_at: datetime = Field(default_factory=datetime.now)
+
+    @validator("overall_health")
+    def validate_overall_health(cls, v):
+        """Validate overall health."""
+        if v not in {"excellent", "good", "fair", "poor"}:
+            raise ValueError("Health must be: excellent, good, fair, or poor")
+        return v
+
+
+# ============================================================================
+# Unified Engine Schemas
+# ============================================================================
+
+
+class LearningReport(BaseModel):
+    """Consolidated report from all learners."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    permission_patterns: list[PatternSuggestion] = Field(
+        default_factory=list, description="Permission learning suggestions"
+    )
+    mcp_optimizations: list[dict[str, Any]] = Field(
+        default_factory=list, description="MCP optimization suggestions"
+    )
+    context_suggestions: list[ContextOptimization] = Field(
+        default_factory=list, description="Context optimization suggestions"
+    )
+    workflow_patterns: list[WorkflowSuggestion] = Field(
+        default_factory=list, description="Workflow bundling suggestions"
+    )
+    instruction_improvements: list[InstructionImprovement] = Field(
+        default_factory=list, description="Instruction effectiveness improvements"
+    )
+    cross_project_transfers: list[TransferSuggestion] = Field(
+        default_factory=list, description="Cross-project pattern transfers"
+    )
+    meta_insights: dict[str, float] = Field(
+        default_factory=dict, description="Meta-learning health metrics"
+    )
+    total_suggestions: int = Field(
+        0, ge=0, description="Total suggestions across all components"
+    )
+    estimated_improvements: str = Field(
+        "", description="Human-readable impact estimate"
+    )
+
+    @property
+    def has_suggestions(self) -> bool:
+        """Check if report has any suggestions."""
+        return self.total_suggestions > 0
+
+
+class AdaptiveSystemConfig(BaseModel):
+    """Configuration for adaptive system engine."""
+
+    interactive: bool = Field(True, description="Whether to prompt user interactively")
+    min_occurrences: int = Field(
+        3, ge=1, description="Minimum occurrences for pattern detection"
+    )
+    confidence_threshold: float = Field(
+        0.7, ge=0.0, le=1.0, description="Minimum confidence for suggestions"
+    )
+    analysis_period_days: int = Field(30, ge=1, description="Analysis window in days")
+    max_suggestions_per_component: int = Field(
+        5, ge=1, description="Max suggestions per component"
+    )
+    enable_meta_learning: bool = Field(
+        True, description="Whether to enable meta-learning calibration"
+    )
+
+
+# ============================================================================
+# Validation Schemas
+# ============================================================================
+
+
+class ValidationResult(BaseModel):
+    """Result of validation check."""
+
+    valid: bool = Field(..., description="Whether validation passed")
+    severity: str = Field(..., description="Severity: fail, warn, info")
+    errors: list[str] = Field(default_factory=list, description="Error messages")
+    warnings: list[str] = Field(default_factory=list, description="Warning messages")
+    info: list[str] = Field(default_factory=list, description="Info messages")
+    validated_at: datetime = Field(default_factory=datetime.now)
+
+    @validator("severity")
+    def validate_severity(cls, v):
+        """Validate severity."""
+        if v not in {"fail", "warn", "info"}:
+            raise ValueError("Severity must be: fail, warn, or info")
+        return v
+
+    @property
+    def has_errors(self) -> bool:
+        """Check if validation has errors."""
+        return len(self.errors) > 0
+
+    @property
+    def has_warnings(self) -> bool:
+        """Check if validation has warnings."""
+        return len(self.warnings) > 0
+
+
+class SourceArtifactDeclaration(BaseModel):
+    """Declaration of manual sources and generated artifacts."""
+
+    manual_sources: list[str] = Field(
+        default_factory=list, description="Files that are manually edited"
+    )
+    generated_artifacts: list[str] = Field(
+        default_factory=list, description="Files that are auto-generated"
+    )
+    validated_at: datetime = Field(default_factory=datetime.now)
+
+    @validator("manual_sources", "generated_artifacts")
+    def validate_no_duplicates(cls, v):
+        """Ensure no duplicate filenames."""
+        if len(v) != len(set(v)):
+            raise ValueError("Duplicate filenames in list")
+        return v
+
+    @property
+    def has_overlap(self) -> bool:
+        """Check if sources and artifacts overlap."""
+        return bool(set(self.manual_sources) & set(self.generated_artifacts))
+
+
+class GenerationHeader(BaseModel):
+    """Generation header for artifacts."""
+
+    generator_name: str = Field(..., description="Name of generator class")
+    generated_at: datetime = Field(default_factory=datetime.now)
+    source_files: list[str] = Field(
+        default_factory=list, description="Source files used"
+    )
+    warning_message: str = Field(
+        "AUTO-GENERATED FILE - DO NOT EDIT DIRECTLY", description="Warning message"
+    )
+
+    def to_html_comment(self) -> str:
+        """Generate HTML comment format for markdown files."""
+        sources = ", ".join(self.source_files) if self.source_files else "N/A"
+        return f"""<!--
+{'=' * 60}
+  {self.warning_message}
+
+  Generated: {self.generated_at.isoformat()}
+  Generator: {self.generator_name}
+  Sources: {sources}
+
+  To modify, edit source files and regenerate.
+{'=' * 60}
+-->"""

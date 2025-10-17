@@ -1,11 +1,18 @@
 """
 Content validation for generated CLAUDE.md files.
+
+Implements tiered validation:
+- FAIL: Critical violations (missing sections, template errors)
+- WARN: Style violations (temporal markers, formatting issues)
+- INFO: Suggestions and statistics
 """
 
 import logging
 import re
 from pathlib import Path
-from typing import Any
+from typing import Any, Literal
+
+from ..schemas import ValidationResult
 
 logger = logging.getLogger(__name__)
 
@@ -19,7 +26,15 @@ class ValidationError(Exception):
 class ContentValidator:
     """Validates generated CLAUDE.md content."""
 
-    def __init__(self):
+    def __init__(self, strict_mode: bool = False):
+        """
+        Initialize content validator.
+
+        Args:
+            strict_mode: If True, warnings become errors (for CI/CD)
+        """
+        self.strict_mode = strict_mode
+
         self.required_sections = [
             "CLAUDE CODE TOOL SELECTION POLICY",
             "System Information",
@@ -33,6 +48,19 @@ class ContentValidator:
             r"find.*→.*fd",
             r"ls.*→.*eza",
             r"cat.*→.*bat",
+        ]
+
+        # Temporal markers to avoid (style warnings)
+        self.temporal_markers = [
+            r"\bNEW\b",
+            r"\bNEW 202\d\b",
+            r"Week \d+",
+            r"Phase \d+",
+            r"ENHANCED",
+            r"UPDATED",
+            r"DEPRECATED.*coming soon",
+            r"Recently added",
+            r"Latest",
         ]
 
     def validate_system_content(self, content: str) -> dict[str, Any]:
@@ -237,6 +265,108 @@ class ContentValidator:
                 "warnings": [],
                 "stats": {},
             }
+
+    def validate_content_tiered(
+        self, content: str, content_type: str = "system"
+    ) -> ValidationResult:
+        """
+        Validate content with tiered strictness (FAIL vs WARN).
+
+        FAIL (Critical):
+        - Missing required sections
+        - Missing required patterns
+        - Template rendering errors
+
+        WARN (Style):
+        - Temporal markers (NEW, Week 1, etc.)
+        - Excessive length
+        - Broken formatting
+
+        Args:
+            content: Content to validate
+            content_type: Type of content (system or project)
+
+        Returns:
+            ValidationResult with tiered severity
+        """
+        errors = []
+        warnings = []
+        info = []
+
+        # === CRITICAL CHECKS (FAIL) ===
+
+        # Check required sections
+        if content_type == "system":
+            missing_sections = self._check_required_sections(
+                content, self.required_sections
+            )
+            errors.extend(missing_sections)
+
+            # Check required patterns
+            missing_patterns = self._check_required_patterns(
+                content, self.required_patterns
+            )
+            errors.extend(missing_patterns)
+
+            # Check tool substitutions
+            tool_errors = self._validate_tool_substitutions(content)
+            errors.extend(tool_errors)
+
+        # === STYLE CHECKS (WARN) ===
+
+        # Check for temporal markers
+        temporal_violations = self._check_temporal_markers(content)
+        if temporal_violations:
+            if self.strict_mode:
+                errors.extend(temporal_violations)  # Promote to error in strict mode
+            else:
+                warnings.extend(temporal_violations)
+
+        # Check content quality (existing warnings)
+        quality_warnings = self._check_content_quality(content)
+        warnings.extend(quality_warnings)
+
+        # === INFO (Statistics) ===
+
+        stats = self._calculate_content_stats(content)
+        info.append(
+            f"Content: {stats['total_chars']:,} chars, {stats['sections']} sections"
+        )
+        info.append(
+            f"Code blocks: {stats['code_blocks']}, Tool references: {stats['tool_references']}"
+        )
+
+        # Determine overall validity and severity
+        valid = len(errors) == 0
+        severity: Literal["fail", "warn", "info"] = (
+            "fail" if errors else ("warn" if warnings else "info")
+        )
+
+        return ValidationResult(
+            valid=valid,
+            severity=severity,
+            errors=errors,
+            warnings=warnings,
+            info=info,
+        )
+
+    def _check_temporal_markers(self, content: str) -> list[str]:
+        """
+        Check for temporal markers that should be avoided.
+
+        Temporal markers like "NEW", "Week 1", "Phase 2" become
+        confusing over time and should be replaced with timeless descriptions.
+        """
+        violations = []
+
+        for pattern in self.temporal_markers:
+            matches = re.findall(pattern, content, re.IGNORECASE)
+            if matches:
+                violations.append(
+                    f"Contains temporal marker '{pattern}' - use timeless descriptions instead"
+                )
+
+        return violations
 
     def generate_validation_report(self, validation_result: dict[str, Any]) -> str:
         """Generate a human-readable validation report."""

@@ -14,7 +14,22 @@ logger = logging.getLogger(__name__)
 
 
 class SystemGenerator(BaseGenerator):
-    """Generates system-level CLAUDE.md files."""
+    """
+    Generates system-level CLAUDE.md files.
+
+    Sources: Nix configuration files (packages.nix, base.nix, etc.)
+    Artifacts: System-level CLAUDE.md
+    """
+
+    # Source/Artifact declarations
+    MANUAL_SOURCES = [
+        "packages.nix",  # Core system packages
+        "base.nix",  # Home-manager packages
+        "CLAUDE-USER-POLICIES.md",  # User policies
+    ]
+    GENERATED_ARTIFACTS = [
+        "CLAUDE.md",  # System-level CLAUDE.md
+    ]
 
     def __init__(self, template_dir: Path = None):
         super().__init__(template_dir)
@@ -48,8 +63,15 @@ class SystemGenerator(BaseGenerator):
             # Render template
             content = self.render_template("system-claude.j2", context)
 
-            # Write file
-            result = self.write_file(output_path, content)
+            # Determine source files used
+            source_files = ["packages.nix", "base.nix"]
+            if system_config.has_user_policies:
+                source_files.append("CLAUDE-USER-POLICIES.md")
+
+            # Write artifact with protection and header
+            result = self.write_artifact(
+                output_path, content, source_files=source_files
+            )
 
             # Add generation stats
             if result.success:

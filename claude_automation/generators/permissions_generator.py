@@ -14,7 +14,24 @@ logger = logging.getLogger(__name__)
 
 
 class PermissionsGenerator(BaseGenerator):
-    """Generates .claude/settings.local.json with optimized permissions."""
+    """
+    Generates .claude/settings.local.json with optimized permissions.
+
+    Sources: Permission templates (permissions-*.j2)
+    Artifacts: settings.local.json (with smart merge for user customizations)
+    """
+
+    # Source/Artifact declarations
+    MANUAL_SOURCES = [
+        "permissions-python.j2",
+        "permissions-typescript.j2",
+        "permissions-rust.j2",
+        "permissions-nixos.j2",
+        "permissions-default.j2",
+    ]
+    GENERATED_ARTIFACTS = [
+        "settings.local.json",  # Generated permissions file
+    ]
 
     def __init__(self, template_dir: Path | None = None):
         """Initialize permissions generator."""
@@ -57,8 +74,12 @@ class PermissionsGenerator(BaseGenerator):
             else:
                 merged_settings = new_settings
 
-            # Write to file
+            # Write to file with artifact protection
             content = json.dumps(merged_settings, indent=2, ensure_ascii=False)
+
+            # Note: We use write_file instead of write_artifact here because
+            # JSON files don't support HTML comments. The file is still declared
+            # as an artifact for protection, but we skip the header.
             result = self.write_file(output_path, content + "\n")
 
             # Add generation stats
