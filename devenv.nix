@@ -5,6 +5,7 @@
   env = {
     GREET = "CLAUDE.md Automation System";
     CLAUDE_AUTOMATION_ROOT = "$DEVENV_ROOT";
+    CLAUDE_AUTOMATION_DEV = "true";  # Flag for development mode
     PYTHONPATH = "$DEVENV_PROFILE/lib/python3.13/site-packages";
   };
 
@@ -123,6 +124,41 @@ else:
       echo "   validate-claude-files   # Validate existing files"
       echo "   test-automation         # Run test suite"
     '';
+
+    # Development quality scripts (new for self-improving system)
+    test.exec = ''
+      echo "🧪 Running full test suite..."
+      uv run python -m pytest tests/ -v --tb=short
+    '';
+
+    test-fast.exec = ''
+      echo "⚡ Running fast tests (unit tests only)..."
+      uv run python -m pytest tests/unit/ -v --tb=line -x
+    '';
+
+    lint.exec = ''
+      echo "🔍 Running linters..."
+      echo "→ Ruff check..."
+      ruff check claude_automation/ tests/ scripts/
+      echo "→ MyPy type checking..."
+      mypy claude_automation/ --ignore-missing-imports
+    '';
+
+    format.exec = ''
+      echo "✨ Formatting code..."
+      echo "→ Black formatter..."
+      black claude_automation/ tests/ scripts/
+      echo "→ Ruff autofix..."
+      ruff check --fix claude_automation/ tests/ scripts/
+    '';
+
+    quality.exec = ''
+      echo "🎯 Running complete quality checks..."
+      format
+      lint
+      test
+      echo "✅ All quality checks passed!"
+    '';
   };
 
   # Pre-commit hooks for code quality
@@ -144,6 +180,29 @@ else:
       enable = true;
       files = "\\.py$";
       excludes = [ ".devenv/" "result" "tests/" ];
+    };
+
+    # Artifact detection hook (warn when committing generated files)
+    artifact-check = {
+      enable = true;
+      name = "Artifact Detection";
+      entry = "${pkgs.bash}/bin/bash -c '
+        # Check for AUTO-GENERATED markers in staged files
+        for file in $(git diff --cached --name-only); do
+          if [ -f \"$file\" ] && grep -q \"AUTO-GENERATED\" \"$file\" 2>/dev/null; then
+            echo \"⚠️  WARNING: Committing artifact: $file\"
+            echo \"   This file appears to be auto-generated.\"
+            echo \"   Did you mean to edit the source files instead?\"
+            read -p \"   Continue anyway? (y/N): \" -n 1 -r
+            echo
+            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+              echo \"Commit aborted.\"
+              exit 1
+            fi
+          fi
+        done
+      '";
+      stages = [ "pre-commit" ];
     };
   };
 
