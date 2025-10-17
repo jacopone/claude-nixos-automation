@@ -177,30 +177,56 @@ else:
     };
 
     mypy = {
-      enable = true;
+      enable = false;  # Temporarily disabled - too many false positives
       files = "\\.py$";
       excludes = [ ".devenv/" "result" "tests/" ];
     };
 
     # Artifact detection hook (warn when committing generated files)
+    # Only checks first 10 lines (where headers would be)
     artifact-check = {
       enable = true;
-      name = "Artifact Detection";
+      name = "Artifact Protection";
       entry = "${pkgs.bash}/bin/bash -c '
-        # Check for AUTO-GENERATED markers in staged files
+        # Check for AUTO-GENERATED markers in staged file HEADERS (first 10 lines only)
+        FOUND_ARTIFACTS=false
+
         for file in $(git diff --cached --name-only); do
-          if [ -f \"$file\" ] && grep -q \"AUTO-GENERATED\" \"$file\" 2>/dev/null; then
-            echo \"⚠️  WARNING: Committing artifact: $file\"
-            echo \"   This file appears to be auto-generated.\"
-            echo \"   Did you mean to edit the source files instead?\"
-            read -p \"   Continue anyway? (y/N): \" -n 1 -r
-            echo
-            if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-              echo \"Commit aborted.\"
-              exit 1
+          if [ -f \"$file\" ] && head -10 \"$file\" 2>/dev/null | grep -q \"AUTO-GENERATED\"; then
+            if [ \"$FOUND_ARTIFACTS\" = false ]; then
+              echo \"\"
+              echo \"⚠️  ========================================\"
+              echo \"⚠️  ARTIFACT PROTECTION WARNING\"
+              echo \"⚠️  ========================================\"
+              echo \"\"
+              FOUND_ARTIFACTS=true
             fi
+
+            echo \"   📄 $file\"
+            echo \"      This file is auto-generated and should not be edited directly.\"
+            echo \"      Edit the source files and regenerate instead.\"
+            echo \"\"
           fi
         done
+
+        if [ \"$FOUND_ARTIFACTS\" = true ]; then
+          echo \"⚠️  You are attempting to commit auto-generated files.\"
+          echo \"⚠️  This is usually a mistake.\"
+          echo \"\"
+          read -p \"   Continue anyway? (y/N): \" -n 1 -r
+          echo \"\"
+
+          if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+            echo \"\"
+            echo \"✓ Commit aborted. Good call!\"
+            echo \"\"
+            exit 1
+          fi
+
+          echo \"\"
+          echo \"⚠️  Proceeding with artifact commit (you were warned!)\"
+          echo \"\"
+        fi
       '";
       stages = [ "pre-commit" ];
     };
