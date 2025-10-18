@@ -255,8 +255,16 @@ class GlobalMCPAnalyzer:
         self.recommendations.sort(key=lambda r: r.priority)
 
     def _recommend_remove_unused(self, all_servers: dict):
-        """Recommend removing servers that are configured but never used."""
+        """Recommend removing servers that are configured but never used.
+
+        Note: Currently only recommends removing project-specific servers.
+        Global servers are skipped as they may be used in other projects not scanned.
+        """
         for server_name, server_info in all_servers.items():
+            # Skip global servers (may be used in projects not scanned)
+            if server_name in self.global_servers:
+                continue
+
             # Check if server has any usage
             has_usage = any(
                 usage.server_name == server_name and usage.invocation_count > 0
@@ -264,13 +272,9 @@ class GlobalMCPAnalyzer:
             )
 
             if not has_usage:
-                # Determine scope and priority
-                if server_name in self.global_servers:
-                    priority = 1  # High priority - global config affects all projects
-                    action = "Remove from ~/.claude.json (affects all projects)"
-                else:
-                    priority = 2  # Medium priority - project-specific
-                    action = f"Remove from {server_info.config_location}"
+                # Only recommend removing project-specific servers
+                priority = 2  # Medium priority - project-specific
+                action = f"Remove from {server_info.config_location}"
 
                 self.recommendations.append(
                     MCPUsageRecommendation(

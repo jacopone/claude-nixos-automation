@@ -138,16 +138,34 @@ class PermissionValidator:
         - Edit(path)
         - Glob(pattern)
         """
-        # Basic format: Tool(argument)
-        basic_pattern = r"^\w+\([^)]+\)$"
+        # Known tools
+        known_tools = ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task", "SlashCommand"]
 
-        # Allow wildcard patterns
-        wildcard_pattern = r"[*:]"
+        # Extract tool name
+        tool_match = re.match(r"^(\w+)\(", permission)
+        if not tool_match:
+            return False
 
-        return (
-            re.match(basic_pattern, permission) is not None
-            or re.search(wildcard_pattern, permission) is not None
-        )
+        tool_name = tool_match.group(1)
+
+        # Must be a known tool
+        if tool_name not in known_tools:
+            return False
+
+        # Must follow basic Tool(arg) format
+        if not re.match(r"^\w+\([^)]+\)$", permission):
+            return False
+
+        # Multiple comma-separated args are unusual (except for specific cases)
+        # Extract args inside parentheses
+        args_match = re.search(r"\(([^)]+)\)", permission)
+        if args_match:
+            args = args_match.group(1)
+            # Count commas - more than 0 is unusual
+            if "," in args:
+                return False
+
+        return True
 
     def _check_dangerous_patterns(self, permission: str) -> list[str]:
         """
@@ -169,8 +187,13 @@ class PermissionValidator:
         if ".." in permission:
             warnings.append("Contains '..' (filesystem traversal risk)")
 
-        # Check for absolute paths without proper scoping
-        if permission.startswith("/") and "*" in permission:
+        # Check for absolute paths with overly broad wildcards
+        # Patterns like /home/* or Read(/home/*/file) are suspicious
+        # But /**/ (recursive glob) is fine
+        if re.search(r"\(/[^)]*\*/", permission):  # /path/*/something pattern
+            warnings.append("Absolute path with wildcard (may grant excessive access)")
+        elif permission.startswith("/") and re.search(r"/\*[^*/]", permission):
+            # Starts with / and has /* but not /** or **/
             warnings.append("Absolute path with wildcard (may grant excessive access)")
 
         # Check for /etc or /sys access (usually not needed)

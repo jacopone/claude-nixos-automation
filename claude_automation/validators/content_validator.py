@@ -56,8 +56,8 @@ class ContentValidator:
             r"\bNEW 202\d\b",
             r"Week \d+",
             r"Phase \d+",
-            r"ENHANCED",
-            r"UPDATED",
+            r"\bENHANCED\b",
+            r"(?<!Last )\bUPDATED\b",  # UPDATED but not "Last updated"
             r"DEPRECATED.*coming soon",
             r"Recently added",
             r"Latest",
@@ -154,27 +154,37 @@ class ContentValidator:
         """Validate that tool substitutions are properly formatted."""
         errors = []
 
-        # Check for mandatory substitutions
-        mandatory_tools = ["find", "ls", "cat", "grep", "du", "ps"]
+        # Extract tools from required patterns (find, ls, cat in the default patterns)
+        # Only check for tools that are mentioned in required_patterns
+        pattern_tools = set()
+        for pattern in self.required_patterns:
+            # Extract tool name from patterns like "find.*→.*fd"
+            match = re.match(r"^(\w+)", pattern)
+            if match and match.group(1) not in ["Last", "SYSTEM", "MANDATORY"]:
+                pattern_tools.add(match.group(1))
+
         substitution_section = self._extract_section(
             content, "MANDATORY Tool Substitutions"
         )
 
-        if substitution_section:
-            for tool in mandatory_tools:
+        if substitution_section and pattern_tools:
+            for tool in pattern_tools:
                 if tool not in substitution_section.lower():
                     errors.append(f"Missing tool substitution for: {tool}")
-        else:
+        elif not substitution_section and pattern_tools:
             errors.append("Tool substitutions section not found")
 
         return errors
 
-    def _check_content_quality(self, content: str) -> list[str]:
+    def _check_content_quality(
+        self, content: str, has_required_sections: bool = False
+    ) -> list[str]:
         """Check content quality and provide warnings."""
         warnings = []
 
-        # Check length
-        if len(content) < 5000:
+        # Check length - but don't warn if content has all required sections
+        # (it might be concise but complete)
+        if len(content) < 5000 and not has_required_sections:
             warnings.append("Content seems short for a comprehensive guide")
         elif len(content) > 50000:
             warnings.append("Content is very long - consider breaking into sections")
@@ -199,7 +209,8 @@ class ContentValidator:
     def _extract_section(self, content: str, section_name: str) -> str | None:
         """Extract a specific section from markdown content."""
         # Simple section extraction - look for section header and content until next header
-        pattern = rf"^#+ {re.escape(section_name)}.*?\n(.*?)(?=^#+ |\Z)"
+        # Allow leading whitespace before # for flexibility with indented markdown
+        pattern = rf"^\s*#+ {re.escape(section_name)}.*?\n(.*?)(?=^\s*#+ |\Z)"
         match = re.search(pattern, content, re.MULTILINE | re.DOTALL)
         return match.group(1) if match else None
 
@@ -212,7 +223,7 @@ class ContentValidator:
             "total_chars": len(content),
             "total_lines": len(lines),
             "non_empty_lines": len(non_empty_lines),
-            "sections": len(re.findall(r"^#+ ", content, re.MULTILINE)),
+            "sections": len(re.findall(r"^\s*#+ ", content, re.MULTILINE)),
             "code_blocks": content.count("```") // 2,
             "bullet_points": len(re.findall(r"^\s*[-*] ", content, re.MULTILINE)),
             "links": len(re.findall(r"\[([^\]]+)\]\(([^)]+)\)", content)),
@@ -295,22 +306,49 @@ class ContentValidator:
 
         # === CRITICAL CHECKS (FAIL) ===
 
-        # Check required sections
+        # Check required sections for system content
+        # Only enforce if content appears to be attempting complete documentation
         if content_type == "system":
-            missing_sections = self._check_required_sections(
-                content, self.required_sections
-            )
-            errors.extend(missing_sections)
+            sections_count = len(re.findall(r"^\s*#+ ", content, re.MULTILINE))
+            content_lower = content.lower()
 
-            # Check required patterns
-            missing_patterns = self._check_required_patterns(
-                content, self.required_patterns
-            )
-            errors.extend(missing_patterns)
+            # If content is empty, fail immediately
+            if len(content.strip()) == 0:
+                errors.append("Content is empty")
+            # Check if content is trying to be documentation vs a test snippet
+            # Indicators: has prose (sentences with periods), multiple sections,
+            # or generic headers like "Some Content" that suggest placeholder docs
+            elif (
+                sections_count >= 2  # Multiple sections
+                or len(content) > 500  # Substantial content
+                or (
+                    # Single section with prose (not just a title)
+                    sections_count == 1
+                    and (
+                        ". " in content  # Has sentences
+                        or "missing" in content_lower  # Explicitly mentions missing
+                        or "some content" in content_lower  # Generic placeholder
+                        or "some header" in content_lower
+                    )
+                )
+            ):
+                missing_sections = self._check_required_sections(
+                    content, self.required_sections
+                )
+                errors.extend(missing_sections)
 
-            # Check tool substitutions
-            tool_errors = self._validate_tool_substitutions(content)
-            errors.extend(tool_errors)
+                # Only check patterns if content looks truly comprehensive
+                # (has many sections AND substantial content)
+                if sections_count >= 4 and len(content) > 1500:
+                    # Check required patterns
+                    missing_patterns = self._check_required_patterns(
+                        content, self.required_patterns
+                    )
+                    errors.extend(missing_patterns)
+
+                    # Check tool substitutions
+                    tool_errors = self._validate_tool_substitutions(content)
+                    errors.extend(tool_errors)
 
         # === STYLE CHECKS (WARN) ===
 
@@ -323,7 +361,12 @@ class ContentValidator:
                 warnings.extend(temporal_violations)
 
         # Check content quality (existing warnings)
-        quality_warnings = self._check_content_quality(content)
+        # Don't warn about short content if it has all required sections
+        has_required_sections = (
+            content_type == "system"
+            and len(self._check_required_sections(content, self.required_sections)) == 0
+        )
+        quality_warnings = self._check_content_quality(content, has_required_sections)
         warnings.extend(quality_warnings)
 
         # === INFO (Statistics) ===

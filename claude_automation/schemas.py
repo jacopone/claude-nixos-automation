@@ -1136,6 +1136,60 @@ class ProjectArchetype(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0, description="Detection confidence")
     detected_at: datetime = Field(default_factory=datetime.now)
 
+    @property
+    def name(self) -> str:
+        """Alias for archetype to match test expectations."""
+        return self.archetype.replace("/", "-").lower()
+
+    @property
+    def test_framework(self) -> str:
+        """Extract test framework from archetype name."""
+        # Parse format: "Language/TestFramework" or "Language/BuildSystem"
+        parts = self.archetype.split("/")
+        if len(parts) == 2:
+            # Return the second part which is usually test framework or build system
+            return parts[1]
+        return self.archetype
+
+    @property
+    def build_system(self) -> str:
+        """Extract build system from archetype name."""
+        # For certain archetypes, the second part is the build system
+        parts = self.archetype.split("/")
+        if len(parts) == 2:
+            framework = parts[1].lower()
+            # Known build systems
+            if framework in ["cargo", "npm", "yarn", "pnpm", "poetry", "pip"]:
+                return framework
+            # For test frameworks, infer build system from language
+            if "rust" in self.archetype.lower():
+                return "cargo"
+            elif "python" in self.archetype.lower():
+                return "pip"
+            elif "typescript" in self.archetype.lower() or "javascript" in self.archetype.lower():
+                return "npm"
+            return parts[1]
+        return self.archetype
+
+    @property
+    def common_tools(self) -> list[str]:
+        """Extract common tools based on archetype."""
+        tools = []
+        arch_lower = self.archetype.lower()
+
+        if "pytest" in arch_lower:
+            tools.extend(["pytest", "python"])
+        if "vitest" in arch_lower:
+            tools.extend(["vitest", "typescript", "node"])
+        if "jest" in arch_lower:
+            tools.extend(["jest", "typescript", "node"])
+        if "cargo" in arch_lower:
+            tools.extend(["cargo", "rustc"])
+        if "nix" in arch_lower:
+            tools.extend(["nix", "nixos-rebuild"])
+
+        return tools
+
     @validator("archetype")
     def validate_archetype(cls, v):
         """Validate archetype."""
@@ -1147,7 +1201,7 @@ class ProjectArchetype(BaseModel):
             "Rust/cargo",
             "NixOS",
             "Go/testing",
-            "Unknown",
+            "Generic",
         }
         if v not in valid_archetypes:
             raise ValueError(f"Invalid archetype: {v}")
@@ -1224,6 +1278,11 @@ class ThresholdAdjustment(BaseModel):
     new_value: float = Field(..., description="New value")
     reason: str = Field(..., description="Why adjustment was made")
     adjusted_at: datetime = Field(default_factory=datetime.now)
+
+    @property
+    def recommended_threshold(self) -> float:
+        """Alias for new_value to match test expectations."""
+        return self.new_value
 
 
 class LearningHealthReport(BaseModel):

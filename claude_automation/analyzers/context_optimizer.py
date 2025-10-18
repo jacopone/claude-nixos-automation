@@ -131,8 +131,8 @@ class ContextUsageTracker:
             usage = usage_map[section]
             usage.total_loads += 1
 
-            # Count as reference if relevance > 0.5
-            if access.relevance_score > 0.5:
+            # Count as reference if relevance >= 0.5
+            if access.relevance_score >= 0.5:
                 usage.total_references += 1
 
             # Update average relevance

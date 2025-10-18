@@ -91,7 +91,7 @@ class ProjectArchetypeDetector:
         """
         if not project_path.exists() or not project_path.is_dir():
             return ProjectArchetype(
-                archetype="Unknown",
+                archetype="Generic",
                 indicators=[],
                 confidence=0.0,
             )
@@ -108,7 +108,7 @@ class ProjectArchetypeDetector:
 
         if not scores:
             return ProjectArchetype(
-                archetype="Unknown",
+                archetype="Generic",
                 indicators=[],
                 confidence=0.0,
             )
@@ -341,11 +341,12 @@ class ProjectArchetypeDetector:
         else:
             return f"Apply {pattern.pattern_type} configuration"
 
-    def transfer_pattern(self, suggestion: TransferSuggestion) -> bool:
+    def transfer_pattern(self, target_project: Path, suggestion: TransferSuggestion) -> bool:
         """
         Apply a transfer suggestion.
 
         Args:
+            target_project: Target project path
             suggestion: TransferSuggestion to apply
 
         Returns:
@@ -358,5 +359,120 @@ class ProjectArchetypeDetector:
         # 3. Validate changes
         # 4. Report success/failure
 
-        logger.info(f"Applied pattern transfer: {suggestion.description}")
+        logger.info(f"Applied pattern transfer to {target_project}: {suggestion.description}")
         return True
+
+    # Test API compatibility aliases and missing methods
+    def detect_archetype(self, project_path: Path) -> ProjectArchetype:
+        """Alias for detect() to match test expectations."""
+        return self.detect(project_path)
+
+    def build_knowledge_base(self, projects: list[Path]) -> dict:
+        """
+        Build knowledge base from multiple projects.
+
+        Args:
+            projects: List of project paths to analyze
+
+        Returns:
+            Dict mapping archetypes to their statistics
+        """
+        knowledge_base = {}
+
+        for project in projects:
+            archetype = self.detect(project)
+            if archetype.archetype == "Generic":
+                continue
+
+            arch_name = archetype.archetype
+            if arch_name not in knowledge_base:
+                knowledge_base[arch_name] = {
+                    "count": 0,
+                    "projects": [],
+                    "common_patterns": []
+                }
+
+            knowledge_base[arch_name]["count"] += 1
+            knowledge_base[arch_name]["projects"].append(str(project))
+
+            # Learn patterns from this project
+            self._learn_project_patterns(project, archetype)
+
+        logger.info(f"Built knowledge base from {len(projects)} projects")
+        return knowledge_base
+
+    def _learn_project_patterns(self, project: Path, archetype: ProjectArchetype):
+        """
+        Learn patterns from a project.
+
+        Args:
+            project: Project path
+            archetype: Detected archetype
+        """
+        # Check for permissions
+        settings_file = project / ".claude" / "settings.local.json"
+        if settings_file.exists():
+            try:
+                import json
+                with open(settings_file) as f:
+                    settings = json.load(f)
+                    if "autoApprove" in settings:
+                        for pattern in settings["autoApprove"]:
+                            self.learn_pattern(
+                                source_project=str(project),
+                                source_archetype=archetype.archetype,
+                                pattern_type="permission",
+                                pattern_data={"pattern": pattern},
+                                applicability_score=0.8
+                            )
+            except Exception as e:
+                logger.debug(f"Failed to learn permissions from {project}: {e}")
+
+        # Check for MCP servers
+        mcp_file = project / ".claude" / "mcp.json"
+        if mcp_file.exists():
+            try:
+                import json
+                with open(mcp_file) as f:
+                    mcp_config = json.load(f)
+                    if "mcpServers" in mcp_config:
+                        for server_name, server_config in mcp_config["mcpServers"].items():
+                            self.learn_pattern(
+                                source_project=str(project),
+                                source_archetype=archetype.archetype,
+                                pattern_type="mcp_server",
+                                pattern_data={"name": server_name, "config": server_config},
+                                applicability_score=0.7
+                            )
+            except Exception as e:
+                logger.debug(f"Failed to learn MCP config from {project}: {e}")
+
+    def find_similar_projects(self, project: Path) -> list[Path]:
+        """
+        Find projects with similar archetypes.
+
+        Args:
+            project: Reference project
+
+        Returns:
+            List of similar project paths
+        """
+        target_archetype = self.detect(project)
+        if target_archetype.archetype == "Generic":
+            return []
+
+        # Load learned patterns
+        if not self.patterns_file.exists():
+            return []
+
+        patterns = self._load_patterns()
+
+        # Find projects with same archetype
+        similar_projects = set()
+        for pattern in patterns:
+            if pattern.source_archetype == target_archetype.archetype:
+                source_path = Path(pattern.source_project)
+                if source_path != project and source_path.exists():
+                    similar_projects.add(source_path)
+
+        return sorted(similar_projects)
