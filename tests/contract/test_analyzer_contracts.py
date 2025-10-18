@@ -26,13 +26,13 @@ TIER1_ANALYZERS = [
     (ApprovalTracker, "ApprovalTracker"),
     (GlobalMCPAnalyzer, "GlobalMCPAnalyzer"),
     (ContextOptimizer, "ContextOptimizer"),
+    (InstructionEffectivenessTracker, "InstructionEffectivenessTracker"),  # Moved from Tier 2
 ]
 
 # Tier 2 Analyzers (pattern detection)
 TIER2_ANALYZERS = [
     (PermissionPatternDetector, "PermissionPatternDetector"),  # Moved from Tier 1
     (WorkflowDetector, "WorkflowDetector"),
-    (InstructionEffectivenessTracker, "InstructionEffectivenessTracker"),
 ]
 
 # Tier 3 Analyzers
@@ -85,7 +85,7 @@ class TestAnalyzerContracts:
         methods = dir(analyzer_class)
 
         # Should have logging or tracking methods
-        logging_methods = ["log_approval", "log_access", "log_section_access", "analyze_all_projects", "track"]
+        logging_methods = ["log_approval", "log_access", "log_section_access", "log_session", "analyze_all_projects", "track"]
 
         has_logging = any(method in methods for method in logging_methods)
         assert has_logging, f"{name} missing logging capability"
@@ -127,8 +127,9 @@ class TestApprovalTrackerContract:
 
         # Should be able to log an approval
         tracker.log_approval(
-            tool="Bash",
-            pattern="pytest:*",
+            permission="Bash(pytest:*)",
+            session_id="test-session",
+            project_path="/tmp/test",
             context={"test": "value"},
         )
 
@@ -137,7 +138,11 @@ class TestApprovalTrackerContract:
         tracker = ApprovalTracker()
 
         # Log an approval
-        tracker.log_approval("Bash", "ruff:*", {})
+        tracker.log_approval(
+            permission="Bash(ruff:*)",
+            session_id="test-session",
+            project_path="/tmp/test",
+        )
 
         # Should be able to retrieve it
         recent = tracker.get_recent_approvals(days=1)
@@ -145,11 +150,12 @@ class TestApprovalTrackerContract:
 
 
 class TestPermissionPatternDetectorContract:
-    """Contract tests for PermissionPatternDetector (Tier 1)."""
+    """Contract tests for PermissionPatternDetector (Tier 2)."""
 
     def test_can_detect_patterns(self):
         """Test T107: PermissionPatternDetector.detect_patterns() works."""
-        detector = PermissionPatternDetector()
+        tracker = ApprovalTracker()
+        detector = PermissionPatternDetector(approval_tracker=tracker)
 
         # Should be able to detect patterns (may return empty list)
         patterns = detector.detect_patterns(min_occurrences=3, days=30)
@@ -200,17 +206,18 @@ class TestWorkflowDetectorContract:
 
 
 class TestInstructionTrackerContract:
-    """Contract tests for InstructionEffectivenessTracker (Tier 2)."""
+    """Contract tests for InstructionEffectivenessTracker (Tier 1)."""
 
     def test_can_log_violation(self):
-        """Test T107: InstructionEffectivenessTracker.log_violation() works."""
+        """Test T107: InstructionEffectivenessTracker.log_session() works."""
         tracker = InstructionEffectivenessTracker()
 
-        # Should be able to log violations
-        tracker.log_violation(
-            policy="test-policy",
+        # Should be able to log sessions
+        tracker.log_session(
             session_id="test-session",
-            context={"test": "value"},
+            policy_name="test-policy",
+            compliant=False,
+            violation_type="test-violation",
         )
 
     def test_can_get_effectiveness_score(self):
