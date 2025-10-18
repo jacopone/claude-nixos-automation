@@ -78,25 +78,59 @@ class AdaptiveSystemEngine:
 
         logger.info("Adaptive System Engine initialized")
 
-    def run_full_learning_cycle(self) -> LearningReport:
+    def run_full_learning_cycle(
+        self, interactive: bool | None = None, components: list[str] | None = None
+    ) -> LearningReport:
         """
         Run complete learning cycle across all components.
 
         Called by ./rebuild-nixos as final step.
 
+        Args:
+            interactive: Override interactive mode (default: use config)
+            components: Optional list of components to run (default: all)
+
         Returns:
             LearningReport with all suggestions
         """
+        # Override config if parameters provided
+        if interactive is not None:
+            original_interactive = self.config.interactive
+            self.config.interactive = interactive
+
         logger.info("🧠 Starting adaptive learning cycle...")
 
         # Phase 1: Collect insights from all learners
-        permission_patterns = self._analyze_permissions()
-        mcp_suggestions = self._analyze_mcp_servers()
-        context_suggestions = self._analyze_context()
-        workflow_patterns = self._analyze_workflows()
-        instruction_improvements = self._analyze_instructions()
-        cross_project_patterns = self._analyze_cross_project()
-        meta_insights = self._analyze_meta_learning()
+        # If components filter provided, only run specified components
+        all_components = {
+            "permission_learning": self._analyze_permissions,
+            "mcp_optimization": self._analyze_mcp_servers,
+            "context_optimization": self._analyze_context,
+            "workflow_detection": self._analyze_workflows,
+            "instruction_tracking": self._analyze_instructions,
+            "cross_project": self._analyze_cross_project,
+            "meta_learning": self._analyze_meta_learning,
+        }
+
+        # Determine which components to run
+        if components:
+            # Run only specified components
+            permission_patterns = all_components["permission_learning"]() if "permission_learning" in components else []
+            mcp_suggestions = all_components["mcp_optimization"]() if "mcp_optimization" in components else []
+            context_suggestions = all_components["context_optimization"]() if "context_optimization" in components else []
+            workflow_patterns = all_components["workflow_detection"]() if "workflow_detection" in components else []
+            instruction_improvements = all_components["instruction_tracking"]() if "instruction_tracking" in components else []
+            cross_project_patterns = all_components["cross_project"]() if "cross_project" in components else []
+            meta_insights = all_components["meta_learning"]() if "meta_learning" in components else {}
+        else:
+            # Run all components
+            permission_patterns = self._analyze_permissions()
+            mcp_suggestions = self._analyze_mcp_servers()
+            context_suggestions = self._analyze_context()
+            workflow_patterns = self._analyze_workflows()
+            instruction_improvements = self._analyze_instructions()
+            cross_project_patterns = self._analyze_cross_project()
+            meta_insights = self._analyze_meta_learning()
 
         # Phase 2: Build consolidated report
         report = self._build_report(
@@ -119,6 +153,10 @@ class AdaptiveSystemEngine:
         # Phase 4: Update meta-learning
         if self.config.enable_meta_learning:
             self._update_meta_learning(report, approved)
+
+        # Restore original interactive setting if it was overridden
+        if interactive is not None:
+            self.config.interactive = original_interactive
 
         logger.info("✅ Learning cycle complete")
         return report
