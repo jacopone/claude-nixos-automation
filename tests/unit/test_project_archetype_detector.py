@@ -221,9 +221,9 @@ def test_build_knowledge_base(detector, temp_projects_dir):
     # Build knowledge base
     kb = detector.build_knowledge_base(projects)
 
-    # Should have knowledge for python-pytest archetype
-    assert "python-pytest" in kb
-    assert kb["python-pytest"]["count"] == 5
+    # Should have knowledge for Python/pytest archetype
+    assert "Python/pytest" in kb
+    assert kb["Python/pytest"]["count"] == 5
 
 
 def test_archetype_characteristics(detector, temp_projects_dir):
