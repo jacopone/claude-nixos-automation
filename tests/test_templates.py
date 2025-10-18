@@ -19,7 +19,21 @@ from claude_automation.schemas import (
 def jinja_env():
     """Create Jinja2 environment with template directory."""
     template_dir = Path(__file__).parent.parent / "claude_automation" / "templates"
-    return Environment(loader=FileSystemLoader(template_dir))
+    env = Environment(loader=FileSystemLoader(template_dir))
+
+    # Add custom filters used in templates
+    def status_icon(status_value):
+        """Convert status value to icon."""
+        icons = {
+            "active": "✓",
+            "unused": "✗",
+            "low_value": "⚠",
+            "misconfigured": "⚠",
+        }
+        return icons.get(status_value, "?")
+
+    env.filters["status_icon"] = status_icon
+    return env
 
 
 class TestDirectoryTemplates:

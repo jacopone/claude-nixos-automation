@@ -233,7 +233,7 @@ class TestInstructionTrackerContract:
         )
 
         # Should return a score
-        score = tracker.get_effectiveness_score("test-policy")
+        score = tracker.get_effectiveness_score("test-policy", total_sessions=10)
         assert isinstance(score, (int, float))
 
 
