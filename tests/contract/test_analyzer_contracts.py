@@ -158,7 +158,7 @@ class TestPermissionPatternDetectorContract:
         detector = PermissionPatternDetector(approval_tracker=tracker)
 
         # Should be able to detect patterns (may return empty list)
-        patterns = detector.detect_patterns(min_occurrences=3, days=30)
+        patterns = detector.detect_patterns(days=30)
         assert isinstance(patterns, list)
 
 
@@ -167,7 +167,8 @@ class TestGlobalMCPAnalyzerContract:
 
     def test_can_analyze_all_projects(self):
         """Test T107: GlobalMCPAnalyzer.analyze_all_projects() works."""
-        analyzer = GlobalMCPAnalyzer()
+        from pathlib import Path
+        analyzer = GlobalMCPAnalyzer(home_dir=Path("/tmp"))
 
         # Should be able to analyze (may return empty report)
         report = analyzer.analyze_all_projects()
@@ -223,6 +224,13 @@ class TestInstructionTrackerContract:
     def test_can_get_effectiveness_score(self):
         """Test T107: InstructionEffectivenessTracker.get_effectiveness_score() works."""
         tracker = InstructionEffectivenessTracker()
+
+        # Log a session first
+        tracker.log_session(
+            session_id="test-session",
+            policy_name="test-policy",
+            compliant=True,
+        )
 
         # Should return a score
         score = tracker.get_effectiveness_score("test-policy")
