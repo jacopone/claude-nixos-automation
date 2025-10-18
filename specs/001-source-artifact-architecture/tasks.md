@@ -301,8 +301,8 @@ description: "Task list for Self-Improving Claude Code System implementation"
 - [X] T120 [P] [Engine] Implement _analyze_meta_learning() method
 - [X] T121 [Engine] Implement _build_report() with prioritization
 - [X] T122 [Engine] Implement _present_report() formatting
-- [X] T123 [Engine] Implement _collect_approvals() interactive flow
-- [X] T124 [Engine] Implement _apply_improvements() dispatcher
+- [X] T123 [Engine] Implement _collect_approvals() interactive flow ✅ **FIXED 2025-10-17** - Now fully interactive
+- [X] T124 [Engine] Implement _apply_improvements() dispatcher ⚠️ **PARTIAL** - Framework done, file modifications TODO
 - [X] T125 [Engine] Implement _update_meta_learning() feedback loop
 - [X] T126 [Engine] Implement run_full_learning_cycle() orchestration
 

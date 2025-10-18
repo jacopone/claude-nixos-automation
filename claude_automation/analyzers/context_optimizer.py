@@ -528,16 +528,183 @@ class ContextOptimizer:
         """
         Identify missing context (information Claude queries for but isn't in CLAUDE.md).
 
+        Analyzes:
+        - Sections with high load but low relevance (wrong content)
+        - Query patterns from session logs
+        - Tool usage not documented
+        - Frequent error patterns
+
         Args:
             days: Analysis window in days
 
         Returns:
             List of context gap descriptions
         """
-        # TODO: Implement by analyzing session logs for:
-        # - Tool usage not mentioned in CLAUDE.md
-        # - Frequent questions Claude asks user
-        # - Error messages indicating missing context
+        gaps = []
+        usage_stats = self.get_section_usage_statistics(days)
 
-        # For now, return empty list
-        return []
+        # Gap Type 1: High load, low relevance
+        # (Section exists but doesn't answer the actual query)
+        for section_usage in usage_stats.values():
+            if (
+                section_usage.total_loads > 5
+                and section_usage.avg_relevance < 0.3
+            ):
+                gaps.append(
+                    f"Section '{section_usage.section_name}' loaded {section_usage.total_loads} times "
+                    f"but only {section_usage.avg_relevance*100:.0f}% relevant - needs better/different content"
+                )
+
+        # Gap Type 2: Analyze query contexts for missing topics
+        accesses = self.usage_tracker.get_recent_accesses(days)
+        query_contexts = [
+            access.query_context
+            for access in accesses
+            if access.query_context and access.relevance_score < 0.5
+        ]
+
+        # Look for patterns in low-relevance queries
+        if query_contexts:
+            # Simple keyword extraction (production would use NLP)
+            common_keywords = self._extract_common_keywords(query_contexts)
+
+            if common_keywords:
+                gaps.append(
+                    f"Frequent query topics not well-covered: {', '.join(common_keywords[:5])}"
+                )
+
+        # Gap Type 3: Session log analysis
+        sessions_dir = Path.home() / ".claude" / "sessions"
+        if sessions_dir.exists():
+            tool_usage_gaps = self._analyze_undocumented_tools(sessions_dir, days)
+            gaps.extend(tool_usage_gaps)
+
+        # Limit to top 5 most important gaps
+        return gaps[:5]
+
+    def _extract_common_keywords(self, query_contexts: list[str]) -> list[str]:
+        """
+        Extract common keywords from query contexts.
+
+        Simple implementation - production would use NLP.
+
+        Args:
+            query_contexts: List of query context strings
+
+        Returns:
+            List of common keywords
+        """
+        from collections import Counter
+
+        # Combine all queries
+        all_text = " ".join(query_contexts).lower()
+
+        # Remove common stop words
+        stop_words = {
+            "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
+            "in", "on", "at", "to", "for", "of", "with", "by", "from", "as",
+            "how", "what", "when", "where", "why", "which", "who", "that",
+        }
+
+        # Tokenize (simple split) and filter
+        words = [
+            word.strip(",.;:!?")
+            for word in all_text.split()
+            if len(word) > 3 and word not in stop_words
+        ]
+
+        # Count and return top keywords
+        word_counts = Counter(words)
+        return [word for word, count in word_counts.most_common(10) if count >= 2]
+
+    def _analyze_undocumented_tools(
+        self, sessions_dir: Path, days: int
+    ) -> list[str]:
+        """
+        Analyze session logs to find tools used but not documented.
+
+        Args:
+            sessions_dir: Path to sessions directory
+            days: Analysis window in days
+
+        Returns:
+            List of gap descriptions for undocumented tools
+        """
+        gaps = []
+
+        try:
+            from datetime import datetime, timedelta
+            cutoff = datetime.now() - timedelta(days=days)
+
+            # Track tool invocations
+            tool_invocations = {}  # tool_name -> count
+
+            # Parse recent session logs
+            for session_file in sessions_dir.glob("*.jsonl"):
+                # Check if session is recent
+                if datetime.fromtimestamp(session_file.stat().st_mtime) < cutoff:
+                    continue
+
+                try:
+                    with open(session_file, encoding="utf-8") as f:
+                        for line in f:
+                            if not line.strip():
+                                continue
+
+                            try:
+                                entry = json.loads(line)
+
+                                # Track tool usage
+                                if entry.get("type") == "tool_use":
+                                    tool_name = entry.get("name", "unknown")
+                                    tool_invocations[tool_name] = (
+                                        tool_invocations.get(tool_name, 0) + 1
+                                    )
+
+                            except json.JSONDecodeError:
+                                continue
+
+                except Exception as e:
+                    logger.debug(f"Failed to parse session {session_file}: {e}")
+                    continue
+
+            # Identify frequently-used but undocumented tools
+            # (Tools used >10 times but not mentioned in CLAUDE.md context)
+            for tool_name, count in tool_invocations.items():
+                if count > 10:
+                    # Check if this tool appears in any section with high relevance
+                    # (Simplified: assume if it's not in a high-relevance section, it's missing)
+                    is_documented = self._is_tool_documented(tool_name)
+
+                    if not is_documented:
+                        gaps.append(
+                            f"Tool '{tool_name}' used {count} times but not well-documented in CLAUDE.md"
+                        )
+
+        except Exception as e:
+            logger.warning(f"Failed to analyze undocumented tools: {e}")
+
+        return gaps[:3]  # Limit to top 3
+
+    def _is_tool_documented(self, tool_name: str) -> bool:
+        """
+        Check if tool is documented in high-relevance sections.
+
+        Simplified heuristic: returns False if tool might be missing.
+
+        Args:
+            tool_name: Name of tool to check
+
+        Returns:
+            True if tool appears to be documented
+        """
+        # Get recent accesses
+        accesses = self.usage_tracker.get_recent_accesses(30)
+
+        # Check if any high-relevance accesses mention this tool
+        for access in accesses:
+            if access.relevance_score > 0.7 and tool_name.lower() in access.section_name.lower():
+                return True
+
+        # If we don't find it in recent high-relevance accesses, assume missing
+        return False

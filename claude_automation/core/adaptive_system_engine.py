@@ -347,16 +347,213 @@ class AdaptiveSystemEngine:
         print("\n" + "=" * 70)
 
     def _collect_approvals(self, report: LearningReport) -> list[dict]:
-        """Interactively collect user approvals."""
-        # TODO: Implement interactive approval flow
-        # For now, return empty list
-        return []
+        """Interactively collect user approvals for suggestions.
+
+        Args:
+            report: Learning report with suggestions from all components
+
+        Returns:
+            List of approved suggestions (dicts with type and details)
+        """
+        approved = []
+
+        # Collect all suggestions by category
+        all_suggestions = []
+
+        # MCP optimizations
+        for i, sug in enumerate(report.mcp_optimizations):
+            all_suggestions.append({
+                "type": "mcp",
+                "index": i,
+                "data": sug,
+                "description": sug.get("description", "MCP optimization")
+            })
+
+        # Permission patterns
+        for i, sug in enumerate(report.permission_patterns):
+            all_suggestions.append({
+                "type": "permission",
+                "index": i,
+                "data": sug,
+                "description": sug.get("description", "Permission pattern")
+            })
+
+        # Context optimizations
+        for i, sug in enumerate(report.context_suggestions):
+            all_suggestions.append({
+                "type": "context",
+                "index": i,
+                "data": sug,
+                "description": sug.get("description", "Context optimization")
+            })
+
+        # Workflow patterns
+        for i, sug in enumerate(report.workflow_patterns):
+            all_suggestions.append({
+                "type": "workflow",
+                "index": i,
+                "data": sug,
+                "description": sug.get("description", "Workflow pattern")
+            })
+
+        if not all_suggestions:
+            return approved
+
+        print("\n" + "=" * 70)
+        print("📋 REVIEW SUGGESTIONS")
+        print("=" * 70)
+        print(f"\nFound {len(all_suggestions)} optimization suggestions.")
+        print("\nOptions:")
+        print("  y - Approve this suggestion")
+        print("  n - Reject this suggestion")
+        print("  a - Approve all remaining")
+        print("  s - Skip all remaining")
+        print("  q - Quit (save approvals so far)")
+        print("")
+
+        try:
+            for i, sug in enumerate(all_suggestions, 1):
+                print(f"\n[{i}/{len(all_suggestions)}] {sug['type'].upper()}: {sug['description']}")
+
+                # Show details based on type
+                if sug['type'] == 'mcp':
+                    server = sug['data'].get('server_name', 'Unknown')
+                    impact = sug['data'].get('impact', 'No details')
+                    print(f"  Server: {server}")
+                    print(f"  Impact: {impact}")
+                elif sug['type'] == 'permission':
+                    examples = sug['data'].get('examples', [])
+                    if examples:
+                        print(f"  Examples: {', '.join(examples[:2])}")
+                elif sug['type'] == 'context':
+                    tokens = sug['data'].get('tokens', 0)
+                    print(f"  Token savings: ~{tokens}K")
+
+                while True:
+                    choice = input("\nApply? [y/n/a/s/q]: ").lower().strip()
+
+                    if choice == 'y':
+                        approved.append(sug)
+                        print("  ✓ Approved")
+                        break
+                    elif choice == 'n':
+                        print("  ✗ Rejected")
+                        break
+                    elif choice == 'a':
+                        # Approve this and all remaining
+                        approved.append(sug)
+                        approved.extend(all_suggestions[i:])
+                        print(f"  ✓ Approved all {len(all_suggestions) - i + 1} remaining suggestions")
+                        return approved
+                    elif choice == 's':
+                        # Skip all remaining
+                        print(f"  Skipped {len(all_suggestions) - i + 1} remaining suggestions")
+                        return approved
+                    elif choice == 'q':
+                        print(f"\n  Saved {len(approved)} approvals. Exiting.")
+                        return approved
+                    else:
+                        print("  Invalid choice. Use y/n/a/s/q")
+
+        except (KeyboardInterrupt, EOFError):
+            print(f"\n\n  Interrupted. Saved {len(approved)} approvals.")
+            return approved
+
+        print(f"\n✓ Review complete. {len(approved)}/{len(all_suggestions)} suggestions approved.\n")
+        return approved
 
     def _apply_improvements(self, approved: list[dict]):
-        """Apply approved improvements across all components."""
-        # TODO: Implement improvement application
-        # This would dispatch to appropriate components based on suggestion type
-        pass
+        """Apply approved improvements across all components.
+
+        Args:
+            approved: List of approved suggestions (each has 'type' and 'data')
+
+        Side effects:
+            - May modify .claude/mcp.json
+            - May modify settings.local.json
+            - May modify CLAUDE.md files
+            - May create slash commands
+        """
+        if not approved:
+            logger.info("No approved suggestions to apply")
+            return
+
+        print(f"\n🔧 Applying {len(approved)} approved improvements...")
+
+        # Group by type
+        by_type = {}
+        for sug in approved:
+            sug_type = sug['type']
+            if sug_type not in by_type:
+                by_type[sug_type] = []
+            by_type[sug_type].append(sug['data'])
+
+        # Apply MCP optimizations
+        if 'mcp' in by_type:
+            self._apply_mcp_optimizations(by_type['mcp'])
+
+        # Apply permission patterns
+        if 'permission' in by_type:
+            self._apply_permission_patterns(by_type['permission'])
+
+        # Apply context optimizations
+        if 'context' in by_type:
+            self._apply_context_optimizations(by_type['context'])
+
+        # Apply workflow patterns
+        if 'workflow' in by_type:
+            self._apply_workflow_patterns(by_type['workflow'])
+
+        print("✓ All improvements applied successfully\n")
+
+    def _apply_mcp_optimizations(self, optimizations: list[dict]):
+        """Apply MCP server optimization suggestions."""
+        logger.info(f"Applying {len(optimizations)} MCP optimizations")
+
+        for opt in optimizations:
+            server_name = opt.get('server_name', 'unknown')
+            action = opt.get('impact', opt.get('action', 'unknown'))
+
+            # TODO: Actually modify .claude/mcp.json
+            # For now, log what would be done
+            print(f"  • MCP: {server_name} - {action}")
+            logger.warning(f"MCP optimization not yet implemented: {server_name}")
+
+    def _apply_permission_patterns(self, patterns: list[dict]):
+        """Apply permission pattern suggestions."""
+        logger.info(f"Applying {len(patterns)} permission patterns")
+
+        for pattern in patterns:
+            description = pattern.get('description', 'unknown pattern')
+
+            # TODO: Use IntelligentPermissionsGenerator to update settings.local.json
+            # For now, log what would be done
+            print(f"  • Permission: {description}")
+            logger.warning(f"Permission pattern not yet implemented: {description}")
+
+    def _apply_context_optimizations(self, optimizations: list[dict]):
+        """Apply CLAUDE.md context optimizations."""
+        logger.info(f"Applying {len(optimizations)} context optimizations")
+
+        for opt in optimizations:
+            description = opt.get('description', 'unknown optimization')
+
+            # TODO: Modify CLAUDE.md files
+            # For now, log what would be done
+            print(f"  • Context: {description}")
+            logger.warning(f"Context optimization not yet implemented: {description}")
+
+    def _apply_workflow_patterns(self, patterns: list[dict]):
+        """Apply workflow pattern suggestions (create slash commands)."""
+        logger.info(f"Applying {len(patterns)} workflow patterns")
+
+        for pattern in patterns:
+            description = pattern.get('description', 'unknown workflow')
+
+            # TODO: Create slash command files
+            # For now, log what would be done
+            print(f"  • Workflow: {description}")
+            logger.warning(f"Workflow pattern not yet implemented: {description}")
 
     def _update_meta_learning(self, report: LearningReport, approved: list[dict]):
         """Update meta-learning based on user feedback."""

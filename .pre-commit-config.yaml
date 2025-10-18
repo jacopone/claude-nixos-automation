@@ -16,13 +16,6 @@ repos:
               fi
             done
 
-      - id: black
-        name: black
-        entry: black
-        language: system
-        types: [python]
-        exclude: '\.devenv/|result'
-
       - id: ruff
         name: ruff
         entry: ruff

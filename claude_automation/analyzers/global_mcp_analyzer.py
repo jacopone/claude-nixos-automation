@@ -225,25 +225,145 @@ class GlobalMCPAnalyzer:
             return MCPServerType.UNKNOWN
 
     def _generate_recommendations(self):
-        """Generate system-wide optimization recommendations."""
-        # TODO: Implement sophisticated recommendations based on:
-        # - Underutilized servers
-        # - High-value servers
-        # - Servers with errors
-        # - Duplicate configurations
+        """Generate system-wide optimization recommendations.
 
-        # For now, generate basic recommendations
+        Analyzes:
+        - Underutilized servers (loaded but rarely used)
+        - High-value servers (high ROI)
+        - Unused servers (configured but never invoked)
+        - Error-prone servers (high failure rate)
+        - Duplicate configurations (same server in multiple places)
+        """
+        all_servers = {**self.global_servers, **self.project_servers}
 
-        # Recommend removing unused project-specific servers
-        for server_name, server_info in self.project_servers.items():
-            if server_name not in self.aggregated_usage:
+        # Recommendation 1: Remove unused servers
+        self._recommend_remove_unused(all_servers)
+
+        # Recommendation 2: Flag underutilized servers
+        self._recommend_fix_underutilized()
+
+        # Recommendation 3: Highlight high-value servers
+        self._recommend_promote_high_value()
+
+        # Recommendation 4: Flag error-prone servers
+        self._recommend_fix_errors()
+
+        # Recommendation 5: Deduplicate configurations
+        self._recommend_deduplicate()
+
+        # Sort by priority (1=high, 3=low)
+        self.recommendations.sort(key=lambda r: r.priority)
+
+    def _recommend_remove_unused(self, all_servers: dict):
+        """Recommend removing servers that are configured but never used."""
+        for server_name, server_info in all_servers.items():
+            # Check if server has any usage
+            has_usage = any(
+                usage.server_name == server_name and usage.invocation_count > 0
+                for usage in self.aggregated_usage.values()
+            )
+
+            if not has_usage:
+                # Determine scope and priority
+                if server_name in self.global_servers:
+                    priority = 1  # High priority - global config affects all projects
+                    action = "Remove from ~/.claude.json (affects all projects)"
+                else:
+                    priority = 2  # Medium priority - project-specific
+                    action = f"Remove from {server_info.config_location}"
+
                 self.recommendations.append(
                     MCPUsageRecommendation(
                         server_name=server_name,
                         recommendation_type="remove_unused",
-                        reason=f"Server configured in project but never used",
-                        action=f"Remove from {server_info.config_location}",
-                        priority=2,  # Medium priority
+                        reason="Server configured but never invoked (wastes tokens on initialization)",
+                        action=action,
+                        priority=priority,
+                    )
+                )
+
+    def _recommend_fix_underutilized(self):
+        """Recommend fixing servers with poor utilization (loaded but rarely used)."""
+        for usage in self.aggregated_usage.values():
+            # Calculate utilization rate: invocations / estimated_sessions
+            # Rough heuristic: if server was used <20% of potential sessions, it's underutilized
+
+            # For now, flag servers with <5 invocations despite being configured
+            # (indicates it's loaded every session but rarely used)
+            if 0 < usage.invocation_count < 5:
+                # Check if it's global
+                if usage.server_name in self.global_servers:
+                    priority = 1  # High - affects all sessions
+                    action = "Consider moving to project-level config where actually needed"
+                else:
+                    priority = 2  # Medium
+                    action = "Review if server is still needed in this project"
+
+                self.recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=usage.server_name,
+                        recommendation_type="poor_utilization",
+                        reason=f"Loaded but rarely used ({usage.invocation_count} invocations)",
+                        action=action,
+                        priority=priority,
+                    )
+                )
+
+    def _recommend_promote_high_value(self):
+        """Highlight high-value servers that should be prioritized."""
+        # Calculate ROI for each server
+        server_roi = {}
+        for usage in self.aggregated_usage.values():
+            if usage.server_name not in server_roi:
+                server_roi[usage.server_name] = usage.roi_score
+
+        # Identify high-value servers (top 20% by ROI and >10 invocations)
+        high_value_threshold = 5.0  # ROI > 5 invocations per 1000 tokens
+
+        for server_name, roi in server_roi.items():
+            usage = next(
+                (u for u in self.aggregated_usage.values() if u.server_name == server_name),
+                None
+            )
+
+            if usage and roi > high_value_threshold and usage.invocation_count > 10:
+                self.recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=server_name,
+                        recommendation_type="high_value",
+                        reason=f"High value: {usage.invocation_count} calls, {usage.total_tokens//1000}K tokens, ROI: {roi:.1f}",
+                        action="Keep and prioritize in documentation",
+                        priority=3,  # Low priority (informational)
+                    )
+                )
+
+    def _recommend_fix_errors(self):
+        """Recommend fixing servers with high error rates."""
+        for usage in self.aggregated_usage.values():
+            if usage.error_count > 0 and usage.success_rate < 50:
+                # High error rate (>50% failures)
+                self.recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=usage.server_name,
+                        recommendation_type="fix_errors",
+                        reason=f"High error rate: {usage.success_rate:.0f}% success ({usage.error_count} failures)",
+                        action="Check server configuration and logs for issues",
+                        priority=1,  # High - broken functionality
+                    )
+                )
+
+    def _recommend_deduplicate(self):
+        """Recommend removing duplicate server configurations."""
+        # Find servers configured in both global and project configs
+        for server_name in self.global_servers:
+            if server_name in self.project_servers:
+                self.recommendations.append(
+                    MCPUsageRecommendation(
+                        server_name=server_name,
+                        recommendation_type="duplicate_config",
+                        reason="Configured in both global (~/.claude.json) and project configs",
+                        action="Remove project-level config (global config takes precedence)",
+                        priority=2,  # Medium - causes confusion
                     )
                 )
 
