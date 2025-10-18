@@ -23,7 +23,10 @@ def temp_data_dir():
 @pytest.fixture
 def meta_learner(temp_data_dir):
     """Create MetaLearner instance with temp data directory."""
-    return MetaLearner(data_dir=temp_data_dir)
+    return MetaLearner(
+        metrics_file=temp_data_dir / "metrics.jsonl",
+        thresholds_file=temp_data_dir / "thresholds.json"
+    )
 
 
 def test_track_suggestion_acceptance(meta_learner):
@@ -286,7 +289,10 @@ def test_suggestion_history_persistence(meta_learner, temp_data_dir):
     )
 
     # Create new meta-learner instance with same data dir
-    new_meta_learner = MetaLearner(data_dir=temp_data_dir)
+    new_meta_learner = MetaLearner(
+        metrics_file=temp_data_dir / "metrics.jsonl",
+        thresholds_file=temp_data_dir / "thresholds.json"
+    )
 
     # Should still have the suggestion
     rate = new_meta_learner.get_acceptance_rate("test")

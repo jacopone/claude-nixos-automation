@@ -24,7 +24,7 @@ def temp_projects_dir():
 @pytest.fixture
 def detector(temp_projects_dir):
     """Create ProjectArchetypeDetector instance."""
-    return ProjectArchetypeDetector(base_path=temp_projects_dir)
+    return ProjectArchetypeDetector()
 
 
 def create_project_structure(base_path: Path, name: str, archetype: str):
