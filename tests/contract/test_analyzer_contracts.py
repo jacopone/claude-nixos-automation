@@ -21,16 +21,16 @@ from claude_automation.analyzers.project_archetype_detector import (
 )
 from claude_automation.analyzers.workflow_detector import WorkflowDetector
 
-# Tier 1 Analyzers
+# Tier 1 Analyzers (logging/tracking)
 TIER1_ANALYZERS = [
     (ApprovalTracker, "ApprovalTracker"),
-    (PermissionPatternDetector, "PermissionPatternDetector"),
     (GlobalMCPAnalyzer, "GlobalMCPAnalyzer"),
     (ContextOptimizer, "ContextOptimizer"),
 ]
 
-# Tier 2 Analyzers
+# Tier 2 Analyzers (pattern detection)
 TIER2_ANALYZERS = [
+    (PermissionPatternDetector, "PermissionPatternDetector"),  # Moved from Tier 1
     (WorkflowDetector, "WorkflowDetector"),
     (InstructionEffectivenessTracker, "InstructionEffectivenessTracker"),
 ]
@@ -73,6 +73,7 @@ class TestAnalyzerContracts:
             "detect_violations",
             "detect_archetype",
             "get_health_metrics",
+            "get_stats",  # ApprovalTracker uses this
         ]
 
         has_analysis_method = any(method in methods for method in analysis_methods)
@@ -84,7 +85,7 @@ class TestAnalyzerContracts:
         methods = dir(analyzer_class)
 
         # Should have logging or tracking methods
-        logging_methods = ["log_approval", "log_access", "analyze_all_projects", "track"]
+        logging_methods = ["log_approval", "log_access", "log_section_access", "analyze_all_projects", "track"]
 
         has_logging = any(method in methods for method in logging_methods)
         assert has_logging, f"{name} missing logging capability"
