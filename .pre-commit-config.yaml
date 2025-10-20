@@ -29,4 +29,4 @@ repos:
         entry: python3 scripts/check-frontmatter.py
         language: system
         files: \.md$
-        exclude: ^CLAUDE\.md$
+        exclude: CLAUDE\.md$
