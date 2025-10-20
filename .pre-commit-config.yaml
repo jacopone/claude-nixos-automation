@@ -1,1 +1,25 @@
-/nix/store/ziwd931yj808yh4f99rd7iqsw3lmjq9x-pre-commit-config.json
+repos:
+  - repo: local
+    hooks:
+      - id: artifact-check
+        name: Artifact Protection
+        entry: bash
+        language: system
+        pass_filenames: false
+        args:
+          - -c
+          - |
+            for file in $(git diff --cached --name-only); do
+              if [ -f "$file" ] && head -10 "$file" 2>/dev/null | grep -q "AUTO-GENERATED"; then
+                echo "⚠️  WARNING: $file appears to be auto-generated"
+                exit 1
+              fi
+            done
+
+      - id: ruff
+        name: ruff
+        entry: ruff
+        language: system
+        types: [python]
+        exclude: '\.devenv/|result'
+        args: ['check', '--fix']
