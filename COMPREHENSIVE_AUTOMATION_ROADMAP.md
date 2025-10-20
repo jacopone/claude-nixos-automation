@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # 🚀 Comprehensive Claude Code Awareness Automation - Implementation Roadmap
 
 **Date**: 2025-10-07

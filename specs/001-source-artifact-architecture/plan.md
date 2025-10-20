@@ -1,3 +1,11 @@
+---
+status: active
+created: 2025-10-20
+updated: 2025-10-20
+type: planning
+lifecycle: persistent
+---
+
 # Implementation Plan: Self-Improving Claude Code System
 
 **Branch**: `001-source-artifact-architecture` | **Date**: 2025-10-17 | **Spec**: [spec.md](./spec.md)

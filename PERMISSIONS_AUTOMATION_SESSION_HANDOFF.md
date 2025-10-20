@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # 🔐 Permissions Automation Implementation - Session Handoff
 
 **Date**: 2025-10-06

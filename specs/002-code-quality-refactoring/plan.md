@@ -1,3 +1,11 @@
+---
+status: active
+created: 2025-10-20
+updated: 2025-10-20
+type: planning
+lifecycle: persistent
+---
+
 # Implementation Plan: Code Quality Refactoring
 
 **Branch**: `002-code-quality-refactoring` | **Date**: 2025-10-19 | **Spec**: [spec.md](./spec.md)

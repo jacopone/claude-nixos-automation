@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # Schema Domain Boundaries Contract
 
 **Version**: 1.0

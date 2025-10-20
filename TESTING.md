@@ -1,3 +1,11 @@
+---
+status: active
+created: 2024-01-01
+updated: 2025-10-20
+type: guide
+lifecycle: persistent
+---
+
 # Testing Documentation
 
 Comprehensive testing guide for claude-nixos-automation.

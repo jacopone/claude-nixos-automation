@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # Quickstart: Code Quality Refactoring Implementation
 
 **Target Audience**: Developer implementing the refactoring

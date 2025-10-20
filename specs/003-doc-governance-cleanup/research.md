@@ -1,3 +1,11 @@
+---
+status: active
+created: 2025-10-20
+updated: 2025-10-20
+type: planning
+lifecycle: persistent
+---
+
 # Research: Documentation Governance and Cleanup System
 
 **Feature**: Documentation Governance and Cleanup

@@ -1,3 +1,11 @@
+---
+status: active
+created: 2025-10-20
+updated: 2025-10-20
+type: planning
+lifecycle: persistent
+---
+
 # Implementation Plan: Documentation Governance and Cleanup System
 
 **Branch**: `003-doc-governance-cleanup` | **Date**: 2025-10-20 | **Spec**: [spec.md](./spec.md)

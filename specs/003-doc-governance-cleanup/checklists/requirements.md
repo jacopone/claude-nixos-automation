@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # Specification Quality Checklist: Documentation Governance and Cleanup System
 
 **Purpose**: Validate specification completeness and quality before proceeding to planning

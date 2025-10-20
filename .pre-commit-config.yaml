@@ -23,3 +23,10 @@ repos:
         types: [python]
         exclude: '\.devenv/|result'
         args: ['check', '--fix']
+
+      - id: check-markdown-frontmatter
+        name: Check Markdown Frontmatter
+        entry: python3 scripts/check-frontmatter.py
+        language: system
+        files: \.md$
+        exclude: ^CLAUDE\.md$

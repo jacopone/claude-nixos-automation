@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # CLAUDE.local.md - Machine-Specific Context
 
 > **⚠️ GITIGNORED FILE**: This file contains machine-specific notes and should NOT be committed to version control.

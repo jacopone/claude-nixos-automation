@@ -1,3 +1,11 @@
+---
+status: draft
+created: 2025-10-20
+updated: 2025-10-20
+type: reference
+lifecycle: persistent
+---
+
 # Data Model: Code Quality Refactoring
 
 **Phase**: 1 (Design & Contracts)
