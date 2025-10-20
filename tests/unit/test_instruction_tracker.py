@@ -5,14 +5,11 @@ Tests policy compliance monitoring and instruction effectiveness scoring.
 """
 
 import tempfile
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.instruction_tracker import (
-    InstructionEffectivenessTracker,
-)
+from claude_automation.analyzers import InstructionEffectivenessTracker
 
 
 @pytest.fixture

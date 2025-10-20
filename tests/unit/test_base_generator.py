@@ -4,11 +4,12 @@ Unit tests for BaseGenerator.
 Tests source/artifact protection and generation header functionality.
 """
 
-import pytest
-from pathlib import Path
 from datetime import datetime
+from pathlib import Path
 
-from claude_automation.generators.base_generator import BaseGenerator
+import pytest
+
+from claude_automation.generators import BaseGenerator
 from claude_automation.schemas import GenerationResult
 
 

@@ -6,18 +6,19 @@ Orchestrates permission learning, MCP optimization, context tuning, and meta-lea
 import logging
 from pathlib import Path
 
-from ..analyzers.approval_tracker import ApprovalTracker
-from ..analyzers.context_optimizer import ContextOptimizer, ContextUsageTracker
-from ..analyzers.global_mcp_analyzer import GlobalMCPAnalyzer
-from ..analyzers.instruction_tracker import InstructionEffectivenessTracker
-from ..analyzers.meta_learner import MetaLearner
-from ..analyzers.permission_pattern_detector import PermissionPatternDetector
-from ..analyzers.project_archetype_detector import ProjectArchetypeDetector
-from ..analyzers.workflow_detector import WorkflowDetector
-from ..generators.intelligent_permissions_generator import (
-    IntelligentPermissionsGenerator,
+from claude_automation.analyzers import (
+    ApprovalTracker,
+    ContextOptimizer,
+    ContextUsageTracker,
+    GlobalMCPAnalyzer,
+    InstructionEffectivenessTracker,
+    MetaLearner,
+    PermissionPatternDetector,
+    ProjectArchetypeDetector,
+    WorkflowDetector,
 )
-from ..schemas import AdaptiveSystemConfig, LearningReport
+from claude_automation.generators import IntelligentPermissionsGenerator
+from claude_automation.schemas import AdaptiveSystemConfig, LearningReport
 
 logger = logging.getLogger(__name__)
 
@@ -451,24 +452,111 @@ class AdaptiveSystemEngine:
 
         try:
             for i, sug in enumerate(all_suggestions, 1):
-                print(f"\n[{i}/{len(all_suggestions)}] {sug['type'].upper()}: {sug['description']}")
+                print(f"\n{'='*70}")
+                print(f"[{i}/{len(all_suggestions)}] {sug['type'].upper()}: {sug['description']}")
+                print(f"{'='*70}")
 
-                # Show details based on type
+                # Show details based on type with FULL transparency
                 if sug['type'] == 'mcp':
                     server = sug['data'].get('server_name', 'Unknown')
                     impact = sug['data'].get('impact', 'No details')
-                    print(f"  Server: {server}")
-                    print(f"  Impact: {impact}")
+                    priority = sug['data'].get('priority', 'MEDIUM')
+
+                    print(f"\n📦 Server: {server}")
+                    print(f"⚡ Priority: {priority}")
+                    print(f"💡 Recommendation: {impact}")
+
+                    # Show what will be changed
+                    print("\n📝 What will change:")
+                    print("   • File: .claude/mcp.json (project-level MCP config)")
+
+                    if 'never used' in impact.lower() or 'remove' in impact.lower():
+                        print(f"   • Action: Remove '{server}' server entry from config")
+                        print("   • Result: Server won't load in future sessions")
+                    elif 'move' in impact.lower() or 'project-level' in impact.lower():
+                        print("   • Action: Remove from ~/.claude.json (global config)")
+                        print("   • Action: Add to .claude/mcp.json (project-specific)")
+                        print("   • Result: Server only loads in relevant projects")
+                    else:
+                        print(f"   • Action: {impact}")
+
+                    print("\n⚠️  Consequences:")
+                    print(f"   • MCP server '{server}' will not be available")
+                    print("   • Any tools provided by this server will be unavailable")
+                    print("   • You can manually re-add it later if needed")
+
+                    print("\n🔄 How to undo:")
+                    print("   • Manual: Edit .claude/mcp.json and restore the server")
+                    print("   • Git: git restore .claude/mcp.json (if changes committed)")
+
                 elif sug['type'] == 'permission':
                     examples = sug['data'].get('examples', [])
+                    description = sug['data'].get('description', 'Unknown pattern')
+
+                    print(f"\n🔐 Pattern detected: {description}")
+                    print("\n📝 What will change:")
+                    print("   • File: .claude/settings.local.json (security permissions)")
+                    print("   • Action: Add auto-approval rule for this pattern")
+
                     if examples:
-                        print(f"  Examples: {', '.join(examples[:2])}")
+                        print("\n📋 Based on these approvals:")
+                        for ex in examples[:3]:
+                            print(f"   • {ex}")
+
+                    print("\n⚠️  Consequences:")
+                    print("   • Claude Code won't ask permission for this pattern")
+                    print("   • Saves time on repetitive approvals")
+                    print("   • Security: Only approve if you trust this pattern")
+
+                    print("\n🔄 How to undo:")
+                    print("   • Edit .claude/settings.local.json")
+                    print("   • Remove the corresponding allow pattern")
+
                 elif sug['type'] == 'context':
                     tokens = sug['data'].get('tokens', 0)
-                    print(f"  Token savings: ~{tokens}K")
+                    section = sug['data'].get('description', 'Unknown section')
+                    reason = sug['data'].get('reason', 'Not specified')
 
+                    print(f"\n📄 Section: {section}")
+                    print(f"💾 Token savings: ~{tokens}K tokens")
+                    print(f"📊 Reason: {reason}")
+
+                    print("\n📝 What will change:")
+                    print("   • File: CLAUDE.md or .claude/CLAUDE.md")
+                    print(f"   • Action: Remove or condense '{section}' section")
+
+                    print("\n⚠️  Consequences:")
+                    print("   • Claude Code won't see this context anymore")
+                    print("   • Faster responses (less context to process)")
+                    print("   • Only approve if section is truly unused")
+
+                    print("\n🔄 How to undo:")
+                    print("   • Git: git restore CLAUDE.md")
+                    print("   • Manual: Re-add the section to CLAUDE.md")
+
+                elif sug['type'] == 'workflow':
+                    commands = sug['data'].get('commands', [])
+                    occurrences = sug['data'].get('occurrences', 0)
+
+                    print(f"\n🔄 Repeated {occurrences} times")
+                    print("📋 Command sequence:")
+                    for cmd in commands:
+                        print(f"   • {cmd}")
+
+                    print("\n📝 What will change:")
+                    print("   • File: .claude/commands/<new-command>.md")
+                    print("   • Action: Create slash command combining these steps")
+
+                    print("\n✅ Benefits:")
+                    print(f"   • Single command instead of {len(commands)} separate steps")
+                    print("   • Faster workflow execution")
+
+                    print("\n🔄 How to undo:")
+                    print("   • Delete the .claude/commands/<new-command>.md file")
+
+                print(f"\n{'─'*70}")
                 while True:
-                    choice = input("\nApply? [y/n/a/s/q]: ").lower().strip()
+                    choice = input("\n👉 Apply this change? [y/n/a/s/q]: ").lower().strip()
 
                     if choice == 'y':
                         approved.append(sug)
@@ -514,6 +602,42 @@ class AdaptiveSystemEngine:
         """
         if not approved:
             logger.info("No approved suggestions to apply")
+            return
+
+        # Show confirmation summary before applying
+        print("\n" + "="*70)
+        print("📋 FINAL CONFIRMATION - Changes to be applied:")
+        print("="*70)
+
+        for i, sug in enumerate(approved, 1):
+            sug_type = sug['type']
+            data = sug['data']
+
+            if sug_type == 'mcp':
+                server = data.get('server_name', 'Unknown')
+                print(f"\n{i}. MCP: Remove server '{server}'")
+                print("   File: .claude/mcp.json")
+            elif sug_type == 'permission':
+                desc = data.get('description', 'Unknown pattern')
+                print(f"\n{i}. Permission: Auto-approve '{desc}'")
+                print("   File: .claude/settings.local.json")
+            elif sug_type == 'context':
+                section = data.get('description', 'Unknown section')
+                print(f"\n{i}. Context: Remove '{section}'")
+                print("   File: CLAUDE.md")
+            elif sug_type == 'workflow':
+                desc = data.get('description', 'Unknown workflow')
+                print(f"\n{i}. Workflow: Create slash command for '{desc}'")
+                print("   File: .claude/commands/<new>.md")
+
+        print("\n" + "─"*70)
+        try:
+            confirm = input("\n👉 Proceed with these changes? [y/N]: ").lower().strip()
+            if confirm != 'y':
+                print("\n⚠️  Changes cancelled. No modifications made.")
+                return
+        except (KeyboardInterrupt, EOFError):
+            print("\n\n⚠️  Changes cancelled by user. No modifications made.")
             return
 
         print(f"\n🔧 Applying {len(approved)} approved improvements...")

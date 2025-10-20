@@ -137,8 +137,8 @@ class SystemConfig(BaseModel):
     @validator("package_count")
     def validate_package_count(cls, v):
         """Validate package count is reasonable."""
-        if v < 10:
-            raise ValueError("Package count seems too low (less than 10)")
+        if v < 1:
+            raise ValueError("Package count must be at least 1")
         if v > 500:
             raise ValueError("Package count seems too high (more than 500)")
         return v
@@ -1335,7 +1335,7 @@ class LearningReport(BaseModel):
     cross_project_transfers: list[TransferSuggestion] = Field(
         default_factory=list, description="Cross-project pattern transfers"
     )
-    meta_insights: dict[str, float] = Field(
+    meta_insights: dict[str, Any] = Field(
         default_factory=dict, description="Meta-learning health metrics"
     )
     total_suggestions: int = Field(

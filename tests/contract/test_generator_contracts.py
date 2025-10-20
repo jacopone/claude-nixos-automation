@@ -6,12 +6,12 @@ Verifies all generators conform to BaseGenerator contract.
 
 import pytest
 
-from claude_automation.generators.base_generator import BaseGenerator
-from claude_automation.generators.intelligent_permissions_generator import (
+from claude_automation.generators import (
+    BaseGenerator,
     IntelligentPermissionsGenerator,
+    PermissionsGenerator,
+    SystemGenerator,
 )
-from claude_automation.generators.permissions_generator import PermissionsGenerator
-from claude_automation.generators.system_generator import SystemGenerator
 
 ALL_GENERATORS = [
     (SystemGenerator, "SystemGenerator"),
@@ -87,7 +87,7 @@ class TestSystemGeneratorContract:
 
         # Should include core config files
         assert any("packages.nix" in str(s) for s in sources)
-        assert any("fish_config.nix" in str(s) for s in sources)
+        assert any("base.nix" in str(s) for s in sources)
 
     def test_system_generator_artifacts(self):
         """Test T108: SystemGenerator declares correct artifacts."""

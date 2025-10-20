@@ -9,9 +9,7 @@ from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.project_archetype_detector import (
-    ProjectArchetypeDetector,
-)
+from claude_automation.analyzers import ProjectArchetypeDetector
 
 
 @pytest.fixture
@@ -152,7 +150,7 @@ def test_pattern_transfer_mcp_servers(detector, temp_projects_dir):
 
     # Should find MCP server to transfer
     mcp_opportunities = [
-        opp for opp in opportunities if opp.pattern_type == "mcp_server"
+        opp for opp in opportunities if opp.pattern.pattern_type == "mcp_server"
     ]
     assert len(mcp_opportunities) > 0
 
@@ -242,9 +240,14 @@ def test_archetype_characteristics(detector, temp_projects_dir):
 def test_find_similar_projects(detector, temp_projects_dir):
     """Test finding similar projects by archetype."""
     # Create projects with different archetypes
-    create_project_structure(temp_projects_dir, "py1", "python-pytest")
-    create_project_structure(temp_projects_dir, "py2", "python-pytest")
-    create_project_structure(temp_projects_dir, "ts1", "typescript-vitest")
+    py1 = create_project_structure(temp_projects_dir, "py1", "python-pytest")
+    py2 = create_project_structure(temp_projects_dir, "py2", "python-pytest")
+    ts1 = create_project_structure(temp_projects_dir, "ts1", "typescript-vitest")
+
+    # Add patterns to Python projects so they get learned
+    (py1 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(pytest:*)"]}')
+    (py2 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(ruff:*)"]}')
+    (ts1 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(vitest:*)"]}')
 
     # Build knowledge base
     detector.build_knowledge_base(list(temp_projects_dir.iterdir()))

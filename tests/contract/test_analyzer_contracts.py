@@ -6,20 +6,16 @@ Verifies all analyzers conform to the expected interface contracts.
 
 import pytest
 
-from claude_automation.analyzers.approval_tracker import ApprovalTracker
-from claude_automation.analyzers.context_optimizer import ContextOptimizer
-from claude_automation.analyzers.global_mcp_analyzer import GlobalMCPAnalyzer
-from claude_automation.analyzers.instruction_tracker import (
+from claude_automation.analyzers import (
+    ApprovalTracker,
+    ContextOptimizer,
+    GlobalMCPAnalyzer,
     InstructionEffectivenessTracker,
-)
-from claude_automation.analyzers.meta_learner import MetaLearner
-from claude_automation.analyzers.permission_pattern_detector import (
+    MetaLearner,
     PermissionPatternDetector,
-)
-from claude_automation.analyzers.project_archetype_detector import (
     ProjectArchetypeDetector,
+    WorkflowDetector,
 )
-from claude_automation.analyzers.workflow_detector import WorkflowDetector
 
 # Tier 1 Analyzers (logging/tracking)
 TIER1_ANALYZERS = [
@@ -223,6 +219,7 @@ class TestInstructionTrackerContract:
 
     def test_can_get_effectiveness_score(self):
         """Test T107: InstructionEffectivenessTracker.get_effectiveness_score() works."""
+        from claude_automation.schemas import InstructionEffectiveness
         tracker = InstructionEffectivenessTracker()
 
         # Log a session first
@@ -232,9 +229,11 @@ class TestInstructionTrackerContract:
             compliant=True,
         )
 
-        # Should return a score
-        score = tracker.get_effectiveness_score("test-policy", total_sessions=10)
-        assert isinstance(score, (int, float))
+        # Should return an InstructionEffectiveness object
+        result = tracker.get_effectiveness_score("test-policy", total_sessions=10)
+        assert isinstance(result, InstructionEffectiveness)
+        assert hasattr(result, "effectiveness_score")
+        assert isinstance(result.effectiveness_score, (int, float))
 
 
 class TestProjectArchetypeDetectorContract:

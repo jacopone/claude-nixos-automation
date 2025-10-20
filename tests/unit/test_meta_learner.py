@@ -10,7 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.meta_learner import MetaLearner
+from claude_automation.analyzers import MetaLearner
 
 
 @pytest.fixture

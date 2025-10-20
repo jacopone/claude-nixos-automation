@@ -5,12 +5,12 @@ Tests workflow pattern detection from slash command sequences.
 """
 
 import tempfile
-from datetime import datetime, timedelta
+from datetime import datetime
 from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.workflow_detector import WorkflowDetector
+from claude_automation.analyzers import WorkflowDetector
 
 
 @pytest.fixture

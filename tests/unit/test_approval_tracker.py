@@ -6,12 +6,12 @@ Tests the permission approval logging and retrieval functionality.
 
 import json
 import tempfile
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.approval_tracker import ApprovalTracker
+from claude_automation.analyzers import ApprovalTracker
 from claude_automation.schemas import PermissionApprovalEntry
 
 
@@ -141,7 +141,7 @@ class TestApprovalRetrieval:
 
         # Old approval (manually create old entry)
         old_entry = PermissionApprovalEntry(
-            timestamp=datetime.now(timezone.utc) - timedelta(days=35),
+            timestamp=datetime.now(UTC) - timedelta(days=35),
             permission=permission,
             session_id=session_id,
             project_path=project_path,
@@ -298,7 +298,7 @@ class TestApprovalMaintenance:
 
         # Create old entry (100 days ago)
         old_entry = PermissionApprovalEntry(
-            timestamp=datetime.now(timezone.utc) - timedelta(days=100),
+            timestamp=datetime.now(UTC) - timedelta(days=100),
             permission=permission,
             session_id=session_id,
             project_path=project_path,

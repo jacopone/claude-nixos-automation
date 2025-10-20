@@ -4,10 +4,10 @@ Integration test for source/artifact protection.
 Tests end-to-end protection of source files from being overwritten.
 """
 
-import pytest
-from pathlib import Path
 
-from claude_automation.generators.system_generator import SystemGenerator
+import pytest
+
+from claude_automation.generators import SystemGenerator
 
 
 class TestSourceArtifactProtection:

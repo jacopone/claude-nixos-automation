@@ -32,7 +32,17 @@ def jinja_env():
         }
         return icons.get(status_value, "?")
 
+    def priority_label(priority_num):
+        """Convert priority number to label."""
+        labels = {
+            1: "HIGH PRIORITY",
+            2: "MEDIUM PRIORITY",
+            3: "LOW PRIORITY",
+        }
+        return labels.get(priority_num, "PRIORITY")
+
     env.filters["status_icon"] = status_icon
+    env.filters["priority_label"] = priority_label
     return env
 
 

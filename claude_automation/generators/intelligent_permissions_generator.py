@@ -7,8 +7,8 @@ import json
 import logging
 from pathlib import Path
 
-from ..analyzers.approval_tracker import ApprovalTracker
-from ..analyzers.permission_pattern_detector import PermissionPatternDetector
+from claude_automation.analyzers import ApprovalTracker, PermissionPatternDetector
+
 from ..schemas import GenerationResult, PatternSuggestion
 from .permissions_generator import PermissionsGenerator
 
@@ -253,18 +253,18 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
             print(f"\n📊 Confidence: {pattern.confidence_percentage}%")
 
             # Show examples from user's history
-            print(f"\n📋 Based on your recent approvals:")
+            print("\n📋 Based on your recent approvals:")
             for ex in pattern.approved_examples[:5]:
                 print(f"  ✓ {ex}")
 
             # Show what would be auto-allowed
-            print(f"\n✅ This would automatically allow:")
+            print("\n✅ This would automatically allow:")
             for item in pattern.would_allow[:5]:
                 print(f"  • {item}")
 
             # Show what would still ask
             if pattern.would_still_ask:
-                print(f"\n❓ Would still ask for:")
+                print("\n❓ Would still ask for:")
                 for item in pattern.would_still_ask[:3]:
                     print(f"  • {item}")
 

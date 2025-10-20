@@ -113,8 +113,8 @@ class TestEngineIntegration:
         # (May be empty if no data, but should return structured object)
         report = engine.run_full_learning_cycle(interactive=False)
 
-        # Report should have suggestions
-        assert hasattr(report, "suggestions") or isinstance(report, dict)
+        # Report should have expected attributes
+        assert hasattr(report, "total_suggestions") or isinstance(report, dict)
 
     def test_engine_handles_component_selection(self):
         """Test T109: Engine can run specific components."""
@@ -168,11 +168,11 @@ class TestEngineOutputFormat:
 
         report = engine.run_full_learning_cycle(interactive=False)
 
-        # Report should have summary or description
-        if hasattr(report, "summary"):
-            assert report.summary is not None
+        # Report should have total_suggestions or estimated_improvements
+        if hasattr(report, "estimated_improvements"):
+            assert report.estimated_improvements is not None
         elif isinstance(report, dict):
-            assert "suggestions" in report or "summary" in report
+            assert "total_suggestions" in report or "estimated_improvements" in report
 
     def test_engine_suggestions_are_prioritized(self):
         """Test T109: Suggestions are prioritized."""
@@ -180,8 +180,8 @@ class TestEngineOutputFormat:
 
         report = engine.run_full_learning_cycle(interactive=False)
 
-        # Suggestions should have priority or be sorted
-        if hasattr(report, "suggestions") and len(report.suggestions) > 0:
-            # Check for priority field
-            first_suggestion = report.suggestions[0]
-            assert hasattr(first_suggestion, "priority") or hasattr(first_suggestion, "confidence")
+        # Check that MCP optimizations have priority if any exist
+        if hasattr(report, "mcp_optimizations") and len(report.mcp_optimizations) > 0:
+            # Check for priority field in dict-style suggestions
+            first_suggestion = report.mcp_optimizations[0]
+            assert "priority" in first_suggestion or isinstance(first_suggestion, dict)

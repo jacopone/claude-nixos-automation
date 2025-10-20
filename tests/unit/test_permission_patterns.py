@@ -10,10 +10,7 @@ from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.approval_tracker import ApprovalTracker
-from claude_automation.analyzers.permission_pattern_detector import (
-    PermissionPatternDetector,
-)
+from claude_automation.analyzers import ApprovalTracker, PermissionPatternDetector
 from claude_automation.schemas import PermissionApprovalEntry
 
 
