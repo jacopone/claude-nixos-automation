@@ -7,11 +7,12 @@ Handles permissions, analytics, slash commands, and directory-specific configura
 from datetime import datetime
 from enum import Enum
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, Any
 
 from pydantic import BaseModel, Field, validator
 
-from claude_automation.schemas import ProjectType
+if TYPE_CHECKING:
+    from claude_automation.schemas.core import ProjectType
 
 
 class CommandCategory(str, Enum):
@@ -94,7 +95,7 @@ class PermissionsConfig(BaseModel):
     """Configuration for permissions generation."""
 
     project_path: Path = Field(..., description="Project root directory")
-    project_type: ProjectType = Field(..., description="Detected project type")
+    project_type: "ProjectType" = Field(..., description="Detected project type")
     usage_patterns: list[UsagePattern] = Field(default_factory=list)
     existing_hooks: dict[str, Any] | None = Field(None)
     quality_tools: list[str] = Field(default_factory=list)
@@ -178,7 +179,7 @@ class SlashCommandsConfig(BaseModel):
     commands_dir: Path = Field(
         ..., description="Commands directory (~/.claude/commands)"
     )
-    project_type: ProjectType = Field(..., description="Project type")
+    project_type: "ProjectType" = Field(..., description="Project type")
     commands: list[SlashCommand] = Field(
         default_factory=list, description="Commands to generate"
     )
@@ -299,3 +300,16 @@ class GenerationResult(BaseModel):
     def has_warnings(self) -> bool:
         """Check if there were any warnings."""
         return len(self.warnings) > 0
+
+
+# Rebuild models with forward references after all imports are complete
+def _rebuild_models():
+    """Rebuild Pydantic models that use forward references."""
+    from claude_automation.schemas.core import ProjectType  # noqa: F401
+
+    PermissionsConfig.model_rebuild()
+    SlashCommandsConfig.model_rebuild()
+
+
+# Call rebuild when module is imported
+_rebuild_models()

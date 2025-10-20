@@ -53,24 +53,28 @@ class TestEngineContract:
         assert hasattr(engine, "_analyze_meta_learning")
 
     def test_engine_has_report_methods(self):
-        """Test T109: Engine has report building and presentation methods."""
+        """Test T109: Engine has report building methods."""
         engine = AdaptiveSystemEngine()
 
         assert hasattr(engine, "_build_report")
-        assert hasattr(engine, "_present_report")
+        # Note: _present_report extracted to InteractiveApprovalUI.present_report()
+        assert hasattr(engine, "ui")
 
     def test_engine_has_approval_methods(self):
-        """Test T109: Engine has approval collection methods."""
+        """Test T109: Engine has UI component for approval collection."""
         engine = AdaptiveSystemEngine()
 
-        assert hasattr(engine, "_collect_approvals")
+        # Note: _collect_approvals extracted to InteractiveApprovalUI.collect_approvals()
+        assert hasattr(engine, "ui")
+        assert hasattr(engine.ui, "collect_approvals")
 
     def test_engine_has_application_methods(self):
-        """Test T109: Engine has improvement application methods."""
+        """Test T109: Engine has applicator component for improvements."""
         engine = AdaptiveSystemEngine()
 
-        assert hasattr(engine, "_apply_improvements")
-        assert hasattr(engine, "_update_meta_learning")
+        # Note: _apply_improvements and _update_meta_learning extracted to ImprovementApplicator
+        assert hasattr(engine, "applicator")
+        assert hasattr(engine.applicator, "apply_improvements")
 
 
 class TestEngineLearningCycle:
@@ -133,8 +137,9 @@ class TestEngineIntegration:
         """Test T109: Engine updates meta-learning with results."""
         engine = AdaptiveSystemEngine()
 
-        # Should have method to update meta-learning
-        assert hasattr(engine, "_update_meta_learning")
+        # Note: _update_meta_learning extracted to ImprovementApplicator.update_meta_learning()
+        assert hasattr(engine, "applicator")
+        assert hasattr(engine.applicator, "update_meta_learning")
 
 
 class TestEngineErrorHandling:

@@ -186,8 +186,8 @@ Developers need to understand and modify the AdaptiveSystemEngine without gettin
 
 ## Success Metrics
 
-- Lines of code in largest schema file: Target <300 (from 1,455)
+- Lines of code in largest schema file: Target <300 lines including docstrings and comments (from 1,455)
 - Test pass rate: Target 86%+ (from 77%)
 - Import statement length: Target <60 chars (from potential >80 with deep paths)
-- AdaptiveSystemEngine complexity: Target <500 lines (from 608)
+- AdaptiveSystemEngine complexity: Target <500 lines including docstrings and comments (from 608)
 - Time to locate a schema: Target <10 seconds (from ~30 seconds)
