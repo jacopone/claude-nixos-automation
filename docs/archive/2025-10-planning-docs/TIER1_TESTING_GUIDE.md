@@ -1,15 +1,20 @@
 ---
-status: active
+status: archived
 created: 2025-10-17
 updated: 2025-10-20
+archived: 2025-10-20
 type: guide
-lifecycle: persistent
+lifecycle: ephemeral
+superseded_by: TESTING.md
 ---
 
 # Tier 1 Components - Testing Guide
 
+> **ARCHIVED**: Content merged into TESTING.md (Tier 1 Learning Components section)
+> See [TESTING.md](../../TESTING.md#tier-1-learning-components) for current testing instructions.
+
 **Date**: 2025-10-17
-**Status**: ✅ All Tier 1 components implemented and tested
+**Final Status**: ✅ All Tier 1 components implemented and tested - Merged into TESTING.md
 
 ---
 

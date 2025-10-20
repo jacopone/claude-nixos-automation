@@ -520,3 +520,51 @@ Run tests before every commit:
 ```bash
 nix develop --command pytest -v
 ```
+
+---
+
+## Tier 1 Learning Components
+
+Additional tests for the adaptive learning system (Phases 3-5).
+
+### Components
+
+1. **Permission Learning** - `approval_tracker.py`, `permission_pattern_detector.py`
+2. **Global MCP Optimization** - `global_mcp_analyzer.py`
+3. **Context Optimization** - `context_optimizer.py`
+
+### Test Files
+
+| Component | Test Files | Test Cases |
+|-----------|------------|------------|
+| Permission Learning | `tests/unit/test_approval_tracker.py`<br>`tests/unit/test_permission_patterns.py`<br>`tests/integration/test_learning_cycle.py` | 17<br>24<br>8 |
+| MCP Optimization | `tests/unit/test_global_mcp_analyzer.py`<br>`tests/integration/test_cross_project.py` | 13<br>7 |
+| Context Optimization | `tests/unit/test_context_optimizer.py` | 19 |
+| **TOTAL** | **6 test files** | **88 tests** |
+
+### Running Tier 1 Tests
+
+```bash
+# All Tier 1 tests
+pytest tests/unit/test_approval_tracker.py tests/unit/test_permission_patterns.py -v
+pytest tests/unit/test_global_mcp_analyzer.py tests/unit/test_context_optimizer.py -v
+pytest tests/integration/test_learning_cycle.py tests/integration/test_cross_project.py -v
+
+# Or run all together
+pytest tests/unit/test_*_{approval,permission,mcp,context}*.py -v
+```
+
+### Prerequisites
+
+Requires `pydantic` (available in devenv):
+
+```bash
+devenv shell
+pytest tests/unit/test_approval_tracker.py -v
+```
+
+Or use `uv`:
+
+```bash
+uv run python -m pytest tests/unit/test_approval_tracker.py -v
+```
