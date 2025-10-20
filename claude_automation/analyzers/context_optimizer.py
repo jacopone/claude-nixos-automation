@@ -13,6 +13,7 @@ from ..schemas import (
     ContextOptimization,
     SectionUsage,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
@@ -37,6 +38,11 @@ class ContextUsageTracker:
 
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "analyze"
 
     def log_access(
         self,
@@ -176,7 +182,7 @@ class ContextUsageTracker:
         }
 
 
-class ContextOptimizer:
+class ContextOptimizer(BaseAnalyzer):
     """
     Optimizes CLAUDE.md based on usage patterns.
 
@@ -195,6 +201,8 @@ class ContextOptimizer:
             log_file: Path to context access log (JSONL format)
             usage_tracker: ContextUsageTracker instance (optional, for compatibility)
         """
+        super().__init__()
+
         # Support both interfaces for backwards compatibility
         if usage_tracker is not None:
             self.usage_tracker = usage_tracker
@@ -205,6 +213,10 @@ class ContextOptimizer:
             self.log_file = log_file
             self.log_file.parent.mkdir(parents=True, exist_ok=True)
             self.usage_tracker = ContextUsageTracker(log_file)
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "analyze"
 
     def log_section_access(
         self,

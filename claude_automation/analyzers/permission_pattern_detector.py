@@ -17,11 +17,12 @@ from ..schemas import (
     PermissionPattern,
 )
 from .approval_tracker import ApprovalTracker
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class PermissionPatternDetector:
+class PermissionPatternDetector(BaseAnalyzer):
     """
     Detects patterns in permission approval history.
 
@@ -84,7 +85,7 @@ class PermissionPatternDetector:
 
     def __init__(
         self,
-        approval_tracker: ApprovalTracker,
+        approval_tracker: ApprovalTracker | None = None,
         min_occurrences: int = 3,
         confidence_threshold: float = 0.7,
     ):
@@ -92,13 +93,18 @@ class PermissionPatternDetector:
         Initialize pattern detector.
 
         Args:
-            approval_tracker: ApprovalTracker instance
+            approval_tracker: ApprovalTracker instance (creates new if None)
             min_occurrences: Minimum occurrences for pattern detection
             confidence_threshold: Minimum confidence for suggestions (0-1)
         """
-        self.tracker = approval_tracker
+        super().__init__()
+        self.tracker = approval_tracker or ApprovalTracker()
         self.min_occurrences = min_occurrences
         self.confidence_threshold = confidence_threshold
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "detect_patterns"
 
     def detect_patterns(
         self, days: int = 30, project_path: str | None = None

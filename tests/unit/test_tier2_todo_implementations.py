@@ -12,8 +12,7 @@ from unittest.mock import patch
 
 import pytest
 
-from claude_automation.analyzers.context_optimizer import ContextOptimizer
-from claude_automation.analyzers.global_mcp_analyzer import GlobalMCPAnalyzer
+from claude_automation.analyzers import ContextOptimizer, GlobalMCPAnalyzer
 from claude_automation.schemas import (
     ContextAccessLog,
     MCPServerInfo,
@@ -31,8 +30,9 @@ class TestGlobalMCPAnalyzerRecommendations:
         # Create analyzer
         analyzer = GlobalMCPAnalyzer(home_dir=tmp_path, analysis_period_days=30)
 
-        # Add some test data
-        analyzer.global_servers = {
+        # Add some test data - use project_servers not global_servers
+        # (global servers are intentionally skipped as they may be used in other projects)
+        analyzer.project_servers = {
             "unused-server": MCPServerInfo(
                 name="unused-server",
                 type=MCPServerType.UNKNOWN,
@@ -41,7 +41,7 @@ class TestGlobalMCPAnalyzerRecommendations:
                 status=MCPServerStatus.UNKNOWN,
                 description="Test",
                 is_configured=True,
-                config_location="global",
+                config_location="project",
             )
         }
 
@@ -60,30 +60,31 @@ class TestGlobalMCPAnalyzerRecommendations:
         analyzer = GlobalMCPAnalyzer(home_dir=tmp_path, analysis_period_days=30)
 
         # Setup data to trigger all recommendation types
-        analyzer.global_servers = {
+        # Use project_servers for unused/error-prone (global servers are skipped for unused detection)
+        analyzer.project_servers = {
             "unused": MCPServerInfo(
                 name="unused", type=MCPServerType.UNKNOWN, command="test", args=[],
                 status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
-                config_location="global",
+                config_location="project",
             ),
             "error-prone": MCPServerInfo(
                 name="error-prone", type=MCPServerType.UNKNOWN, command="test", args=[],
                 status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
-                config_location="global",
+                config_location="project",
             ),
-            "duplicate": MCPServerInfo(
-                name="duplicate", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
-                config_location="global",
-            ),
-        }
-
-        analyzer.project_servers = {
             "duplicate": MCPServerInfo(  # Same as global - will trigger duplicate warning
                 name="duplicate", type=MCPServerType.UNKNOWN, command="test", args=[],
                 status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
                 config_location="project",
             )
+        }
+
+        analyzer.global_servers = {
+            "duplicate": MCPServerInfo(
+                name="duplicate", type=MCPServerType.UNKNOWN, command="test", args=[],
+                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                config_location="global",
+            ),
         }
 
         analyzer.aggregated_usage = {
@@ -127,11 +128,12 @@ class TestGlobalMCPAnalyzerRecommendations:
         analyzer = GlobalMCPAnalyzer(home_dir=tmp_path, analysis_period_days=30)
 
         # Add data that will generate different priorities
-        analyzer.global_servers = {
+        # Use project_servers (global servers are skipped for unused detection)
+        analyzer.project_servers = {
             "unused": MCPServerInfo(
                 name="unused", type=MCPServerType.UNKNOWN, command="test", args=[],
                 status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
-                config_location="global",
+                config_location="project",
             )
         }
 

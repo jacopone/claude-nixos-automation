@@ -16,11 +16,12 @@ from ..schemas import (
     MCPToolUsage,
     MCPUsageRecommendation,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class GlobalMCPAnalyzer:
+class GlobalMCPAnalyzer(BaseAnalyzer):
     """
     Analyzes MCP usage across ALL projects system-wide.
 
@@ -90,6 +91,11 @@ class GlobalMCPAnalyzer:
 
         # Ensure file exists and is readable
         return mcp_config_path.exists() and mcp_config_path.is_file()
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "analyze_all_projects"
 
     def analyze_all_projects(self) -> GlobalMCPReport:
         """

@@ -13,11 +13,12 @@ from ..schemas import (
     LearningMetrics,
     ThresholdAdjustment,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class MetaLearner:
+class MetaLearner(BaseAnalyzer):
     """
     Meta-learning layer for system self-calibration.
 
@@ -61,6 +62,11 @@ class MetaLearner:
 
         # Load current thresholds
         self.thresholds = self._load_thresholds()
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "get_health_metrics"
 
     def _load_thresholds(self) -> dict:
         """

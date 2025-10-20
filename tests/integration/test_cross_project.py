@@ -6,19 +6,9 @@ Tests end-to-end scenarios across multiple projects.
 
 import json
 import tempfile
-from datetime import datetime, timedelta
 from pathlib import Path
 
-import pytest
-
-from claude_automation.analyzers.global_mcp_analyzer import GlobalMCPAnalyzer
-from claude_automation.schemas import (
-    GlobalMCPReport,
-    MCPServerInfo,
-    MCPServerStatus,
-    MCPServerType,
-    MCPToolUsage,
-)
+from claude_automation.analyzers import GlobalMCPAnalyzer
 
 
 class TestCrossProjectMCPAnalysis:

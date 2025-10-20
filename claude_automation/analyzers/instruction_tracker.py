@@ -13,11 +13,12 @@ from ..schemas import (
     InstructionImprovement,
     PolicyViolation,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class InstructionEffectivenessTracker:
+class InstructionEffectivenessTracker(BaseAnalyzer):
     """
     Tracks effectiveness of CLAUDE.md instructions.
 
@@ -39,6 +40,11 @@ class InstructionEffectivenessTracker:
 
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "suggest_improvements"
 
     def log_session(
         self,
@@ -128,14 +134,14 @@ class InstructionEffectivenessTracker:
         """
         violations = self.get_recent_violations(days, policy_name)
 
-        # Calculate compliant sessions
-        compliant_sessions = total_sessions - len(violations)
+        # Calculate compliant sessions (ensure non-negative)
+        compliant_sessions = max(0, total_sessions - len(violations))
 
         # Calculate effectiveness score
         if total_sessions == 0:
             effectiveness_score = 1.0  # No sessions = no violations
         else:
-            effectiveness_score = compliant_sessions / total_sessions
+            effectiveness_score = max(0.0, compliant_sessions / total_sessions)
 
         return InstructionEffectiveness(
             policy_name=policy_name,

@@ -3,6 +3,7 @@ Analyzers for project analysis and detection.
 """
 
 from .approval_tracker import ApprovalTracker
+from .base_analyzer import BaseAnalyzer
 from .context_optimizer import ContextOptimizer, ContextUsageTracker
 from .directory_analyzer import DirectoryAnalyzer
 from .global_mcp_analyzer import GlobalMCPAnalyzer
@@ -18,6 +19,7 @@ from .workflow_analyzer import WorkflowAnalyzer
 from .workflow_detector import WorkflowDetector
 
 __all__ = [
+    "BaseAnalyzer",
     "ApprovalTracker",
     "ContextOptimizer",
     "ContextUsageTracker",

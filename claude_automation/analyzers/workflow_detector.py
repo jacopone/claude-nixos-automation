@@ -14,11 +14,12 @@ from ..schemas import (
     WorkflowSequence,
     WorkflowSuggestion,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class WorkflowDetector:
+class WorkflowDetector(BaseAnalyzer):
     """
     Detects patterns in slash command sequences.
 
@@ -40,6 +41,11 @@ class WorkflowDetector:
 
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "detect_patterns"
 
     def log_command(
         self,

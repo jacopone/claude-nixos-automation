@@ -13,11 +13,12 @@ from ..schemas import (
     ProjectArchetype,
     TransferSuggestion,
 )
+from .base_analyzer import BaseAnalyzer
 
 logger = logging.getLogger(__name__)
 
 
-class ProjectArchetypeDetector:
+class ProjectArchetypeDetector(BaseAnalyzer):
     """
     Detects project archetypes and transfers patterns.
 
@@ -78,6 +79,11 @@ class ProjectArchetypeDetector:
 
         self.patterns_file = patterns_file
         self.patterns_file.parent.mkdir(parents=True, exist_ok=True)
+
+
+    def _get_analysis_method_name(self) -> str:
+        """Return the name of the primary analysis method."""
+        return "detect_archetype"
 
     def detect(self, project_path: Path) -> ProjectArchetype:
         """

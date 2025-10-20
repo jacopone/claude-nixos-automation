@@ -6,15 +6,12 @@ Tests section tracking, noise detection, and effective ratio calculation.
 
 import json
 import tempfile
-from datetime import datetime, timedelta
 from pathlib import Path
 
 import pytest
 
-from claude_automation.analyzers.context_optimizer import ContextOptimizer
+from claude_automation.analyzers import ContextOptimizer
 from claude_automation.schemas import (
-    ContextAccessLog,
-    ContextOptimization,
     SectionUsage,
 )
 
