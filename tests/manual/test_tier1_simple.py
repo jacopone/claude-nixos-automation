@@ -4,10 +4,8 @@ Simple end-to-end test for Tier 1 components (no pytest required).
 Run with: devenv shell -c "python test_tier1_simple.py"
 """
 import sys
-import json
 import tempfile
 from pathlib import Path
-from datetime import datetime
 
 # Color codes for output
 GREEN = '\033[92m'
@@ -56,7 +54,7 @@ def test_phase3_approval_tracker():
             print(f"{GREEN}✓{RESET} Generated suggestions: {len(suggestions)}")
 
             print(f"\n{GREEN}{'='*80}")
-            print(f"PHASE 3: ALL TESTS PASSED ✓")
+            print("PHASE 3: ALL TESTS PASSED ✓")
             print(f"{'='*80}{RESET}\n")
             return True
 
@@ -66,7 +64,7 @@ def test_phase3_approval_tracker():
 
     except Exception as e:
         print(f"\n{RED}{'='*80}")
-        print(f"PHASE 3: FAILED ✗")
+        print("PHASE 3: FAILED ✗")
         print(f"Error: {e}")
         print(f"{'='*80}{RESET}\n")
         import traceback
@@ -80,7 +78,10 @@ def test_phase4_permission_patterns():
     print(f"{BLUE}{'='*80}{RESET}\n")
 
     try:
-        from claude_automation.analyzers.permission_pattern_detector import PermissionPatternDetector
+        from claude_automation.analyzers.approval_tracker import ApprovalTracker
+        from claude_automation.analyzers.permission_pattern_detector import (
+            PermissionPatternDetector,
+        )
         print(f"{GREEN}✓{RESET} PermissionPatternDetector imported successfully")
 
         storage_dir = Path(tempfile.mkdtemp())
@@ -111,7 +112,7 @@ def test_phase4_permission_patterns():
             print(f"{GREEN}✓{RESET} Generated optimization suggestions: {len(suggestions)}")
 
             print(f"\n{GREEN}{'='*80}")
-            print(f"PHASE 4: ALL TESTS PASSED ✓")
+            print("PHASE 4: ALL TESTS PASSED ✓")
             print(f"{'='*80}{RESET}\n")
             return True
 
@@ -121,7 +122,7 @@ def test_phase4_permission_patterns():
 
     except Exception as e:
         print(f"\n{RED}{'='*80}")
-        print(f"PHASE 4: FAILED ✗")
+        print("PHASE 4: FAILED ✗")
         print(f"Error: {e}")
         print(f"{'='*80}{RESET}\n")
         import traceback
@@ -135,7 +136,10 @@ def test_phase5_context_optimizer():
     print(f"{BLUE}{'='*80}{RESET}\n")
 
     try:
-        from claude_automation.analyzers.context_optimizer import ContextUsageTracker, ContextOptimizer
+        from claude_automation.analyzers.context_optimizer import (
+            ContextOptimizer,
+            ContextUsageTracker,
+        )
         print(f"{GREEN}✓{RESET} ContextUsageTracker and ContextOptimizer imported successfully")
 
         with tempfile.NamedTemporaryFile(mode='w', suffix='.jsonl', delete=False) as f:
@@ -175,7 +179,7 @@ def test_phase5_context_optimizer():
             print(f"{GREEN}✓{RESET} Generated optimization suggestions: {len(suggestions)}")
 
             print(f"\n{GREEN}{'='*80}")
-            print(f"PHASE 5: ALL TESTS PASSED ✓")
+            print("PHASE 5: ALL TESTS PASSED ✓")
             print(f"{'='*80}{RESET}\n")
             return True
 
@@ -184,7 +188,7 @@ def test_phase5_context_optimizer():
 
     except Exception as e:
         print(f"\n{RED}{'='*80}")
-        print(f"PHASE 5: FAILED ✗")
+        print("PHASE 5: FAILED ✗")
         print(f"Error: {e}")
         print(f"{'='*80}{RESET}\n")
         import traceback
@@ -194,12 +198,12 @@ def test_phase5_context_optimizer():
 def main():
     """Run all Tier 1 component tests"""
     print(f"\n{YELLOW}{'='*80}")
-    print(f"TIER 1 COMPONENTS - END-TO-END TESTING")
+    print("TIER 1 COMPONENTS - END-TO-END TESTING")
     print(f"{'='*80}{RESET}\n")
-    print(f"Testing all three Tier 1 learning components:")
-    print(f"  • Phase 3: Permission Learning (ApprovalTracker)")
-    print(f"  • Phase 4: Global MCP Optimization (PermissionPatternDetector)")
-    print(f"  • Phase 5: Context Optimization (ContextOptimizer)")
+    print("Testing all three Tier 1 learning components:")
+    print("  • Phase 3: Permission Learning (ApprovalTracker)")
+    print("  • Phase 4: Global MCP Optimization (PermissionPatternDetector)")
+    print("  • Phase 5: Context Optimization (ContextOptimizer)")
     print()
 
     results = {
@@ -210,7 +214,7 @@ def main():
 
     # Summary
     print(f"\n{YELLOW}{'='*80}")
-    print(f"FINAL SUMMARY")
+    print("FINAL SUMMARY")
     print(f"{'='*80}{RESET}\n")
 
     passed = sum(results.values())

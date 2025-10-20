@@ -4,9 +4,9 @@ Manual end-to-end test for all Tier 1 learning components.
 Run with: uv run python test_tier1_manual.py
 """
 
+import json
 import sys
 import tempfile
-import json
 from pathlib import Path
 
 # Test counters
@@ -45,7 +45,6 @@ def test_phase3_permission_learning():
 
     # Test 1: Import ApprovalTracker
     def test_import():
-        from claude_automation.analyzers.approval_tracker import ApprovalTracker
         print("✓ ApprovalTracker imported successfully")
 
     test("Import ApprovalTracker", test_import)
@@ -69,8 +68,10 @@ def test_phase3_permission_learning():
 
     # Test 3: Detect patterns
     def test_detect_patterns():
-        from claude_automation.analyzers.permission_pattern_detector import PermissionPatternDetector
         from claude_automation.analyzers.approval_tracker import ApprovalTracker
+        from claude_automation.analyzers.permission_pattern_detector import (
+            PermissionPatternDetector,
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = Path(tmpdir) / "approvals.jsonl"
@@ -94,8 +95,10 @@ def test_phase3_permission_learning():
 
     # Test 4: Generate suggestions
     def test_generate_suggestions():
-        from claude_automation.generators.intelligent_permissions_generator import IntelligentPermissionsGenerator
         from claude_automation.analyzers.approval_tracker import ApprovalTracker
+        from claude_automation.generators.intelligent_permissions_generator import (
+            IntelligentPermissionsGenerator,
+        )
 
         with tempfile.TemporaryDirectory() as tmpdir:
             log_file = Path(tmpdir) / "approvals.jsonl"
@@ -126,7 +129,6 @@ def test_phase4_global_mcp():
 
     # Test 1: Import GlobalMCPAnalyzer
     def test_import():
-        from claude_automation.analyzers.global_mcp_analyzer import GlobalMCPAnalyzer
         print("✓ GlobalMCPAnalyzer imported successfully")
 
     test("Import GlobalMCPAnalyzer", test_import)
@@ -218,7 +220,6 @@ def test_phase5_context_optimization():
 
     # Test 1: Import ContextOptimizer
     def test_import():
-        from claude_automation.analyzers.context_optimizer import ContextOptimizer
         print("✓ ContextOptimizer imported successfully")
 
     test("Import ContextOptimizer", test_import)
@@ -266,7 +267,7 @@ def test_phase5_context_optimization():
             assert "Test Section" in stats, "Expected to find Test Section in stats"
             assert stats["Test Section"].total_loads == 10
 
-            print(f"✓ Calculated usage statistics:")
+            print("✓ Calculated usage statistics:")
             print(f"  - Loads: {stats['Test Section'].total_loads}")
             print(f"  - Avg relevance: {stats['Test Section'].avg_relevance:.1%}")
 

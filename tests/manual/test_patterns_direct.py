@@ -2,12 +2,15 @@
 """Direct test of permission pattern detection."""
 
 import sys
+from collections import Counter
 from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
 from claude_automation.analyzers.approval_tracker import ApprovalTracker
-from claude_automation.analyzers.permission_pattern_detector import PermissionPatternDetector
+from claude_automation.analyzers.permission_pattern_detector import (
+    PermissionPatternDetector,
+)
 
 print("🔍 Testing Permission Pattern Detection\n")
 
@@ -28,7 +31,7 @@ unique = tracker.get_all_unique_permissions(days=30)
 print(f"🔑 {len(unique)} unique permission patterns\n")
 
 # Top 10
-from collections import Counter
+
 counter = Counter(a.permission for a in approvals)
 print("📈 Top 10 permissions:")
 for perm, count in counter.most_common(10):

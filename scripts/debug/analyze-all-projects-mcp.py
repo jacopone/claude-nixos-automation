@@ -24,9 +24,6 @@ from claude_automation.analyzers.mcp_usage_analyzer import MCPUsageAnalyzer
 from claude_automation.schemas import (
     MCPServerInfo,
     MCPServerStatus,
-    MCPToolUsage,
-    MCPUsageRecommendation,
-    MCPServerSessionUtilization,
 )
 
 # Configure logging

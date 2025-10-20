@@ -142,7 +142,7 @@ def analyze_file(file_path: Path) -> dict[str, set[str]]:
     direct_pattern = r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import ([\w\s,]+)'
 
     # Pattern 3: Already migrated (from claude_automation.analyzers import ApprovalTracker)
-    migrated_pattern = r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas) import ([\w\s,]+)'
+    # migrated_pattern = r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas) import ([\w\s,]+)'
 
     for pattern in [relative_pattern, direct_pattern]:
         for match in re.finditer(pattern, content):

@@ -15,11 +15,11 @@ print("🔍 Debugging Pattern Matching\n")
 tracker = ApprovalTracker()
 approvals = tracker.get_recent_approvals(days=30)
 
-print(f"📊 Sample of actual approval data:")
+print("📊 Sample of actual approval data:")
 for a in approvals[:10]:
     print(f"   {a.permission}")
 
-print(f"\n📋 Pattern regexes being tested:")
+print("\n📋 Pattern regexes being tested:")
 patterns = {
     "modern_cli": r"Bash\((fd|eza|bat|rg|dust|procs)",
     "git": r"Bash\(git (status|log|diff|show|branch)",
@@ -28,7 +28,7 @@ patterns = {
 for name, pattern in patterns.items():
     print(f"   {name}: {pattern}")
 
-print(f"\n🧪 Testing matches:")
+print("\n🧪 Testing matches:")
 test_permissions = [
     "Bash(fd:*)",
     "Bash(git:*)",

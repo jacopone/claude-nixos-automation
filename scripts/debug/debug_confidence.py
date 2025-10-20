@@ -3,8 +3,8 @@
 
 import re
 import sys
-from pathlib import Path
 from collections import Counter
+from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent))
 
@@ -30,7 +30,7 @@ print(f"\n🔍 Modern CLI pattern matches: {len(matching)}")
 print(f"   Pattern: {pattern_regex}")
 
 if matching:
-    print(f"\n   Sample matches:")
+    print("\n   Sample matches:")
     counter = Counter(a.permission for a in matching)
     for perm, count in counter.most_common(10):
         print(f"      {count:3d}× {perm}")
@@ -42,7 +42,7 @@ if matching:
     print(f"   Meets confidence=0.7? {base_conf >= 0.7}")
 
 # Test git pattern
-print(f"\n\n🔍 Git read-only pattern:")
+print("\n\n🔍 Git read-only pattern:")
 git_pattern = r"Bash\(git (status|log|diff|show|branch)"
 git_matching = []
 
