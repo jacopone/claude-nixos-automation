@@ -20,6 +20,22 @@ class RiskLevel(str, Enum):
     RED = "red"  # >20% disk usage or <6 months until full
 
 
+class DiskHealthSnapshot(BaseModel):
+    """
+    Single snapshot of disk health metrics for historical tracking.
+
+    Stored in ~/.claude/learning/disk_health_history.jsonl for growth analysis.
+    """
+
+    timestamp: datetime = Field(..., description="When this snapshot was taken")
+    total_mb: int = Field(..., ge=0, description="Total learning data size")
+    session_logs_mb: int = Field(..., ge=0, description="Size of session logs")
+    learning_data_mb: int = Field(..., ge=0, description="Size of learning cache")
+    archives_mb: int = Field(0, ge=0, description="Size of archives")
+    available_gb: int = Field(..., ge=0, description="Available disk space")
+    session_count: int = Field(0, ge=0, description="Number of sessions")
+
+
 class LearningDataHealthReport(BaseModel):
     """
     Health report for learning data disk usage.
@@ -28,7 +44,7 @@ class LearningDataHealthReport(BaseModel):
     and provides risk assessment with actionable recommendations.
 
     Phase 1: Snapshot-based monitoring (no history tracking yet).
-    Phase 2: Will add growth rate tracking via DiskHealthTracker.
+    Phase 1.5: Adds growth rate tracking via DiskHealthTracker.
     """
 
     timestamp: datetime = Field(

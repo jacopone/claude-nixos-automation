@@ -341,6 +341,9 @@ class MCPUsageAnalyzer:
         logger.info(f"Analyzed {len(session_stats)} sessions")
         logger.info(f"Calculated utilization for {len(server_utilization)} servers")
 
+        # Mark analyzed sessions with lifecycle tracker (Phase 2)
+        self._mark_sessions_analyzed(log_files)
+
         return usage_list, session_stats, server_utilization
 
     def _parse_session_log(
@@ -735,3 +738,37 @@ class MCPUsageAnalyzer:
                 )
 
         return recommendations
+
+    def _mark_sessions_analyzed(self, log_files: list[Path]) -> None:
+        """
+        Mark analyzed session files with ANALYZED lifecycle stage.
+
+        Phase 2: Integrates lifecycle tracking to enable value-based cleanup.
+
+        Args:
+            log_files: List of session .jsonl files that were analyzed
+        """
+        try:
+            from claude_automation.analyzers.session_lifecycle_tracker import (
+                SessionLifecycleTracker,
+            )
+            from claude_automation.schemas.lifecycle import SessionLifecycle
+
+            tracker = SessionLifecycleTracker()
+
+            # Mark each analyzed session
+            for log_file in log_files:
+                try:
+                    tracker.mark_session(
+                        log_file,
+                        SessionLifecycle.ANALYZED,
+                        notes="Processed by MCP usage analyzer"
+                    )
+                except Exception as e:
+                    logger.debug(f"Could not mark session {log_file.name}: {e}")
+
+            logger.info(f"Marked {len(log_files)} sessions as ANALYZED")
+
+        except Exception as e:
+            # Don't fail analysis if lifecycle tracking fails
+            logger.warning(f"Could not update session lifecycle: {e}")

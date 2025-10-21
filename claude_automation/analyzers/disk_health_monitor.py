@@ -3,15 +3,21 @@ Disk Health Monitor - Analyzes learning data disk usage and assesses risk.
 
 This is a Tier 1 analyzer that tracks disk metrics for adaptive learning data.
 Phase 1: Snapshot-based monitoring with risk assessment.
-Phase 2: Will add historical tracking for growth rate analysis.
+Phase 1.5: Historical tracking for growth rate analysis.
 """
 
 import logging
 import shutil
+from datetime import datetime
 from pathlib import Path
 
 from claude_automation.analyzers.base_analyzer import BaseAnalyzer
-from claude_automation.schemas.health import LearningDataHealthReport, RiskLevel
+from claude_automation.analyzers.disk_health_tracker import DiskHealthTracker
+from claude_automation.schemas.health import (
+    DiskHealthSnapshot,
+    LearningDataHealthReport,
+    RiskLevel,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -27,7 +33,8 @@ class DiskHealthMonitor(BaseAnalyzer):
     - Available disk space
     - Risk level assessment
 
-    Phase 1: Snapshot-based (no history yet).
+    Phase 1: Snapshot-based monitoring.
+    Phase 1.5: Historical tracking with growth projections.
     """
 
     def __init__(self, **kwargs):
@@ -43,6 +50,9 @@ class DiskHealthMonitor(BaseAnalyzer):
         self.projects_dir = Path.home() / ".claude" / "projects"
         self.learning_dir = Path.home() / ".claude" / "learning"
         self.archives_dir = Path.home() / ".claude" / "archives"
+
+        # History tracker for growth analysis
+        self.tracker = DiskHealthTracker()
 
     def _get_analysis_method_name(self) -> str:
         """Return the primary analysis method name."""
@@ -81,7 +91,18 @@ class DiskHealthMonitor(BaseAnalyzer):
         # Step 4: Assess risk
         risk_level, risk_message = self._assess_risk(total_bytes, total_disk_bytes)
 
-        # Step 5: Build report
+        # Step 5: Calculate growth metrics (Phase 1.5)
+        growth_mb_per_month = self.tracker.calculate_growth_rate(days=90)
+        months_until_full = None
+
+        if growth_mb_per_month is not None and growth_mb_per_month > 0:
+            months_until_full = self.tracker.calculate_months_until_full(
+                current_mb=total_bytes // (1024**2),
+                available_gb=available_bytes // (1024**3),
+                growth_mb_per_month=growth_mb_per_month
+            )
+
+        # Step 6: Build report
         report = LearningDataHealthReport(
             session_logs_mb=session_logs_bytes // (1024**2),
             learning_data_mb=learning_data_bytes // (1024**2),
@@ -92,15 +113,36 @@ class DiskHealthMonitor(BaseAnalyzer):
             usage_percentage=round(usage_percentage, 2),
             risk_level=risk_level,
             risk_message=risk_message,
-            # Phase 2 fields (not implemented yet)
-            growth_mb_per_month=None,
-            months_until_full=None,
+            # Phase 1.5: Growth tracking
+            growth_mb_per_month=growth_mb_per_month,
+            months_until_full=months_until_full,
         )
+
+        # Step 7: Record snapshot for future growth analysis
+        snapshot = DiskHealthSnapshot(
+            timestamp=datetime.now(),
+            total_mb=report.total_mb,
+            session_logs_mb=report.session_logs_mb,
+            learning_data_mb=report.learning_data_mb,
+            archives_mb=report.archives_mb,
+            available_gb=report.available_gb,
+            session_count=report.session_count,
+        )
+        self.tracker.record_snapshot(snapshot)
 
         logger.info(
             f"Health check complete: {report.total_mb}MB used, "
             f"{report.available_gb}GB available, risk={risk_level.value}"
         )
+
+        if growth_mb_per_month is not None:
+            if months_until_full is not None:
+                logger.info(
+                    f"Growth: {growth_mb_per_month:.1f}MB/month, "
+                    f"projected {months_until_full:.1f} months until full"
+                )
+            else:
+                logger.info(f"Growth: {growth_mb_per_month:.1f}MB/month")
 
         return report
 

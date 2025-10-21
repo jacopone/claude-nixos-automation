@@ -40,6 +40,7 @@ from claude_automation.schemas.core import (
 
 # Disk health monitoring schemas
 from claude_automation.schemas.health import (
+    DiskHealthSnapshot,
     LearningDataHealthReport,
     RiskLevel,
 )
@@ -57,6 +58,13 @@ from claude_automation.schemas.learning import (
     ProjectArchetype,
     ThresholdAdjustment,
     TransferSuggestion,
+)
+
+# Session lifecycle tracking schemas
+from claude_automation.schemas.lifecycle import (
+    LifecycleStats,
+    SessionLifecycle,
+    SessionMetadata,
 )
 
 # MCP server schemas
@@ -147,7 +155,12 @@ __all__ = [
     "ContextOptimization",
     # Health schemas
     "RiskLevel",
+    "DiskHealthSnapshot",
     "LearningDataHealthReport",
+    # Lifecycle schemas
+    "SessionLifecycle",
+    "SessionMetadata",
+    "LifecycleStats",
     # Workflow schemas
     "SlashCommandLog",
     "WorkflowSequence",
