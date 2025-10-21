@@ -38,6 +38,12 @@ from claude_automation.schemas.core import (
     ToolInfo,
 )
 
+# Disk health monitoring schemas
+from claude_automation.schemas.health import (
+    LearningDataHealthReport,
+    RiskLevel,
+)
+
 # Learning cycle schemas
 from claude_automation.schemas.learning import (
     AdaptiveSystemConfig,
@@ -139,6 +145,9 @@ __all__ = [
     "ContextAccessLog",
     "SectionUsage",
     "ContextOptimization",
+    # Health schemas
+    "RiskLevel",
+    "LearningDataHealthReport",
     # Workflow schemas
     "SlashCommandLog",
     "WorkflowSequence",

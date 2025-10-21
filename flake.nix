@@ -57,6 +57,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/update-mcp-usage-analytics";
         };
+        check-data-health = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/check-data-health";
+        };
         deploy-hooks = {
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/deploy-hooks";
@@ -163,6 +167,15 @@ export PYTHONPATH="$out/lib:\$PYTHONPATH"
 exec ${pythonEnv}/bin/python $out/lib/update-mcp-usage-analytics-v2.py "\$@"
 EOF
             chmod +x $out/bin/update-mcp-usage-analytics
+
+            # Copy and wrap disk health monitor
+            cp check-data-health.py $out/lib/
+            cat > $out/bin/check-data-health <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python $out/lib/check-data-health.py "\$@"
+EOF
+            chmod +x $out/bin/check-data-health
 
             # Copy and wrap hook deployer
             cat > $out/bin/deploy-hooks <<EOF
