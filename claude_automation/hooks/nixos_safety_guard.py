@@ -232,15 +232,53 @@ To bypass this warning: export NIXOS_SAFETY_GUARD=0
     return False, None
 
 
-def check_dangerous_command(bash_command):
+def is_called_from_rebuild_script(tool_input):
+    """
+    Detect if the command is being executed from within the rebuild-nixos wrapper script.
+
+    This allows nixos-rebuild to run from within the safe wrapper script
+    while still blocking direct manual invocation.
+
+    Returns:
+        bool: True if called from rebuild-nixos wrapper
+    """
+    # Check if the command originates from rebuild-nixos by looking at context
+    # The tool_input might contain file paths or descriptions that indicate source
+
+    # Method 1: Check if we're in nixos-config directory
+    cwd = os.getcwd()
+    if "nixos-config" in cwd:
+        # Check if rebuild-nixos script exists in this directory
+        rebuild_script = Path(cwd) / "rebuild-nixos"
+        if rebuild_script.exists():
+            # Likely being called from within the rebuild workflow
+            # Additional check: look for environment markers that rebuild-nixos sets
+            if os.environ.get("NIXOS_REBUILD_WRAPPER"):
+                return True
+
+    return False
+
+
+def check_dangerous_command(bash_command, tool_input=None):
     """
     Check if bash command matches dangerous patterns.
+
+    Args:
+        bash_command: The bash command to check
+        tool_input: Full tool input dict for context detection
 
     Returns:
         tuple: (is_dangerous, warning_type, warning_message) or (False, None, None)
     """
     for danger in DANGEROUS_COMMANDS:
         if re.search(danger["pattern"], bash_command):
+            # Special handling for nixos-rebuild
+            if danger["warning_type"] == "nixos-rebuild-direct":
+                # Allow if called from rebuild-nixos wrapper
+                if tool_input and is_called_from_rebuild_script(tool_input):
+                    # This is safe - called from within the wrapper
+                    return False, None, None
+
             return True, danger["warning_type"], danger["message"]
 
     return False, None, None
@@ -332,7 +370,9 @@ def main():
     elif tool_name == "Bash":
         bash_command = tool_input.get("command", "")
         if bash_command:
-            is_dangerous, danger_type, message = check_dangerous_command(bash_command)
+            is_dangerous, danger_type, message = check_dangerous_command(
+                bash_command, tool_input
+            )
             if is_dangerous:
                 # For nixos-rebuild, add contextual suggestion
                 if danger_type == "nixos-rebuild-direct":
