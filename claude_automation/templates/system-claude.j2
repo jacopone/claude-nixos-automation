@@ -29,7 +29,7 @@ This file provides Claude Code with comprehensive information about all availabl
 - **OS**: NixOS (nixos-unstable)
 - **Desktop**: GNOME (Wayland)
 - **Shell**: Fish (with smart command substitutions)
-- **Terminal**: Kitty (optimized for AI development)
+- **Terminal**: Kitty
 - **Package Management**: Nix Flakes + Home Manager
 
 ## Available Tools
@@ -38,7 +38,7 @@ This file provides Claude Code with comprehensive information about all availabl
 {% if category.value == 'AI & MCP Tools' %}
 ### 🤖 {{ category.value }}
 
-**This system is optimized for AI-assisted development with cutting-edge tools:**
+**AI development tools available:**
 
 {% for tool in tools %}
 - **`{{ tool.name }}`** - {{ tool.description }}{% if tool.url %} ({{ tool.url }}){% endif %}
@@ -46,8 +46,6 @@ This file provides Claude Code with comprehensive information about all availabl
 {% endfor %}
 {% elif category.value == 'Modern CLI Tools' %}
 ### ⚡ {{ category.value }}
-
-**ALWAYS use these modern alternatives instead of traditional POSIX commands:**
 
 {% for tool in tools %}
 - `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
@@ -66,6 +64,7 @@ This file provides Claude Code with comprehensive information about all availabl
 ### {{ category.value }}
 {% for tool in tools %}
 - `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
+
 {% endfor %}
 
 {% endif %}

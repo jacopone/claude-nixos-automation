@@ -54,12 +54,33 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
 
         Scans for .claude/mcp.json files system-wide,
         skipping hidden directories except .claude itself.
+        Uses caching (1 hour TTL) to avoid expensive rglob on every run.
 
         Returns:
             List of project paths with MCP configs
         """
-        projects = []
+        import json
+        import time
 
+        cache_file = self.home_dir / ".claude" / "cache" / "mcp_projects.json"
+        cache_file.parent.mkdir(parents=True, exist_ok=True)
+        cache_ttl_seconds = 3600  # 1 hour cache
+
+        # Try to load from cache
+        if cache_file.exists():
+            cache_age = time.time() - cache_file.stat().st_mtime
+            if cache_age < cache_ttl_seconds:
+                try:
+                    with open(cache_file) as f:
+                        cached_paths = json.load(f)
+                    projects = [Path(p) for p in cached_paths]
+                    logger.debug(f"Using cached project list ({len(projects)} projects, age: {cache_age:.0f}s)")
+                    return projects
+                except Exception as e:
+                    logger.warning(f"Failed to load cache: {e}")
+
+        # Cache miss or expired - do full scan
+        projects = []
         logger.info(f"Scanning {self.home_dir} for MCP configurations...")
 
         # Find all .claude/mcp.json files
@@ -71,6 +92,15 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
                 logger.debug(f"Found MCP config in: {project_path}")
 
         logger.info(f"Discovered {len(projects)} projects with MCP configurations")
+
+        # Save to cache
+        try:
+            with open(cache_file, 'w') as f:
+                json.dump([str(p) for p in projects], f)
+            logger.debug(f"Cached project list to {cache_file}")
+        except Exception as e:
+            logger.warning(f"Failed to save cache: {e}")
+
         return projects
 
     def _is_valid_project(self, mcp_config_path: Path) -> bool:
@@ -520,7 +550,9 @@ class MCPUsageAnalyzer:
 
                         # Track server loading
                         if entry.get("type") == "mcp_server_init":
-                            servers_loaded.add(entry.get("server"))
+                            server = entry.get("server")
+                            if server:
+                                servers_loaded.add(server)
 
                         # Track tool usage
                         elif entry.get("type") == "mcp_tool_call":
