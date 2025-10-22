@@ -126,7 +126,7 @@ class ImprovementApplicator:
 
         for opt in optimizations:
             server_name = opt.get('server_name', 'unknown')
-            action = opt.get('action', '')
+            action = opt.get('impact', '')  # Field is called 'impact' in the dict
 
             try:
                 # Parse action to determine config location
