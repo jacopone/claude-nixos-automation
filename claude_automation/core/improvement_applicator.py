@@ -3,7 +3,10 @@ Improvement Applicator - Handles application of approved learning suggestions.
 Applies changes to MCP configs, permissions, context files, and workflows.
 """
 
+import json
 import logging
+import re
+from pathlib import Path
 
 from claude_automation.schemas import LearningReport
 
@@ -114,17 +117,130 @@ class ImprovementApplicator:
         print("✓ All improvements applied successfully\n")
 
     def _apply_mcp_optimizations(self, optimizations: list[dict]) -> None:
-        """Apply MCP server optimization suggestions."""
+        """
+        Apply MCP server optimization suggestions.
+
+        Modifies .claude/mcp.json (project) or ~/.claude.json (global) to remove servers.
+        """
         logger.info(f"Applying {len(optimizations)} MCP optimizations")
 
         for opt in optimizations:
             server_name = opt.get('server_name', 'unknown')
-            action = opt.get('impact', opt.get('action', 'unknown'))
+            action = opt.get('action', '')
 
-            # TODO: Actually modify .claude/mcp.json
-            # For now, log what would be done
-            print(f"  • MCP: {server_name} - {action}")
-            logger.warning(f"MCP optimization not yet implemented: {server_name}")
+            try:
+                # Parse action to determine config location
+                # Format: "Remove from global (~/.claude.json)" or "Remove from project (nixos-config)"
+                if 'global' in action:
+                    config_path = Path.home() / '.claude.json'
+                    location_type = 'global'
+                    location_desc = '~/.claude.json'
+                elif 'project' in action:
+                    # Extract project name from "Remove from project (PROJECT_NAME)"
+                    match = re.search(r'project \(([^)]+)\)', action)
+                    if not match:
+                        logger.error(f"Could not parse project name from action: {action}")
+                        print(f"  ✗ MCP: {server_name} - Failed (could not parse project name)")
+                        continue
+
+                    project_name = match.group(1)
+                    config_path = self._find_project_mcp_config(project_name)
+                    location_type = 'project'
+                    location_desc = f'{project_name}/.claude/mcp.json'
+
+                    if not config_path:
+                        logger.error(f"Could not find .claude/mcp.json for project: {project_name}")
+                        print(f"  ✗ MCP: {server_name} - Failed (project config not found)")
+                        continue
+                else:
+                    logger.error(f"Could not determine config location from action: {action}")
+                    print(f"  ✗ MCP: {server_name} - Failed (unknown location)")
+                    continue
+
+                # Remove server from config
+                if self._remove_server_from_config(config_path, server_name, location_type):
+                    print(f"  ✓ MCP: Removed '{server_name}' from {location_desc}")
+                    logger.info(f"Successfully removed {server_name} from {location_desc}")
+                else:
+                    print(f"  ✗ MCP: Failed to remove '{server_name}' from {location_desc}")
+
+            except Exception as e:
+                logger.error(f"Error removing {server_name}: {e}")
+                print(f"  ✗ MCP: {server_name} - Error: {e}")
+
+    def _find_project_mcp_config(self, project_name: str) -> Path | None:
+        """
+        Find .claude/mcp.json for a project by name.
+
+        Args:
+            project_name: Name of project (e.g., "nixos-config", "birthday-manager")
+
+        Returns:
+            Path to .claude/mcp.json or None if not found
+        """
+        home_dir = Path.home()
+
+        # Search for .claude/mcp.json in project with matching name
+        for mcp_config in home_dir.rglob(".claude/mcp.json"):
+            # Skip hidden directories (except .claude)
+            path_parts = mcp_config.parts
+            if any(part.startswith(".") and part != ".claude" for part in path_parts):
+                continue
+
+            # Check if project directory name matches
+            project_path = mcp_config.parent.parent  # Go up from .claude/mcp.json
+            if project_path.name == project_name:
+                logger.debug(f"Found MCP config for {project_name}: {mcp_config}")
+                return mcp_config
+
+        logger.warning(f"Could not find .claude/mcp.json for project: {project_name}")
+        return None
+
+    def _remove_server_from_config(self, config_path: Path, server_name: str, location_type: str) -> bool:
+        """
+        Remove a server from MCP configuration file.
+
+        Args:
+            config_path: Path to config file (.claude.json or .claude/mcp.json)
+            server_name: Name of server to remove
+            location_type: 'global' or 'project'
+
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Read config
+            if not config_path.exists():
+                logger.error(f"Config file not found: {config_path}")
+                return False
+
+            with open(config_path, encoding='utf-8') as f:
+                config = json.load(f)
+
+            # Check if server exists
+            mcp_servers = config.get('mcpServers', {})
+            if server_name not in mcp_servers:
+                logger.warning(f"Server '{server_name}' not found in {config_path}")
+                return False
+
+            # Remove server
+            del mcp_servers[server_name]
+            config['mcpServers'] = mcp_servers
+
+            # Write back
+            with open(config_path, 'w', encoding='utf-8') as f:
+                json.dump(config, f, indent=2)
+                f.write('\n')  # Add trailing newline
+
+            logger.info(f"Removed '{server_name}' from {config_path}")
+            return True
+
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in {config_path}: {e}")
+            return False
+        except Exception as e:
+            logger.error(f"Error modifying {config_path}: {e}")
+            return False
 
     def _apply_permission_patterns(self, patterns: list[dict]) -> None:
         """Apply permission pattern suggestions."""
