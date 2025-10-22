@@ -6,7 +6,7 @@ import logging
 from datetime import datetime
 from pathlib import Path
 
-from ..parsers.nix_parser import NixConfigParser
+from ..parsers.cached_nix_parser import CachedNixParser
 from ..schemas import FishAbbreviation, GenerationResult, SystemConfig, ToolCategory
 from .base_generator import BaseGenerator
 
@@ -33,7 +33,7 @@ class SystemGenerator(BaseGenerator):
 
     def __init__(self, template_dir: Path = None):
         super().__init__(template_dir)
-        self.parser = NixConfigParser()
+        self.parser = CachedNixParser()
 
     def generate(self, output_path: Path, config_dir: Path = None) -> GenerationResult:
         """Generate system-level CLAUDE.md file."""

@@ -7,7 +7,7 @@ them in JSONL format for pattern detection.
 
 import json
 import logging
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from pathlib import Path
 from typing import Any
 
@@ -38,6 +38,31 @@ class ApprovalTracker:
         self.storage_dir.mkdir(parents=True, exist_ok=True)
 
         self.approvals_file = storage_dir / "permission_approvals.jsonl"
+        self.max_file_size_mb = 10  # Rotate after 10MB
+
+    def _rotate_if_needed(self) -> None:
+        """Rotate log file if it exceeds size limit."""
+        if not self.approvals_file.exists():
+            return
+
+        size_mb = self.approvals_file.stat().st_size / (1024 * 1024)
+        if size_mb > self.max_file_size_mb:
+            # Archive old file with timestamp
+            timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
+            archive_path = self.storage_dir / f"permission_approvals_{timestamp}.jsonl"
+
+            logger.info(f"Rotating approval log: {size_mb:.1f}MB → {archive_path.name}")
+            self.approvals_file.rename(archive_path)
+
+            # Optionally compress old archives
+            import gzip
+            import shutil
+            compressed_path = archive_path.with_suffix('.jsonl.gz')
+            with open(archive_path, 'rb') as f_in:
+                with gzip.open(compressed_path, 'wb') as f_out:
+                    shutil.copyfileobj(f_in, f_out)
+            archive_path.unlink()  # Remove uncompressed
+            logger.info(f"Compressed archive: {compressed_path.name}")
 
     def log_approval(
         self,
@@ -63,6 +88,9 @@ class ApprovalTracker:
             project_path=project_path,
             context=context or {},
         )
+
+        # Rotate log file if needed (before writing)
+        self._rotate_if_needed()
 
         # Append to JSONL file
         try:
@@ -91,7 +119,7 @@ class ApprovalTracker:
         if not self.approvals_file.exists():
             return []
 
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         approvals = []
 
         try:
@@ -107,7 +135,7 @@ class ApprovalTracker:
 
                     # Make timestamp timezone-aware if naive
                     if entry.timestamp.tzinfo is None:
-                        entry.timestamp = entry.timestamp.replace(tzinfo=timezone.utc)
+                        entry.timestamp = entry.timestamp.replace(tzinfo=UTC)
 
                     # Filter by date
                     if entry.timestamp < cutoff:
@@ -188,7 +216,7 @@ class ApprovalTracker:
         if not self.approvals_file.exists():
             return 0
 
-        cutoff = datetime.now(timezone.utc) - timedelta(days=days)
+        cutoff = datetime.now(UTC) - timedelta(days=days)
         kept_approvals = []
         removed_count = 0
 
@@ -205,7 +233,7 @@ class ApprovalTracker:
 
                     # Make timestamp timezone-aware if naive
                     if entry.timestamp.tzinfo is None:
-                        entry.timestamp = entry.timestamp.replace(tzinfo=timezone.utc)
+                        entry.timestamp = entry.timestamp.replace(tzinfo=UTC)
 
                     if entry.timestamp >= cutoff:
                         kept_approvals.append(data)
