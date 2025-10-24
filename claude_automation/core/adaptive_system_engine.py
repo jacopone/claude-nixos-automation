@@ -317,7 +317,7 @@ class AdaptiveSystemEngine:
             logger.error(f"Workflow analysis failed: {e}")
             return []
 
-    def _analyze_instructions(self) -> list[dict]:
+    def _analyze_instructions(self) -> list:
         """Find low-effectiveness instructions needing improvement."""
         try:
             # TODO: Calculate actual session count from logs
@@ -329,35 +329,19 @@ class AdaptiveSystemEngine:
                 min_violations=3,
             )
 
-            # Convert to dict format
-            return [
-                {
-                    "policy": i.policy_name,
-                    "compliance": int(i.effectiveness_data.effectiveness_score * 100),
-                    "reason": i.reason,
-                    "priority": i.priority,
-                }
-                for i in improvements[: self.config.max_suggestions_per_component]
-            ]
+            # Return full InstructionImprovement objects (maintain type safety)
+            return improvements[: self.config.max_suggestions_per_component]
         except Exception as e:
             logger.error(f"Instruction analysis failed: {e}")
             return []
 
-    def _analyze_cross_project(self) -> list[dict]:
+    def _analyze_cross_project(self) -> list:
         """Identify cross-project pattern transfer opportunities."""
         try:
             transfers = self.archetype_detector.find_transfer_opportunities()
 
-            # Convert to dict format
-            return [
-                {
-                    "description": t.description,
-                    "source": t.pattern.source_project,
-                    "target": t.target_project,
-                    "compatibility": t.compatibility_score,
-                }
-                for t in transfers[: self.config.max_suggestions_per_component]
-            ]
+            # Return full TransferSuggestion objects (maintain type safety)
+            return transfers[: self.config.max_suggestions_per_component]
         except Exception as e:
             logger.error(f"Cross-project analysis failed: {e}")
             return []

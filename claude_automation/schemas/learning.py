@@ -281,10 +281,10 @@ class LearningReport(BaseModel):
     workflow_patterns: list[Any] = Field(
         default_factory=list, description="Workflow bundling suggestions"
     )
-    instruction_improvements: list[Any] = Field(
+    instruction_improvements: list[InstructionImprovement] = Field(
         default_factory=list, description="Instruction effectiveness improvements"
     )
-    cross_project_transfers: list[Any] = Field(
+    cross_project_transfers: list[TransferSuggestion] = Field(
         default_factory=list, description="Cross-project pattern transfers"
     )
     meta_insights: dict[str, Any] = Field(

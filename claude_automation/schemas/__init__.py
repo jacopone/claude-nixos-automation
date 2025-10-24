@@ -87,6 +87,20 @@ from claude_automation.schemas.permissions import (
     PermissionPattern,
 )
 
+# Tool usage analytics schemas
+from claude_automation.schemas.tool_usage import (
+    ToolCategory as ToolUsageCategory,
+)
+from claude_automation.schemas.tool_usage import (
+    ToolInfo as ToolUsageToolInfo,
+)
+from claude_automation.schemas.tool_usage import (
+    ToolUsageAnalyticsConfig,
+    ToolUsageRecommendation,
+    ToolUsageStats,
+    UsageSource,
+)
+
 # Validation schemas
 from claude_automation.schemas.validation import (
     GenerationHeader,
@@ -169,4 +183,11 @@ __all__ = [
     "ValidationResult",
     "SourceArtifactDeclaration",
     "GenerationHeader",
+    # Tool usage schemas
+    "ToolUsageCategory",
+    "ToolUsageToolInfo",
+    "ToolUsageStats",
+    "ToolUsageRecommendation",
+    "ToolUsageAnalyticsConfig",
+    "UsageSource",
 ]

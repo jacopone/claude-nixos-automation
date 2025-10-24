@@ -270,8 +270,8 @@ class ImprovementApplicator:
             return is_clean
         except Exception as e:
             logger.warning(f"Could not check git status: {e}")
-            # Assume safe if git check fails (might not be a git repo)
-            return True
+            # Assume unsafe if git check fails (fail-safe behavior)
+            return False
 
     def _apply_permission_patterns(self, patterns: list[dict]) -> None:
         """
@@ -337,17 +337,37 @@ class ImprovementApplicator:
                     added_count += 1
                     logger.info(f"Added permission rule: {rule}")
 
-        # Write back settings
+        # Write back settings atomically
         if added_count > 0:
             try:
-                with open(target_file, 'w', encoding='utf-8') as f:
-                    json.dump(settings, f, indent=2)
-                    f.write('\n')  # Add trailing newline
+                import os
+                import tempfile
+
+                # Write to temporary file first
+                with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    dir=target_file.parent,
+                    delete=False,
+                    suffix='.tmp',
+                    encoding='utf-8'
+                ) as tmp:
+                    json.dump(settings, tmp, indent=2)
+                    tmp.write('\n')  # Add trailing newline
+                    tmp_path = tmp.name
+
+                # Atomic rename
+                os.replace(tmp_path, target_file)
                 print(f"  ✓ Permission: Added {added_count} rules to {target_file.relative_to(Path.cwd())}")
                 logger.info(f"Successfully applied {added_count} permission rules")
             except Exception as e:
                 logger.error(f"Error writing {target_file}: {e}")
                 print("  ✗ Permission patterns: Error writing settings file")
+                # Clean up temp file if it exists
+                try:
+                    if 'tmp_path' in locals() and Path(tmp_path).exists():
+                        Path(tmp_path).unlink()
+                except Exception:
+                    pass
         else:
             print("  ℹ️  Permission: No new rules to add (all already exist)")
             logger.info("No new permission rules needed")
@@ -441,38 +461,53 @@ class ImprovementApplicator:
                 logger.warning(f"Workflow pattern has no commands: {description}")
                 continue
 
-            # Generate command name from description
-            cmd_name = self._generate_command_name(commands)
+            # Generate unique command name
+            cmd_name = self._generate_command_name(commands, commands_dir)
             cmd_file = commands_dir / f"{cmd_name}.md"
-
-            # Don't overwrite existing commands
-            if cmd_file.exists():
-                logger.warning(f"Command already exists: {cmd_file}")
-                print(f"  ⚠️  Workflow: {cmd_name} already exists, skipped")
-                continue
 
             # Generate command content
             content = self._generate_command_content(description, commands, occurrences, cmd_name)
 
-            # Write command file
+            # Write command file atomically
             try:
-                with open(cmd_file, 'w', encoding='utf-8') as f:
-                    f.write(content)
+                import os
+                import tempfile
+
+                # Write to temporary file first
+                with tempfile.NamedTemporaryFile(
+                    mode='w',
+                    dir=commands_dir,
+                    delete=False,
+                    suffix='.tmp',
+                    encoding='utf-8'
+                ) as tmp:
+                    tmp.write(content)
+                    tmp_path = tmp.name
+
+                # Atomic rename
+                os.replace(tmp_path, cmd_file)
                 print(f"  ✓ Workflow: Created /{cmd_name} (.claude/commands/{cmd_name}.md)")
                 logger.info(f"Created workflow command: {cmd_file}")
             except Exception as e:
                 logger.error(f"Failed to create workflow command {cmd_name}: {e}")
                 print(f"  ✗ Workflow: {cmd_name} - Error: {e}")
+                # Clean up temp file if it exists
+                try:
+                    if 'tmp_path' in locals() and Path(tmp_path).exists():
+                        Path(tmp_path).unlink()
+                except Exception:
+                    pass
 
-    def _generate_command_name(self, commands: list[str]) -> str:
+    def _generate_command_name(self, commands: list[str], commands_dir) -> str:
         """
-        Generate command name from command sequence.
+        Generate unique command name from command sequence.
 
         Args:
             commands: List of commands like ["/speckit.specify", "/speckit.plan"]
+            commands_dir: Path to .claude/commands directory
 
         Returns:
-            Command name like "workflow-specify-plan"
+            Unique command name like "workflow-specify-plan" or "workflow-specify-plan-2"
         """
         import re
 
@@ -489,14 +524,22 @@ class ImprovementApplicator:
 
         # Combine with workflow prefix
         if parts:
-            name = 'workflow-' + '-'.join(parts[:3])  # Max 3 parts
+            base_name = 'workflow-' + '-'.join(parts[:3])  # Max 3 parts
         else:
-            name = 'workflow'
+            base_name = 'workflow'
 
         # Sanitize
-        name = re.sub(r'[^a-z0-9-]', '', name.lower())
+        base_name = re.sub(r'[^a-z0-9-]', '', base_name.lower())
+        base_name = base_name or 'workflow'
 
-        return name or 'workflow'
+        # Ensure uniqueness by appending counter if needed
+        name = base_name
+        counter = 1
+        while (commands_dir / f"{name}.md").exists():
+            counter += 1
+            name = f"{base_name}-{counter}"
+
+        return name
 
     def _generate_command_content(self, description: str, commands: list[str], occurrences: int, cmd_name: str) -> str:
         """
