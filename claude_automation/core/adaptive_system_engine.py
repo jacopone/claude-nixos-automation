@@ -18,6 +18,7 @@ from claude_automation.analyzers import (
     ProjectArchetypeDetector,
     WorkflowDetector,
 )
+from claude_automation.analyzers.health_checker import create_default_health_checker
 from claude_automation.core.improvement_applicator import ImprovementApplicator
 from claude_automation.core.interactive_approval_ui import InteractiveApprovalUI
 from claude_automation.generators import IntelligentPermissionsGenerator
@@ -86,6 +87,9 @@ class AdaptiveSystemEngine:
         # Initialize improvement applicator
         self.applicator = ImprovementApplicator(meta_learner=self.meta_learner)
 
+        # Initialize health checker
+        self.health_checker = create_default_health_checker()
+
         logger.info("Adaptive System Engine initialized")
 
     def run_full_learning_cycle(
@@ -109,6 +113,29 @@ class AdaptiveSystemEngine:
             self.config.interactive = interactive
 
         logger.info("🧠 Starting adaptive learning cycle...")
+
+        # Phase 0: Health Check - Validate analyzer prerequisites
+        health_report = self.health_checker.check_all_analyzers()
+
+        if health_report.failed_count > 0 or health_report.degraded_count > 0:
+            print("\n⚠️  Warning: Some analyzers have issues")
+            print(f"   • Healthy: {health_report.healthy_count}/{health_report.total_analyzers}")
+            if health_report.degraded_count > 0:
+                print(f"   • Degraded: {health_report.degraded_count} (missing data)")
+            if health_report.failed_count > 0:
+                print(f"   • Failed: {health_report.failed_count} (configuration errors)")
+
+            # Show brief details for unhealthy analyzers
+            for status in health_report.analyzer_statuses:
+                if not status.is_healthy:
+                    print(f"   • {status.analyzer_name}: {status.status_message}")
+                    if status.missing_prerequisites:
+                        print(f"     Missing: {', '.join(status.missing_prerequisites)}")
+
+            print("\n💡 Some suggestions may be limited. Continuing with available analyzers...\n")
+            logger.warning(f"Analyzer health: {health_report.health_percentage:.0f}% ({health_report.healthy_count}/{health_report.total_analyzers} healthy)")
+        else:
+            logger.debug(f"All analyzers healthy ({health_report.total_analyzers}/{ health_report.total_analyzers})")
 
         # Phase 1: Collect insights from all learners
         # If components filter provided, only run specified components
