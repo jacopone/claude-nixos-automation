@@ -136,6 +136,22 @@ class PermissionPatternDetector(BaseAnalyzer):
             if pattern:
                 detected_patterns.append(pattern)
 
+        # Filter out previously rejected permission patterns
+        from .rejection_tracker import RejectionTracker
+        tracker = RejectionTracker()
+        rejections = tracker.get_recent_rejections(days=90, suggestion_type='permission')
+        rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
+
+        # Filter detected patterns
+        detected_patterns = [
+            p for p in detected_patterns
+            if p.pattern_type not in rejected_fingerprints
+        ]
+
+        if not detected_patterns:
+            logger.info("All permission patterns were previously rejected")
+            return []
+
         # Create suggestions from patterns
         suggestions = []
         for pattern in detected_patterns:
@@ -196,7 +212,7 @@ class PermissionPatternDetector(BaseAnalyzer):
         final_confidence = min(1.0, base_confidence + consistency_bonus + recency_bonus)
 
         # Collect examples
-        examples = list(set(a.permission for a in matching_approvals[:5]))
+        examples = list({a.permission for a in matching_approvals[:5]})
 
         return PermissionPattern(
             pattern_type=category,

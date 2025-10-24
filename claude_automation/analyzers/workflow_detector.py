@@ -150,6 +150,22 @@ class WorkflowDetector(BaseAnalyzer):
             logger.info("No frequent workflow patterns detected")
             return []
 
+        # Filter out previously rejected workflows
+        from .rejection_tracker import RejectionTracker
+        tracker = RejectionTracker()
+        rejections = tracker.get_recent_rejections(days=90, suggestion_type='workflow')
+        rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
+
+        frequent_sequences = {
+            seq: count
+            for seq, count in frequent_sequences.items()
+            if '|'.join(seq) not in rejected_fingerprints
+        }
+
+        if not frequent_sequences:
+            logger.info("All workflow patterns were previously rejected")
+            return []
+
         # Generate suggestions
         suggestions = []
         for sequence_tuple, count in frequent_sequences.items():
@@ -358,8 +374,8 @@ class WorkflowDetector(BaseAnalyzer):
                 "total_sessions": 0,
             }
 
-        unique_commands = set(c.command for c in commands)
-        unique_sessions = set(c.session_id for c in commands)
+        unique_commands = {c.command for c in commands}
+        unique_sessions = {c.session_id for c in commands}
 
         return {
             "total_commands": len(commands),

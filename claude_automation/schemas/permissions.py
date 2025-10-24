@@ -95,3 +95,23 @@ class PatternSuggestion(BaseModel):
     def confidence_percentage(self) -> int:
         """Get confidence as percentage."""
         return int(self.pattern.confidence * 100)
+
+
+class SuggestionRejectionEntry(BaseModel):
+    """Log entry for a rejected suggestion."""
+
+    timestamp: datetime = Field(default_factory=datetime.now)
+    suggestion_type: str = Field(
+        ..., description="Type: workflow or permission"
+    )
+    suggestion_fingerprint: str = Field(
+        ..., description="Unique identifier for suggestion"
+    )
+    project_path: str = Field("", description="Project where rejection occurred")
+
+    @validator("suggestion_type")
+    def validate_type(cls, v):
+        """Validate suggestion type."""
+        if v not in {"workflow", "permission"}:
+            raise ValueError("suggestion_type must be 'workflow' or 'permission'")
+        return v

@@ -85,6 +85,7 @@ from claude_automation.schemas.permissions import (
     PatternSuggestion,
     PermissionApprovalEntry,
     PermissionPattern,
+    SuggestionRejectionEntry,
 )
 
 # Tool usage analytics schemas
@@ -141,6 +142,7 @@ __all__ = [
     "PermissionApprovalEntry",
     "PermissionPattern",
     "PatternSuggestion",
+    "SuggestionRejectionEntry",
     # MCP schemas
     "MCPServerType",
     "MCPServerStatus",

@@ -152,6 +152,17 @@ class InteractiveApprovalUI:
                 approved.append(sug)
                 print("  ✓ Approved")
             elif decision == 'reject':
+                # Log rejection silently
+                from claude_automation.analyzers.rejection_tracker import (
+                    RejectionTracker,
+                )
+                tracker = RejectionTracker()
+                fingerprint = self._generate_fingerprint(sug)
+                tracker.log_rejection(
+                    suggestion_type=sug['type'],
+                    suggestion_fingerprint=fingerprint,
+                    project_path=sug.get('data', {}).get('project_path', '')
+                )
                 print("  ✗ Rejected")
             elif decision == 'approve_all':
                 # Approve this and all remaining
@@ -311,3 +322,25 @@ class InteractiveApprovalUI:
 
         print("\n🔄 How to undo:")
         print("   • Delete the .claude/commands/<new-command>.md file")
+
+    def _generate_fingerprint(self, sug: dict[str, Any]) -> str:
+        """
+        Generate unique fingerprint for suggestion.
+
+        Args:
+            sug: Suggestion dict with type and data
+
+        Returns:
+            Fingerprint string for matching rejections
+        """
+        sug_type = sug['type']
+        data = sug['data']
+
+        if sug_type == 'workflow':
+            commands = data.get('commands', [])
+            return '|'.join(commands)
+        elif sug_type == 'permission':
+            pattern = data.get('pattern', {})
+            return pattern.get('pattern_type', 'unknown')
+
+        return f"{sug_type}:unknown"
