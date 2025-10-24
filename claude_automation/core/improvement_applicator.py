@@ -242,17 +242,163 @@ class ImprovementApplicator:
             logger.error(f"Error modifying {config_path}: {e}")
             return False
 
+    def _check_git_status(self) -> bool:
+        """
+        Check if git working directory is clean.
+
+        Returns:
+            True if clean (safe to modify), False if uncommitted changes
+        """
+        import subprocess
+        from pathlib import Path
+
+        try:
+            result = subprocess.run(
+                ['git', 'status', '--porcelain'],
+                cwd=Path.cwd(),
+                capture_output=True,
+                text=True,
+                timeout=5
+            )
+
+            # Empty output = clean working directory
+            is_clean = len(result.stdout.strip()) == 0
+
+            if not is_clean:
+                logger.warning("Git working directory has uncommitted changes")
+
+            return is_clean
+        except Exception as e:
+            logger.warning(f"Could not check git status: {e}")
+            # Assume safe if git check fails (might not be a git repo)
+            return True
+
     def _apply_permission_patterns(self, patterns: list[dict]) -> None:
-        """Apply permission pattern suggestions."""
+        """
+        Apply permission pattern suggestions.
+
+        Updates .claude/settings.local.json with new allow patterns.
+        """
         logger.info(f"Applying {len(patterns)} permission patterns")
 
+        import json
+        from pathlib import Path
+
+        # Check git status before modifying
+        if not self._check_git_status():
+            logger.warning("Uncommitted changes detected, skipping permission patterns")
+            print("  ⚠️  Uncommitted changes - skipped permission patterns")
+            return
+
+        # Determine target file (project-local settings)
+        target_file = Path.cwd() / ".claude" / "settings.local.json"
+
+        # Ensure .claude directory exists
+        target_file.parent.mkdir(parents=True, exist_ok=True)
+
+        # Load or initialize settings
+        try:
+            if target_file.exists():
+                with open(target_file, encoding='utf-8') as f:
+                    settings = json.load(f)
+            else:
+                settings = {}
+        except json.JSONDecodeError as e:
+            logger.error(f"Invalid JSON in {target_file}: {e}")
+            print("  ✗ Permission patterns: Invalid JSON in settings file")
+            return
+        except Exception as e:
+            logger.error(f"Error reading {target_file}: {e}")
+            print("  ✗ Permission patterns: Error reading settings file")
+            return
+
+        # Ensure permissions structure exists
+        if 'permissions' not in settings:
+            settings['permissions'] = {}
+        if 'allow' not in settings['permissions']:
+            settings['permissions']['allow'] = []
+
+        # Track changes
+        added_count = 0
+
+        # Apply each pattern
         for pattern in patterns:
             description = pattern.get('description', 'unknown pattern')
+            examples = pattern.get('examples', [])
 
-            # TODO: Use IntelligentPermissionsGenerator to update settings.local.json
-            # For now, log what would be done
-            print(f"  • Permission: {description}")
-            logger.warning(f"Permission pattern not yet implemented: {description}")
+            # Generate permission rules from pattern
+            # For minimal implementation, use examples directly
+            rules = self._extract_permission_rules(description, examples)
+
+            for rule in rules:
+                # Avoid duplicates
+                if rule not in settings['permissions']['allow']:
+                    settings['permissions']['allow'].append(rule)
+                    added_count += 1
+                    logger.info(f"Added permission rule: {rule}")
+
+        # Write back settings
+        if added_count > 0:
+            try:
+                with open(target_file, 'w', encoding='utf-8') as f:
+                    json.dump(settings, f, indent=2)
+                    f.write('\n')  # Add trailing newline
+                print(f"  ✓ Permission: Added {added_count} rules to {target_file.relative_to(Path.cwd())}")
+                logger.info(f"Successfully applied {added_count} permission rules")
+            except Exception as e:
+                logger.error(f"Error writing {target_file}: {e}")
+                print("  ✗ Permission patterns: Error writing settings file")
+        else:
+            print("  ℹ️  Permission: No new rules to add (all already exist)")
+            logger.info("No new permission rules needed")
+
+    def _extract_permission_rules(self, description: str, examples: list[str]) -> list[str]:
+        """
+        Extract permission rules from pattern description and examples.
+
+        Args:
+            description: Pattern description (e.g., "Allow git read-only commands")
+            examples: Example permissions (e.g., ["Bash(git status)", "Bash(git log)"])
+
+        Returns:
+            List of permission rules to add
+        """
+        rules = []
+
+        # Use examples if available
+        if examples:
+            # Convert specific examples to wildcard patterns
+            for ex in examples[:5]:  # Limit to 5 examples
+                # Extract tool and command pattern
+                # "Bash(git status)" -> "Bash(git status:*)"
+                if '(' in ex and ')' in ex:
+                    # Already has parameters
+                    if ':' not in ex:
+                        # Add wildcard if not already parameterized
+                        rule = ex.replace(')', ':*)')
+                    else:
+                        rule = ex
+                    rules.append(rule)
+                else:
+                    rules.append(ex)
+
+        # Fallback: Generate from description
+        if not rules:
+            desc_lower = description.lower()
+            if 'git' in desc_lower and ('read' in desc_lower or 'status' in desc_lower):
+                rules = ["Bash(git status:*)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)"]
+            elif 'pytest' in desc_lower or 'test' in desc_lower:
+                rules = ["Bash(pytest:*)"]
+            elif 'ruff' in desc_lower:
+                rules = ["Bash(ruff:*)"]
+            elif 'nix' in desc_lower:
+                rules = ["Bash(nix:*)"]
+            else:
+                # Very conservative fallback
+                logger.warning(f"Could not extract specific rules from: {description}")
+                rules = []
+
+        return rules
 
     def _apply_context_optimizations(self, optimizations: list[dict]) -> None:
         """Apply CLAUDE.md context optimizations."""
@@ -267,16 +413,147 @@ class ImprovementApplicator:
             logger.warning(f"Context optimization not yet implemented: {description}")
 
     def _apply_workflow_patterns(self, patterns: list[dict]) -> None:
-        """Apply workflow pattern suggestions (create slash commands)."""
+        """
+        Apply workflow pattern suggestions by creating slash commands.
+
+        Creates .claude/commands/<workflow-name>.md files.
+        """
         logger.info(f"Applying {len(patterns)} workflow patterns")
+
+        from pathlib import Path
+
+        # Check git status before modifying
+        if not self._check_git_status():
+            logger.warning("Uncommitted changes detected, skipping workflow patterns")
+            print("  ⚠️  Uncommitted changes - skipped workflow patterns")
+            return
+
+        # Ensure commands directory exists
+        commands_dir = Path.cwd() / ".claude" / "commands"
+        commands_dir.mkdir(parents=True, exist_ok=True)
 
         for pattern in patterns:
             description = pattern.get('description', 'unknown workflow')
+            commands = pattern.get('commands', [])
+            occurrences = pattern.get('occurrences', 0)
 
-            # TODO: Create slash command files
-            # For now, log what would be done
-            print(f"  • Workflow: {description}")
-            logger.warning(f"Workflow pattern not yet implemented: {description}")
+            if not commands:
+                logger.warning(f"Workflow pattern has no commands: {description}")
+                continue
+
+            # Generate command name from description
+            cmd_name = self._generate_command_name(commands)
+            cmd_file = commands_dir / f"{cmd_name}.md"
+
+            # Don't overwrite existing commands
+            if cmd_file.exists():
+                logger.warning(f"Command already exists: {cmd_file}")
+                print(f"  ⚠️  Workflow: {cmd_name} already exists, skipped")
+                continue
+
+            # Generate command content
+            content = self._generate_command_content(description, commands, occurrences, cmd_name)
+
+            # Write command file
+            try:
+                with open(cmd_file, 'w', encoding='utf-8') as f:
+                    f.write(content)
+                print(f"  ✓ Workflow: Created /{cmd_name} (.claude/commands/{cmd_name}.md)")
+                logger.info(f"Created workflow command: {cmd_file}")
+            except Exception as e:
+                logger.error(f"Failed to create workflow command {cmd_name}: {e}")
+                print(f"  ✗ Workflow: {cmd_name} - Error: {e}")
+
+    def _generate_command_name(self, commands: list[str]) -> str:
+        """
+        Generate command name from command sequence.
+
+        Args:
+            commands: List of commands like ["/speckit.specify", "/speckit.plan"]
+
+        Returns:
+            Command name like "workflow-specify-plan"
+        """
+        import re
+
+        # Extract base names
+        parts = []
+        for cmd in commands:
+            # Remove leading slash and extract meaningful parts
+            clean = cmd.lstrip('/').replace('.', '-')
+            # Take last part if hyphenated
+            if '-' in clean:
+                parts.append(clean.split('-')[-1])
+            else:
+                parts.append(clean)
+
+        # Combine with workflow prefix
+        if parts:
+            name = 'workflow-' + '-'.join(parts[:3])  # Max 3 parts
+        else:
+            name = 'workflow'
+
+        # Sanitize
+        name = re.sub(r'[^a-z0-9-]', '', name.lower())
+
+        return name or 'workflow'
+
+    def _generate_command_content(self, description: str, commands: list[str], occurrences: int, cmd_name: str) -> str:
+        """
+        Generate markdown content for workflow command.
+
+        Args:
+            description: Workflow description
+            commands: Command sequence
+            occurrences: How many times pattern occurred
+            cmd_name: Generated command name
+
+        Returns:
+            Markdown content for slash command
+        """
+        content = f"""# Workflow Command: {description}
+
+**Auto-generated from usage patterns** (occurred {occurrences} times)
+
+## Command Sequence
+
+This workflow executes the following commands in order:
+
+"""
+
+        for i, cmd in enumerate(commands, 1):
+            content += f"{i}. `{cmd}`\n"
+
+        content += f"""
+
+## Usage
+
+```bash
+# Run this workflow
+/{cmd_name}
+```
+
+## What This Does
+
+Automatically runs:
+"""
+
+        for cmd in commands:
+            content += f"- {cmd}\n"
+
+        content += """
+
+## Notes
+
+- This is an auto-generated workflow based on your usage patterns
+- Edit or delete this file if the workflow needs adjustment
+- File location: `.claude/commands/""" + cmd_name + """.md`
+
+---
+*Auto-generated by adaptive learning system*
+"""
+
+        return content
 
     def update_meta_learning(self, report: LearningReport, approved: list[dict]) -> None:
         """

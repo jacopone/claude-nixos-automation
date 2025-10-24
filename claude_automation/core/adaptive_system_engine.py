@@ -398,12 +398,12 @@ class AdaptiveSystemEngine:
         # Note: The schema expects specific types, but we're passing dicts
         # This is a simplification for now - in production, we'd convert properly
         return LearningReport(
-            permission_patterns=[],  # TODO: Convert from dicts
+            permission_patterns=permissions,  # Pass actual dicts
             mcp_optimizations=mcp,
-            context_suggestions=[],  # TODO: Convert from dicts
-            workflow_patterns=[],  # TODO: Convert from dicts
-            instruction_improvements=[],  # TODO: Convert from dicts
-            cross_project_transfers=[],  # TODO: Convert from dicts
+            context_suggestions=context,  # Pass actual dicts
+            workflow_patterns=workflows,  # Pass actual dicts
+            instruction_improvements=instructions,  # Pass actual dicts
+            cross_project_transfers=cross_project,  # Pass actual dicts
             meta_insights=meta,
             total_suggestions=total,
             estimated_improvements=estimated,

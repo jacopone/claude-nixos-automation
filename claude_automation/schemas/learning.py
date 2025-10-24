@@ -264,12 +264,6 @@ class InstructionImprovement(BaseModel):
 # Unified Engine Schemas
 # ============================================================================
 
-# Forward import to avoid circular dependency
-from typing import TYPE_CHECKING
-
-if TYPE_CHECKING:
-    pass
-
 
 class LearningReport(BaseModel):
     """Consolidated report from all learners."""
@@ -287,10 +281,10 @@ class LearningReport(BaseModel):
     workflow_patterns: list[Any] = Field(
         default_factory=list, description="Workflow bundling suggestions"
     )
-    instruction_improvements: list[InstructionImprovement] = Field(
+    instruction_improvements: list[Any] = Field(
         default_factory=list, description="Instruction effectiveness improvements"
     )
-    cross_project_transfers: list[TransferSuggestion] = Field(
+    cross_project_transfers: list[Any] = Field(
         default_factory=list, description="Cross-project pattern transfers"
     )
     meta_insights: dict[str, Any] = Field(
