@@ -1,0 +1,210 @@
+---
+status: active
+created: {{ config.timestamp.strftime('%Y-%m-%d') }}
+updated: {{ config.timestamp.strftime('%Y-%m-%d') }}
+type: reference
+lifecycle: persistent
+---
+
+# System Tool Usage Analytics
+
+**Last Updated**: {{ timestamp }}
+**Analysis Period**: {{ config.analysis_period_days }} days
+**Total Commands Tracked**: {{ "{:,}".format(config.total_commands_tracked) }}
+
+## Summary
+
+- **Total Tools Installed**: {{ config.total_tools }}
+- **Tools Used**: {{ config.used_tools|length }} ({{ "%.1f"|format(config.adoption_rate) }}%)
+- **Dormant Tools**: {{ config.unused_tool_count }}
+- **Human-Used Tools**: {{ config.human_tool_count }}
+- **Claude-Used Tools**: {{ config.claude_tool_count }}
+
+{% if config.adoption_rate < 50 -%}
+⚠️ **Low adoption rate**: Less than half of installed tools are being used
+{% endif %}
+
+## Top Tools by Usage
+
+### Overall (Human + Claude + Scripts)
+{% for tool in (config.used_tools|sort(attribute='total_invocations', reverse=true))[:15] %}
+{{ loop.index }}. **{{ tool.tool_name }}**: {{ "{:,}".format(tool.total_invocations) }} total
+   - Human: {{ tool.human_invocations }} ({{ "%.0f"|format(tool.human_percentage) }}%)
+   - Claude: {{ tool.claude_invocations }} ({{ "%.0f"|format(tool.claude_percentage) }}%)
+   - Scripts: {{ tool.script_invocations }}
+   - Last used: {{ tool.last_used.strftime('%Y-%m-%d') if tool.last_used else 'Unknown' }}
+{% endfor %}
+
+### Human-Preferred Tools (Top 15)
+{% for tool in (config.used_tools|sort(attribute='human_invocations', reverse=true))[:15] if tool.human_invocations > 0 %}
+{{ loop.index }}. **{{ tool.tool_name }}**: {{ tool.human_invocations }} uses
+{% endfor %}
+
+### Claude-Preferred Tools (Top 15)
+{% for tool in (config.used_tools|sort(attribute='claude_invocations', reverse=true))[:15] if tool.claude_invocations > 0 %}
+{{ loop.index }}. **{{ tool.tool_name }}**: {{ tool.claude_invocations }} uses
+{% endfor %}
+
+## Tool Inventory by Category
+
+{% for category in ['ai-tools', 'modern-cli', 'dev-tools', 'database-tools', 'file-management', 'system-tools', 'productivity', 'fonts', 'other'] %}
+{%- set cat_tools = config.tool_inventory|selectattr('category.value', 'equalto', category)|list %}
+{%- if cat_tools %}
+
+### {{ category|title|replace('-', ' ') }} ({{ cat_tools|length }} tools)
+
+{% for tool in cat_tools|sort(attribute='name') -%}
+{%- set usage = config.used_tools|selectattr('tool_name', 'equalto', tool.name)|list|first %}
+**{{ tool.name }}**{% if usage %} - {{ "{:,}".format(usage.total_invocations) }} uses{% else %} - 🔴 **DORMANT**{% endif %}
+{% if tool.description -%}
+   - {{ tool.description }}
+{% endif -%}
+{% if usage -%}
+   - Human: {{ usage.human_invocations }} | Claude: {{ usage.claude_invocations }} | Scripts: {{ usage.script_invocations }}
+   - Last used: {{ usage.last_used.strftime('%Y-%m-%d') if usage.last_used }}
+   - Adoption score: {{ "%.1f"|format(usage.adoption_score) }} uses/day
+{% else -%}
+   - ⚠️ Never used in last {{ config.analysis_period_days }} days
+   - Location: line {{ tool.package_line }} in packages.nix
+{% endif %}
+
+{% endfor -%}
+{% endif -%}
+{% endfor %}
+
+## Human vs Claude Analysis
+
+### Tools Both Use (Shared)
+{% set shared_tools = [] %}
+{% for tool in config.used_tools %}
+{%- if tool.human_invocations > 0 and tool.claude_invocations > 0 -%}
+{%- set _ = shared_tools.append(tool) -%}
+{%- endif -%}
+{% endfor %}
+
+{{ shared_tools|length }} tools used by both human and Claude:
+{% for tool in (shared_tools|sort(attribute='total_invocations', reverse=true))[:20] %}
+- **{{ tool.tool_name }}**: H:{{ tool.human_invocations }} C:{{ tool.claude_invocations }}
+{% endfor %}
+
+### Human-Only Tools
+{% set human_only = [] %}
+{% for tool in config.used_tools %}
+{%- if tool.human_invocations > 0 and tool.claude_invocations == 0 -%}
+{%- set _ = human_only.append(tool) -%}
+{%- endif -%}
+{% endfor %}
+
+{% if human_only|length > 0 -%}
+{{ human_only|length }} tools used only by humans:
+{% for tool in (human_only|sort(attribute='human_invocations', reverse=true))[:20] %}
+- **{{ tool.tool_name }}**: {{ tool.human_invocations }} uses
+{% endfor %}
+
+💡 **Insight**: These tools solve human-specific needs or Claude is not aware of them.
+{% endif %}
+
+### Claude-Only Tools
+{% set claude_only = [] %}
+{% for tool in config.used_tools %}
+{%- if tool.claude_invocations > 0 and tool.human_invocations == 0 -%}
+{%- set _ = claude_only.append(tool) -%}
+{%- endif -%}
+{% endfor %}
+
+{% if claude_only|length > 0 -%}
+{{ claude_only|length }} tools used only by Claude:
+{% for tool in (claude_only|sort(attribute='claude_invocations', reverse=true))[:20] %}
+- **{{ tool.tool_name }}**: {{ tool.claude_invocations }} uses
+{% endfor %}
+
+💡 **Insight**: AI-optimized tools working well for Claude's workflows.
+{% endif %}
+
+## Dormant Tools (Candidates for Removal)
+
+{{ config.unused_tool_count }} tools unused in last {{ config.analysis_period_days }} days:
+
+{% for tool in config.dormant_tools|sort(attribute='category.value') -%}
+**{{ tool.name }}**{% if tool.description %} - {{ tool.description }}{% endif %}
+   - Category: {{ tool.category.value }}
+   - Location: line {{ tool.package_line }} in packages.nix
+{% if tool.url -%}
+   - URL: {{ tool.url }}
+{% endif %}
+
+{% endfor %}
+
+{% if config.unused_tool_count > 20 -%}
+⚠️ **Action recommended**: Consider removing dormant tools to reduce system bloat.
+
+**Safe removal criteria**:
+1. Tool has 0 uses in analysis period ({{ config.analysis_period_days }} days)
+2. Tool is not a dependency for other packages
+3. Tool is not a library (fonts, Python packages)
+{% endif %}
+
+## Recommendations
+
+{% if config.recommendations|length == 0 -%}
+✅ No recommendations - tool usage looks optimal!
+{% else -%}
+{% for rec in config.recommendations|sort(attribute='priority') -%}
+{% if rec.priority == 1 -%}
+### 🔴 HIGH PRIORITY: {{ rec.tool_name }}
+{% elif rec.priority == 2 -%}
+### 🟡 MEDIUM PRIORITY: {{ rec.tool_name }}
+{% else -%}
+### 💚 LOW PRIORITY: {{ rec.tool_name }}
+{% endif %}
+
+**Type**: {{ rec.recommendation_type|replace('_', ' ')|title }}
+**Issue**: {{ rec.reason }}
+**Action**: {{ rec.action }}
+
+{% endfor -%}
+{% endif %}
+
+## Usage Trends by Category
+
+{% for category, count in config.usage_by_category|dictsort(by='value', reverse=true) %}
+- **{{ category|replace('-', ' ')|title }}**: {{ "{:,}".format(count) }} invocations
+{% endfor %}
+
+## Comparison with October 2025 Baseline
+
+{% set baseline_tools = {
+  'glow': 32,
+  'zoxide': 20,
+  'eza': 19,
+  'bat': 7,
+  'fd': 2,
+  'rg': 1,
+  'dust': 1
+} %}
+
+| Tool | Oct 2025 Baseline | Current | Change | Status |
+|------|-------------------|---------|--------|--------|
+{% for tool_name, baseline_count in baseline_tools.items() -%}
+{%- set current_tool = config.used_tools|selectattr('tool_name', 'equalto', tool_name)|list|first -%}
+{%- set current_count = current_tool.total_invocations if current_tool else 0 -%}
+{%- set change = current_count - baseline_count -%}
+{%- set status = '✅ Growing' if change > 0 else ('⚠️ Declining' if change < 0 else '➡️ Stable') -%}
+| {{ tool_name }} | {{ baseline_count }} | {{ current_count }} | {{ "+" if change > 0 }}{{ change }} | {{ status }} |
+{% endfor %}
+
+**Baseline study**: `docs/analysis/tool-adoption-baseline-2025-10.md`
+
+## Next Review
+
+**Scheduled**: {{ (config.timestamp + timedelta(days=30)).strftime('%Y-%m-%d') }}
+
+**Action items for next review**:
+1. Check if dormant tools are still unused
+2. Verify Claude is using modern CLI tools per CLAUDE.md policy
+3. Review any newly installed tools
+4. Compare adoption rate trends
+
+---
+*Tool analytics auto-generated by claude-nixos-automation*
+*For questions or issues, see: `docs/analysis/COMMAND_TRACKING_GUIDE.md`*

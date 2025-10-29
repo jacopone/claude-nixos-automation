@@ -1,7 +1,7 @@
 """
 RejectionTracker - Logs and retrieves suggestion rejection history.
 
-Tracks when users reject workflow/permission suggestions to prevent
+Tracks when users reject workflow/permission/mcp/context suggestions to prevent
 re-suggesting the same patterns. Auto-filters rejections older than 90 days.
 """
 
@@ -56,7 +56,7 @@ class RejectionTracker:
         Log a suggestion rejection.
 
         Args:
-            suggestion_type: Type of suggestion ('workflow' or 'permission')
+            suggestion_type: Type of suggestion ('workflow', 'permission', 'mcp', or 'context')
             suggestion_fingerprint: Unique identifier for the suggestion
             project_path: Project where rejection occurred
         """
@@ -89,7 +89,7 @@ class RejectionTracker:
 
         Args:
             days: Number of days to look back (default 90)
-            suggestion_type: Filter by type ('workflow', 'permission', or None for all)
+            suggestion_type: Filter by type ('workflow', 'permission', 'mcp', 'context', or None for all)
 
         Returns:
             List of rejection entries, newest first
@@ -178,12 +178,16 @@ class RejectionTracker:
 
         workflow_rejections = [r for r in rejections_90d if r.suggestion_type == 'workflow']
         permission_rejections = [r for r in rejections_90d if r.suggestion_type == 'permission']
+        mcp_rejections = [r for r in rejections_90d if r.suggestion_type == 'mcp']
+        context_rejections = [r for r in rejections_90d if r.suggestion_type == 'context']
 
         return {
             "total_rejections_90d": len(rejections_90d),
             "total_rejections_30d": len(rejections_30d),
             "workflow_rejections_90d": len(workflow_rejections),
             "permission_rejections_90d": len(permission_rejections),
+            "mcp_rejections_90d": len(mcp_rejections),
+            "context_rejections_90d": len(context_rejections),
             "storage_file": str(self.rejections_file),
             "storage_exists": self.rejections_file.exists(),
         }

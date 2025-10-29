@@ -102,7 +102,7 @@ class SuggestionRejectionEntry(BaseModel):
 
     timestamp: datetime = Field(default_factory=datetime.now)
     suggestion_type: str = Field(
-        ..., description="Type: workflow or permission"
+        ..., description="Type: workflow, permission, mcp, or context"
     )
     suggestion_fingerprint: str = Field(
         ..., description="Unique identifier for suggestion"
@@ -112,6 +112,6 @@ class SuggestionRejectionEntry(BaseModel):
     @validator("suggestion_type")
     def validate_type(cls, v):
         """Validate suggestion type."""
-        if v not in {"workflow", "permission"}:
-            raise ValueError("suggestion_type must be 'workflow' or 'permission'")
+        if v not in {"workflow", "permission", "mcp", "context"}:
+            raise ValueError("suggestion_type must be 'workflow', 'permission', 'mcp', or 'context'")
         return v

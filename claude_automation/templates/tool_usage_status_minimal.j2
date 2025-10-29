@@ -1,0 +1,22 @@
+## 📦 System Tool Usage
+
+**Installed**: {{ config.total_tools }} tools | **Used**: {{ config.used_tools|length }} ({{ "%.0f"|format(config.adoption_rate) }}%) | **Analysis period**: {{ config.analysis_period_days }} days
+
+**Top 5 tools**:
+{% for tool in (config.used_tools|sort(attribute='total_invocations', reverse=true))[:5] -%}
+- **{{ tool.tool_name }}**: {{ tool.total_invocations }} uses (H:{{ tool.human_invocations }} C:{{ tool.claude_invocations }})
+{% endfor %}
+
+{% if config.unused_tool_count > 20 -%}
+⚠️ **{{ config.unused_tool_count }} dormant tools** found (unused in last {{ config.analysis_period_days }} days)
+{% endif %}
+
+**Human vs Claude**:
+- {{ config.human_tool_count }} tools used by humans
+- {{ config.claude_tool_count }} tools used by Claude
+{% if config.claude_tool_count < config.human_tool_count * 0.5 -%}
+- ⚠️ Claude using significantly fewer tools than humans
+{% endif %}
+
+---
+*Tool analytics auto-generated. Full report: `.claude/tool-analytics.md`*
