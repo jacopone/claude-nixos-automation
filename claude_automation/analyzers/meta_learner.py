@@ -156,11 +156,19 @@ class MetaLearner(BaseAnalyzer):
             confidence=acceptance_rate,
         )
 
-        # Adjust thresholds based on acceptance rate
-        if acceptance_rate < 0.5:
-            self.increase_thresholds()
-        elif acceptance_rate > 0.9:
-            self.decrease_thresholds()
+        # FIXED: Only adjust thresholds when we have meaningful data
+        # The old logic would increase thresholds when 0 suggestions were made
+        # (0 suggestions → 0% acceptance → increase thresholds → even fewer
+        # suggestions), creating a vicious cycle that ratcheted thresholds to max.
+        #
+        # New logic: Only adjust when we have enough suggestions to draw
+        # conclusions (minimum 3 suggestions per session).
+        if total_suggestions >= 3:
+            if acceptance_rate < 0.3:  # Very low acceptance - raise thresholds
+                self.increase_thresholds()
+            elif acceptance_rate > 0.9:  # Very high acceptance - lower thresholds
+                self.decrease_thresholds()
+        # With 0-2 suggestions, don't adjust thresholds - not enough data
 
     def get_health_metrics(self) -> dict[str, dict]:
         """

@@ -65,6 +65,7 @@ class PermissionPattern(BaseModel):
             "modern_cli",
             "project_full_access",
             "file_operations",
+            "file_write_operations",
             "test_execution",
         }
         if v not in valid_types:
