@@ -8,10 +8,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Add the claude-automation package to Python path
-claude_automation_path = Path(__file__).parent / "claude-automation"
-sys.path.insert(0, str(claude_automation_path.parent))
-
 from claude_automation.generators.project_generator import ProjectGenerator
 from claude_automation.validators.content_validator import ContentValidator
 

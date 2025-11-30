@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Generate tool usage analytics and append to CLAUDE.md.
-Analyzes installed system tools and their usage patterns.
+Generate MCP usage analytics and append to CLAUDE.md.
+Analyzes configured MCP servers and their connection status.
 """
 
 import argparse
@@ -9,12 +9,9 @@ import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
-from claude_automation.analyzers.tool_usage_analyzer import ToolUsageAnalyzer
-from claude_automation.generators.tool_usage_analytics_generator import (
-    ToolUsageAnalyticsGenerator,
+from claude_automation.analyzers.mcp_usage_analyzer import MCPUsageAnalyzer
+from claude_automation.generators.mcp_usage_analytics_generator import (
+    MCPUsageAnalyticsGenerator,
 )
 
 # Configure logging
@@ -27,7 +24,7 @@ logger = logging.getLogger(__name__)
 def parse_arguments():
     """Parse command-line arguments."""
     parser = argparse.ArgumentParser(
-        description="Generate tool usage analytics for CLAUDE.md"
+        description="Generate MCP usage analytics for CLAUDE.md"
     )
 
     parser.add_argument(
@@ -75,35 +72,32 @@ def main():
         logger.error(f"Project path is not a directory: {project_path}")
         return 1
 
-    logger.info(f"Analyzing tool usage for project: {project_path}")
+    logger.info(f"Analyzing MCP usage for project: {project_path}")
 
     try:
-        # Analyze tool usage
-        analyzer = ToolUsageAnalyzer(project_path)
+        # Analyze MCP usage
+        analyzer = MCPUsageAnalyzer(project_path)
         config = analyzer.analyze(analysis_period_days=args.analysis_period)
 
         # Dry run mode
         if args.dry_run:
             logger.info("=== DRY RUN MODE ===")
             logger.info(f"Project: {config.project_path}")
-            logger.info(f"Packages.nix: {project_path / 'modules' / 'core' / 'packages.nix'}")
+            logger.info(f"Global config: {config.global_mcp_config or 'Not found'}")
+            logger.info(f"Project config: {config.project_mcp_config or 'Not found'}")
             logger.info("")
-            logger.info(f"Total tools: {config.total_tools}")
-            logger.info(f"Used tools: {len(config.used_tools)} ({config.adoption_rate:.1f}%)")
-            logger.info(f"Dormant tools: {config.unused_tool_count}")
-            logger.info(f"Human tools: {config.human_tool_count}")
-            logger.info(f"Claude tools: {config.claude_tool_count}")
-            logger.info("")
-            logger.info("Top 5 tools:")
-            for i, tool in enumerate(sorted(config.used_tools, key=lambda t: t.total_invocations, reverse=True)[:5], 1):
+            logger.info(f"Configured servers: {config.total_configured_servers}")
+            for server in config.configured_servers:
                 logger.info(
-                    f"  {i}. {tool.tool_name}: {tool.total_invocations} uses (H:{tool.human_invocations} C:{tool.claude_invocations})"
+                    f"  - {server.name}: {server.status.value} ({server.config_location})"
                 )
             logger.info("")
+            logger.info(f"Connected servers: {len(config.connected_servers)}")
+            logger.info(f"Unused servers: {len(config.unused_servers)}")
             logger.info(f"Recommendations: {len(config.recommendations)}")
-            for rec in sorted(config.recommendations, key=lambda r: r.priority)[:5]:
+            for rec in config.recommendations:
                 logger.info(
-                    f"  [{rec.recommendation_type}] {rec.tool_name}: {rec.reason}"
+                    f"  [{rec.recommendation_type}] {rec.server_name}: {rec.reason}"
                 )
             logger.info("")
             logger.info(f"Output would be appended to: {config.claude_file}")
@@ -111,29 +105,25 @@ def main():
             return 0
 
         # Generate analytics
-        generator = ToolUsageAnalyticsGenerator()
+        generator = MCPUsageAnalyticsGenerator()
         result = generator.generate(config)
 
         # Report results
         if result.success:
-            logger.info("✅ Tool usage analytics generated successfully")
+            logger.info("✅ MCP usage analytics generated successfully")
             logger.info(f"   Output: {result.output_path}")
             logger.info(
-                f"   Total tools: {result.stats.get('total_tools', 0)}"
+                f"   Configured servers: {result.stats.get('configured_servers', 0)}"
             )
             logger.info(
-                f"   Used tools: {result.stats.get('used_tools', 0)} ({result.stats.get('adoption_rate', 0):.1f}%)"
-            )
-            logger.info(
-                f"   Dormant tools: {result.stats.get('dormant_tools', 0)}"
+                f"   Connected servers: {result.stats.get('connected_servers', 0)}"
             )
             logger.info(f"   Recommendations: {result.stats.get('recommendations', 0)}")
             logger.info("")
-            logger.info("💡 Check your CLAUDE.md for the System Tool Usage section!")
-            logger.info("   Full report available at: .claude/tool-analytics.md")
+            logger.info("💡 Check your CLAUDE.md for the MCP Server Status section!")
             return 0
         else:
-            logger.error("❌ Tool usage analytics generation failed")
+            logger.error("❌ MCP usage analytics generation failed")
             for error in result.errors:
                 logger.error(f"   Error: {error}")
             for warning in result.warnings:

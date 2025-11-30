@@ -7,10 +7,6 @@ Generate/update user policies files for Claude Code.
 
 import logging
 import sys
-from pathlib import Path
-
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
 
 from claude_automation.generators.user_policies_generator import UserPoliciesGenerator
 
@@ -33,7 +29,7 @@ def main():
 
     # Check status
     status = generator.get_user_file_status()
-    logger.info(f"📊 Current Status:")
+    logger.info("📊 Current Status:")
     logger.info(f"   User file exists: {status['user_file_exists']}")
     logger.info(f"   Example file exists: {status['example_file_exists']}")
     logger.info(f"   User file path: {status['user_file_path']}")

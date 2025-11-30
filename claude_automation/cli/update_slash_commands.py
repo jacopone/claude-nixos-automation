@@ -9,9 +9,6 @@ import logging
 import sys
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent))
-
 from claude_automation.analyzers.project_detector import ProjectDetector
 from claude_automation.analyzers.workflow_analyzer import WorkflowAnalyzer
 from claude_automation.generators.slash_commands_generator import (

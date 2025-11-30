@@ -9,10 +9,6 @@ This script is designed to run at the end of ./rebuild-nixos workflow.
 import argparse
 import logging
 import sys
-from pathlib import Path
-
-# Add project to path
-sys.path.insert(0, str(Path(__file__).parent))
 
 from claude_automation.core.adaptive_system_engine import AdaptiveSystemEngine
 from claude_automation.schemas import AdaptiveSystemConfig
@@ -235,7 +231,7 @@ Examples:
         if report.workflow_patterns and len(report.workflow_patterns) > 0:
             has_content = True
             print(f"\n  🔄 Workflow Shortcuts: {len(report.workflow_patterns)} repeated command sequences")
-            print(f"     💡 Impact: Faster workflows (combine frequently-used commands)")
+            print("     💡 Impact: Faster workflows (combine frequently-used commands)")
 
         if not has_content:
             print("\n  ℹ️  Analyzed but found no high-confidence optimizations")

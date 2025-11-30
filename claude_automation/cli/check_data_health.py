@@ -12,10 +12,6 @@ Phase 1: Monitoring and visibility (no automatic cleanup).
 import argparse
 import logging
 import sys
-from pathlib import Path
-
-# Add project to path
-sys.path.insert(0, str(Path(__file__).parent))
 
 from claude_automation.analyzers.disk_health_monitor import DiskHealthMonitor
 

@@ -96,88 +96,80 @@
           installPhase = ''
             mkdir -p $out/bin $out/lib/claude_automation
 
-            # Copy Python package
+            # Copy Python package (includes cli/ module)
             cp -r claude_automation/* $out/lib/claude_automation/
 
-            # Copy and wrap Python scripts
-            for script in update-system-claude-v2.py update-project-claude-v2.py update-user-policies-v2.py; do
-              cp $script $out/lib/
-              name=$(basename $script -v2.py)
-
-              # Create wrapper shell script
-              # Note: These scripts must be run from ~/nixos-config directory
-              cat > $out/bin/$name <<EOF
+            # Create CLI wrappers using -m module execution
+            cat > $out/bin/update-system-claude <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/$script "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_system "\$@"
 EOF
-              chmod +x $out/bin/$name
-            done
+            chmod +x $out/bin/update-system-claude
 
-            # Copy and wrap permissions script
-            cp update-permissions-v2.py $out/lib/
+            cat > $out/bin/update-project-claude <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_project "\$@"
+EOF
+            chmod +x $out/bin/update-project-claude
+
+            cat > $out/bin/update-user-policies <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_user_policies "\$@"
+EOF
+            chmod +x $out/bin/update-user-policies
+
             cat > $out/bin/update-permissions <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-permissions-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_permissions "\$@"
 EOF
             chmod +x $out/bin/update-permissions
 
-            # Copy and wrap directory context script
-            cp update-directory-context-v2.py $out/lib/
             cat > $out/bin/update-directory-context <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-directory-context-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_directory_context "\$@"
 EOF
             chmod +x $out/bin/update-directory-context
 
-            # Copy and wrap local context script
-            cp update-local-context-v2.py $out/lib/
             cat > $out/bin/update-local-context <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-local-context-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_local_context "\$@"
 EOF
             chmod +x $out/bin/update-local-context
 
-            # Copy and wrap slash commands script
-            cp update-slash-commands-v2.py $out/lib/
             cat > $out/bin/update-slash-commands <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-slash-commands-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_slash_commands "\$@"
 EOF
             chmod +x $out/bin/update-slash-commands
 
-            # Copy and wrap usage analytics script
-            cp update-usage-analytics-v2.py $out/lib/
             cat > $out/bin/update-usage-analytics <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-usage-analytics-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_usage_analytics "\$@"
 EOF
             chmod +x $out/bin/update-usage-analytics
 
-            # Copy and wrap MCP usage analytics script
-            cp update-mcp-usage-analytics-v2.py $out/lib/
             cat > $out/bin/update-mcp-usage-analytics <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/update-mcp-usage-analytics-v2.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.update_mcp_analytics "\$@"
 EOF
             chmod +x $out/bin/update-mcp-usage-analytics
 
-            # Copy and wrap disk health monitor
-            cp check-data-health.py $out/lib/
             cat > $out/bin/check-data-health <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/check-data-health.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.check_data_health "\$@"
 EOF
             chmod +x $out/bin/check-data-health
 
-            # Copy and wrap hook deployer
             cat > $out/bin/deploy-hooks <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
@@ -185,7 +177,6 @@ exec ${pythonEnv}/bin/python -m claude_automation.deployment.hook_deployer "\$@"
 EOF
             chmod +x $out/bin/deploy-hooks
 
-            # Copy and wrap package differ
             cat > $out/bin/package-diff <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
@@ -193,12 +184,10 @@ exec ${pythonEnv}/bin/python -m claude_automation.analyzers.package_differ "\$@"
 EOF
             chmod +x $out/bin/package-diff
 
-            # Copy and wrap interactive setup script
-            cp setup-user-policies-interactive.py $out/lib/
             cat > $out/bin/setup-user-policies-interactive <<EOF
 #!/usr/bin/env bash
 export PYTHONPATH="$out/lib:\$PYTHONPATH"
-exec ${pythonEnv}/bin/python $out/lib/setup-user-policies-interactive.py "\$@"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.setup_user_policies "\$@"
 EOF
             chmod +x $out/bin/setup-user-policies-interactive
 

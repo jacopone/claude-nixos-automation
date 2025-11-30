@@ -240,7 +240,7 @@ def main():
     print("\n🔨 Generating user policies file...")
     output_path = generate_custom_policies(preferences)
 
-    print(f"\n✅ Success! User policies created at:")
+    print("\n✅ Success! User policies created at:")
     print(f"   {output_path}\n")
     print("📝 Next steps:")
     print("   1. Review the generated file")

@@ -11,9 +11,6 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-# Add parent directory to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
-
 from claude_automation.analyzers import ProjectDetector
 from claude_automation.generators.permissions_generator import PermissionsGenerator
 from claude_automation.schemas import PermissionsConfig
