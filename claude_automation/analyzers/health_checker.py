@@ -245,17 +245,17 @@ def validate_permission_learning() -> tuple[bool, str, list[str]]:
     """
     missing = []
 
-    # Check for approval tracker data
-    approval_db = Path.home() / ".claude" / "approval-history.jsonl"
+    # Check for approval tracker data (matches ApprovalTracker path)
+    approval_db = Path.home() / ".claude" / "learning" / "permission_approvals.jsonl"
     if not approval_db.exists():
-        missing.append("approval-history.jsonl")
+        missing.append("permission_approvals.jsonl")
 
     if missing:
         return False, "Missing approval history data", missing
 
     # Check if file is readable and non-empty
     if approval_db.stat().st_size == 0:
-        return False, "Approval history is empty", ["approval-history.jsonl (empty)"]
+        return False, "Approval history is empty", ["permission_approvals.jsonl (empty)"]
 
     return True, "Ready", []
 
@@ -337,10 +337,10 @@ def validate_instruction_tracking() -> tuple[bool, str, list[str]]:
     """
     missing = []
 
-    # Check for policy violation tracking
-    violation_db = Path.home() / ".claude" / "policy-violations.jsonl"
+    # Check for policy violation tracking (matches InstructionEffectivenessTracker path)
+    violation_db = Path.home() / ".claude" / "learning" / "policy_violations.jsonl"
     if not violation_db.exists():
-        missing.append("policy-violations.jsonl")
+        missing.append("policy_violations.jsonl")
 
     if missing:
         return False, "No policy violation data", missing
@@ -369,10 +369,10 @@ def validate_meta_learning() -> tuple[bool, str, list[str]]:
     """
     missing = []
 
-    # Check for learning metrics database
-    metrics_db = Path.home() / ".claude" / "learning-metrics.jsonl"
+    # Check for learning metrics database (matches MetaLearner path)
+    metrics_db = Path.home() / ".claude" / "learning" / "meta_metrics.jsonl"
     if not metrics_db.exists():
-        missing.append("learning-metrics.jsonl")
+        missing.append("meta_metrics.jsonl")
 
     if missing:
         return False, "No learning metrics data", missing

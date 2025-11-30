@@ -7,7 +7,14 @@ from datetime import datetime
 from pathlib import Path
 
 from ..parsers.cached_nix_parser import CachedNixParser
-from ..schemas import FishAbbreviation, GenerationResult, SystemConfig, ToolCategory
+from ..schemas import (
+    ClaudeRelevance,
+    FishAbbreviation,
+    GenerationResult,
+    SystemConfig,
+    ToolCategory,
+    ToolInfo,
+)
 from .base_generator import BaseGenerator
 
 logger = logging.getLogger(__name__)
@@ -156,8 +163,139 @@ class SystemGenerator(BaseGenerator):
             has_user_policies=has_user_policies,
         )
 
+    # Tools that are substitutions for standard POSIX commands - ESSENTIAL
+    TOOL_SUBSTITUTIONS = {
+        "fd": "find",
+        "eza": "ls",
+        "bat": "cat",
+        "ripgrep": "grep",
+        "rg": "grep",
+        "dust": "du",
+        "procs": "ps",
+        "bottom": "top",
+        "btm": "top",
+        "choose": "cut/awk",
+        "duf": "df",
+        "zoxide": "cd",
+        "xh": "curl",
+    }
+
+    # Tools with unique syntax Claude wouldn't guess - HIGH relevance
+    HIGH_RELEVANCE_TOOLS = {
+        "jless",
+        "miller",
+        "mlr",
+        "pgcli",
+        "mycli",
+        "usql",
+        "csvlook",
+        "yq",
+        "yq-go",
+        "glow",
+        "hyperfine",
+        "tokei",
+        "ast-grep",
+        "semgrep",
+        "hurl",
+        "broot",
+        "atuin",
+        "mcfly",
+        "just",
+        "entr",
+    }
+
+    # Standard tools Claude already knows - LOW relevance (skip)
+    STANDARD_TOOLS = {
+        "git",
+        "gcc",
+        "gnumake",
+        "docker",
+        "docker-compose",
+        "podman",
+        "npm",
+        "nodejs",
+        "python",
+        "wget",
+        "curl",
+        "ssh",
+        "tmux",
+        "vim",
+        "neovim",
+        "sqlite",
+        "jq",
+        "gh",
+        "nmap",
+        "wireshark",
+        "tcpdump",
+        "strace",
+        "gdb",
+        "valgrind",
+        "pkg-config",
+        "cmake",
+        "ninja",
+        "file",
+        "parallel",
+    }
+
+    def _calculate_relevance(self, tool: ToolInfo) -> ClaudeRelevance:
+        """Calculate Claude relevance for a tool."""
+        name_lower = tool.name.lower()
+
+        # System Support Packages are never relevant
+        if tool.category == ToolCategory.SYSTEM_PACKAGES:
+            return ClaudeRelevance.NONE
+
+        # Tool substitutions are ESSENTIAL
+        if name_lower in self.TOOL_SUBSTITUTIONS:
+            return ClaudeRelevance.ESSENTIAL
+
+        # AI & MCP tools are ESSENTIAL (Claude should know about AI tools)
+        if tool.category == ToolCategory.AI_MCP_TOOLS:
+            return ClaudeRelevance.ESSENTIAL
+
+        # Modern CLI Tools are ESSENTIAL (they're the substitutions)
+        if tool.category == ToolCategory.CLI_TOOLS:
+            return ClaudeRelevance.ESSENTIAL
+
+        # High relevance tools with unique syntax
+        if name_lower in self.HIGH_RELEVANCE_TOOLS:
+            return ClaudeRelevance.HIGH
+
+        # Standard tools Claude knows
+        if name_lower in self.STANDARD_TOOLS:
+            return ClaudeRelevance.LOW
+
+        # Default to MEDIUM for unknown tools
+        return ClaudeRelevance.MEDIUM
+
+    def _filter_by_relevance(
+        self, categories: dict[ToolCategory, list]
+    ) -> dict[ToolCategory, list]:
+        """Filter tools to only include ESSENTIAL and HIGH relevance."""
+        filtered = {}
+
+        for category, tools in categories.items():
+            # Skip System Support Packages entirely
+            if category == ToolCategory.SYSTEM_PACKAGES:
+                continue
+
+            filtered_tools = []
+            for tool in tools:
+                relevance = self._calculate_relevance(tool)
+                # Update tool's relevance field
+                tool.relevance = relevance
+                # Only include ESSENTIAL and HIGH
+                if relevance in (ClaudeRelevance.ESSENTIAL, ClaudeRelevance.HIGH):
+                    filtered_tools.append(tool)
+
+            # Only include category if it has tools
+            if filtered_tools:
+                filtered[category] = filtered_tools
+
+        return filtered
+
     def _organize_by_category(self, packages: dict) -> dict[ToolCategory, list]:
-        """Organize packages by category."""
+        """Organize packages by category and filter by relevance."""
         categories = {}
 
         for tool_info in packages.values():
@@ -170,7 +308,8 @@ class SystemGenerator(BaseGenerator):
         for category in categories:
             categories[category].sort(key=lambda t: t.name.lower())
 
-        return categories
+        # Apply relevance filtering
+        return self._filter_by_relevance(categories)
 
     def _parse_fish_abbreviations(self, home_file: Path) -> list[FishAbbreviation]:
         """Parse fish abbreviations from home-manager config."""

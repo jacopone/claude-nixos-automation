@@ -44,10 +44,10 @@ class ContentValidator:
         self.required_patterns = [
             r"Last updated:",
             r"SYSTEM OPTIMIZATION LEVEL: EXPERT",
-            r"MANDATORY Tool Substitutions",
-            r"find.*→.*fd",
-            r"ls.*→.*eza",
-            r"cat.*→.*bat",
+            # Table format: | `find` | `fd` |
+            r"\|\s*`find`\s*\|\s*`fd`\s*\|",
+            r"\|\s*`ls`\s*\|\s*`eza`\s*\|",
+            r"\|\s*`cat`\s*\|\s*`bat`\s*\|",
         ]
 
         # Temporal markers to avoid (style warnings)
@@ -154,25 +154,19 @@ class ContentValidator:
         """Validate that tool substitutions are properly formatted."""
         errors = []
 
-        # Extract tools from required patterns (find, ls, cat in the default patterns)
-        # Only check for tools that are mentioned in required_patterns
-        pattern_tools = set()
-        for pattern in self.required_patterns:
-            # Extract tool name from patterns like "find.*→.*fd"
-            match = re.match(r"^(\w+)", pattern)
-            if match and match.group(1) not in ["Last", "SYSTEM", "MANDATORY"]:
-                pattern_tools.add(match.group(1))
+        # Check for tool substitution table (new format uses markdown table)
+        # Look for | `find` | `fd` | pattern in the content
+        required_substitutions = [
+            ("find", "fd"),
+            ("ls", "eza"),
+            ("cat", "bat"),
+        ]
 
-        substitution_section = self._extract_section(
-            content, "MANDATORY Tool Substitutions"
-        )
-
-        if substitution_section and pattern_tools:
-            for tool in pattern_tools:
-                if tool not in substitution_section.lower():
-                    errors.append(f"Missing tool substitution for: {tool}")
-        elif not substitution_section and pattern_tools:
-            errors.append("Tool substitutions section not found")
+        for old_tool, new_tool in required_substitutions:
+            # Match table row: | `find` | `fd` |
+            pattern = rf"\|\s*`{old_tool}`\s*\|\s*`{new_tool}`\s*\|"
+            if not re.search(pattern, content):
+                errors.append(f"Missing tool substitution: {old_tool} → {new_tool}")
 
         return errors
 

@@ -22,8 +22,6 @@ This file provides Claude Code with comprehensive information about all availabl
 **SYSTEM OPTIMIZATION LEVEL: EXPERT**
 {% include 'shared/policies.j2' %}
 
-{% include 'shared/command_examples.j2' %}
-
 ## System Information
 
 - **OS**: NixOS (nixos-unstable)
@@ -32,52 +30,30 @@ This file provides Claude Code with comprehensive information about all availabl
 - **Terminal**: Kitty
 - **Package Management**: Nix Flakes + Home Manager
 
-## Available Tools
+## Available Tools ({{ total_tools }} documented)
 
 {% for category, tools in tool_categories.items() %}
 {% if category.value == 'AI & MCP Tools' %}
 ### 🤖 {{ category.value }}
-
-**AI development tools available:**
-
 {% for tool in tools %}
-- **`{{ tool.name }}`** - {{ tool.description }}{% if tool.url %} ({{ tool.url }}){% endif %}
-
+- **`{{ tool.name }}`** - {{ tool.description }}
 {% endfor %}
+
 {% elif category.value == 'Modern CLI Tools' %}
 ### ⚡ {{ category.value }}
-
 {% for tool in tools %}
-- `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
-{% endfor %}
-
-{% elif category.value == 'System Support Packages' %}
-### 📦 {{ category.value }}
-
-**These are system libraries, fonts, and build dependencies (not directly invokable):**
-
-{% for tool in tools %}
-- `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
+- `{{ tool.name }}` - {{ tool.description }}
 {% endfor %}
 
 {% else %}
 ### {{ category.value }}
 {% for tool in tools %}
-- `{{ tool.name }}` - {{ tool.description }}{% if tool.url %} - {{ tool.url }}{% endif %}
-
+- `{{ tool.name }}` - {{ tool.description }}
 {% endfor %}
 
 {% endif %}
 {% endfor %}
 
-{% include 'shared/fish_abbreviations.j2' %}
-
 ## Maintenance
 
-This file is automatically maintained and should be updated when:
-- New packages are added to `nixos-config/modules/core/packages.nix`
-- New home-manager programs are configured
-- Fish shell abbreviations or functions are modified
-- Development tools or workflows change
-
-To regenerate this file, run the NixOS rebuild process which automatically updates Claude Code configurations.
+Auto-maintained by NixOS rebuild. Regenerated when packages.nix or home-manager config changes.

@@ -5,10 +5,12 @@ Uses frequency analysis and categorization to identify generalizable patterns
 that can reduce future permission prompts.
 """
 
+import json
 import logging
 import re
 from collections import Counter, defaultdict
 from datetime import datetime
+from pathlib import Path
 from typing import Any
 
 from ..schemas import (
@@ -147,6 +149,53 @@ class PermissionPatternDetector(BaseAnalyzer):
         """Return the name of the primary analysis method."""
         return "detect_patterns"
 
+    def _get_existing_patterns(self) -> set[str]:
+        """
+        Load existing allowed patterns from settings.local.json.
+
+        Returns:
+            Set of patterns already in the allow list.
+        """
+        existing = set()
+        settings_file = Path.cwd() / ".claude" / "settings.local.json"
+
+        if settings_file.exists():
+            try:
+                with open(settings_file, encoding='utf-8') as f:
+                    settings = json.load(f)
+                allow_list = settings.get('permissions', {}).get('allow', [])
+                existing = set(allow_list)
+                logger.debug(f"Loaded {len(existing)} existing patterns from settings.local.json")
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.warning(f"Could not load existing patterns: {e}")
+
+        return existing
+
+    def _pattern_already_approved(self, pattern: 'PermissionPattern', existing_patterns: set[str]) -> bool:
+        """
+        Check if a detected pattern is already covered by existing patterns.
+
+        Args:
+            pattern: The detected pattern to check
+            existing_patterns: Set of patterns from settings.local.json
+
+        Returns:
+            True if pattern is already approved (should be skipped)
+        """
+        # Check if any example from this pattern matches existing patterns
+        for example in pattern.approved_examples:
+            # Direct match
+            if example in existing_patterns:
+                return True
+            # Check if covered by wildcard patterns
+            for existing in existing_patterns:
+                if existing.endswith('**)') or existing.endswith(':*)'):
+                    # Wildcard pattern - check if it covers our example
+                    prefix = existing.replace('**)', '').replace(':*)', '')
+                    if example.startswith(prefix):
+                        return True
+        return False
+
     def detect_patterns(
         self, days: int = 30, project_path: str | None = None
     ) -> list[PatternSuggestion]:
@@ -203,14 +252,26 @@ class PermissionPatternDetector(BaseAnalyzer):
         rejections = tracker.get_recent_rejections(days=90, suggestion_type='permission')
         rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
 
-        # Filter detected patterns
+        # Filter detected patterns (rejected)
         detected_patterns = [
             p for p in detected_patterns
             if p.pattern_type not in rejected_fingerprints
         ]
 
+        # Filter out patterns already approved in settings.local.json
+        existing_patterns = self._get_existing_patterns()
+        if existing_patterns:
+            original_count = len(detected_patterns)
+            detected_patterns = [
+                p for p in detected_patterns
+                if not self._pattern_already_approved(p, existing_patterns)
+            ]
+            filtered_count = original_count - len(detected_patterns)
+            if filtered_count > 0:
+                logger.info(f"Filtered {filtered_count} patterns (already in settings.local.json)")
+
         if not detected_patterns:
-            logger.info("All permission patterns were previously rejected")
+            logger.info("All permission patterns were previously rejected or already approved")
             return []
 
         # Create suggestions from patterns

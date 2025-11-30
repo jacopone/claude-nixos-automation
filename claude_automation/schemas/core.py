@@ -27,6 +27,20 @@ class ToolCategory(str, Enum):
     OTHER = "Other Tools"
 
 
+class ClaudeRelevance(str, Enum):
+    """Relevance level for tool documentation in CLAUDE.md.
+
+    Used to filter which tools are included in generated documentation.
+    Claude doesn't need to know about standard tools it already understands.
+    """
+
+    ESSENTIAL = "essential"  # Tool substitutions (fd, eza, bat, rg) - must document
+    HIGH = "high"  # Non-obvious tools with unique syntax (jless, miller, choose)
+    MEDIUM = "medium"  # Useful but Claude likely knows (devenv, lazygit)
+    LOW = "low"  # Standard tools Claude knows (git, gcc, docker, npm)
+    NONE = "none"  # System packages, fonts, libraries - skip entirely
+
+
 class ProjectType(str, Enum):
     """Detected project types for permissions optimization."""
 
@@ -45,6 +59,10 @@ class ToolInfo(BaseModel):
     description: str = Field(..., description="Tool description")
     category: ToolCategory = Field(..., description="Tool category")
     url: str | None = Field(None, description="Tool homepage URL")
+    relevance: ClaudeRelevance = Field(
+        default=ClaudeRelevance.MEDIUM,
+        description="Relevance for CLAUDE.md documentation",
+    )
 
     @validator("name")
     def validate_name(cls, v):

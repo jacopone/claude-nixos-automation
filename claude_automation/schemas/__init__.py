@@ -28,6 +28,7 @@ from claude_automation.schemas.context import (
     SectionUsage,
 )
 from claude_automation.schemas.core import (
+    ClaudeRelevance,
     FishAbbreviation,
     GitStatus,
     ParsingResult,
@@ -119,6 +120,7 @@ from claude_automation.schemas.workflows import (
 __all__ = [
     # Core schemas
     "ToolCategory",
+    "ClaudeRelevance",
     "ProjectType",
     "ToolInfo",
     "FishAbbreviation",
