@@ -183,7 +183,8 @@ class PermissionPatternDetector(BaseAnalyzer):
             True if pattern is already approved (should be skipped)
         """
         # Check if any example from this pattern matches existing patterns
-        for example in pattern.approved_examples:
+        # Note: PermissionPattern has 'examples', not 'approved_examples'
+        for example in pattern.examples:
             # Direct match
             if example in existing_patterns:
                 return True

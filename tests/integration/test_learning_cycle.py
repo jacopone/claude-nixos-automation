@@ -26,12 +26,19 @@ def tracker(temp_storage):
 
 
 @pytest.fixture
-def detector(tracker):
-    """Create PermissionPatternDetector."""
+def detector(tracker, monkeypatch, temp_storage):
+    """Create PermissionPatternDetector.
+
+    Uses monkeypatch to change CWD to temp_storage to prevent loading
+    real settings.local.json patterns during tests.
+    """
+    # Isolate from real settings.local.json
+    monkeypatch.chdir(temp_storage)
+
     return PermissionPatternDetector(
         approval_tracker=tracker,
         min_occurrences=3,
-        confidence_threshold=0.5,  # Lower threshold for testing (patterns without recency bonus reach ~0.53)
+        confidence_threshold=0.5,  # Match TIER_1_SAFE threshold
     )
 
 
@@ -180,41 +187,48 @@ class TestApprovalToPatternToSuggestion:
         """
         Test that patterns below threshold don't generate suggestions.
         """
-        # STEP 1: User approves commands only twice (below threshold of 3)
+        # STEP 1: User approves command only once (below TIER_1_SAFE threshold of 2)
         session_id = "test-session"
         project_path = "/home/user/project"
 
         tracker.log_approval("Bash(git status:*)", session_id, project_path)
-        tracker.log_approval("Bash(git log:*)", session_id, project_path)
 
         # STEP 2: Try to detect patterns
         suggestions = detector.detect_patterns(days=30)
 
         # STEP 3: Verify no suggestions (below minimum occurrences)
+        # Note: TIER_1_SAFE requires 2 occurrences minimum
         assert len(suggestions) == 0
 
-    def test_pattern_confidence_affects_suggestions(self, tracker, detector):
+    def test_pattern_confidence_affects_suggestions(self, tracker):
         """
         Test that confidence threshold filters suggestions.
+
+        The new reliability-based confidence formula doesn't dilute based on
+        unrelated commands. Instead, it measures session/project spread.
+        To test filtering, we use a high threshold with single-session approvals.
         """
-        # STEP 1: Create pattern with low confidence
-        # (few occurrences among many total approvals)
-        session_id = "test-session"
+        # Create detector with HIGH threshold (requires multi-session spread)
+        high_threshold_detector = PermissionPatternDetector(
+            approval_tracker=tracker,
+            min_occurrences=2,
+            confidence_threshold=0.9,  # Very high threshold
+        )
+
+        # Single session = no session spread bonus
+        session_id = "single-session"
         project_path = "/home/user/project"
 
-        # 3 git commands (just above occurrence threshold)
+        # 3 git commands from single session
+        # Confidence = 0.5 (base) + 0.025 (1 session) + 0.03 (1 project) + ~0.05 + 0.05 = ~0.655
+        # Below 0.9 threshold
         for _ in range(3):
             tracker.log_approval("Bash(git status:*)", session_id, project_path)
 
-        # Many unrelated commands (dilutes confidence)
-        for i in range(30):
-            tracker.log_approval(f"Read(/file{i}.txt)", session_id, project_path)
+        # STEP 2: Detect patterns with high threshold
+        suggestions = high_threshold_detector.detect_patterns(days=30)
 
-        # STEP 2: Detect patterns with threshold=0.6
-        suggestions = detector.detect_patterns(days=30)
-
-        # STEP 3: Git pattern should have low confidence (3/33 ≈ 0.09)
-        # Even with bonuses, won't reach 0.6 threshold
+        # STEP 3: Git pattern should be excluded due to low confidence (< 0.9)
         git_suggestions = [
             s for s in suggestions
             if "git" in s.pattern.pattern_type
