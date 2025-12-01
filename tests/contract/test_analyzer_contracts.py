@@ -253,17 +253,23 @@ class TestProjectArchetypeDetectorContract:
 class TestMetaLearnerContract:
     """Contract tests for MetaLearner (Tier 3)."""
 
-    def test_can_get_health_metrics(self):
+    def test_can_get_health_metrics(self, tmp_path):
         """Test T107: MetaLearner.get_health_metrics() works."""
-        learner = MetaLearner()
+        # Use temp directory to avoid dependency on home directory
+        metrics_file = tmp_path / "meta_metrics.jsonl"
+        thresholds_file = tmp_path / "thresholds.json"
+        learner = MetaLearner(metrics_file=metrics_file, thresholds_file=thresholds_file)
 
         # Should return health metrics
         metrics = learner.get_health_metrics()
         assert isinstance(metrics, dict)
 
-    def test_can_suggest_threshold_adjustments(self):
+    def test_can_suggest_threshold_adjustments(self, tmp_path):
         """Test T107: MetaLearner.suggest_threshold_adjustments() works."""
-        learner = MetaLearner()
+        # Use temp directory to avoid dependency on home directory
+        metrics_file = tmp_path / "meta_metrics.jsonl"
+        thresholds_file = tmp_path / "thresholds.json"
+        learner = MetaLearner(metrics_file=metrics_file, thresholds_file=thresholds_file)
 
         # Should return adjustment suggestions
         adjustments = learner.suggest_threshold_adjustments()

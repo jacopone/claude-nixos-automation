@@ -236,9 +236,13 @@ class MetaLearner(BaseAnalyzer):
             days: Number of days to look back
 
         Returns:
-            List of metric dicts
+            List of metric dicts (empty list if file doesn't exist)
         """
         from datetime import timedelta
+
+        # Handle missing file gracefully
+        if not self.metrics_file.exists():
+            return []
 
         cutoff = datetime.now() - timedelta(days=days)
         metrics = []
