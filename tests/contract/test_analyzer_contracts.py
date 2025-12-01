@@ -245,7 +245,7 @@ class TestInstructionTrackerContract:
         result = tracker.get_effectiveness_score("test-policy", total_sessions=10)
         assert isinstance(result, InstructionEffectiveness)
         assert hasattr(result, "effectiveness_score")
-        assert isinstance(result.effectiveness_score, (int, float))
+        assert isinstance(result.effectiveness_score, int | float)
 
 
 class TestProjectArchetypeDetectorContract:
