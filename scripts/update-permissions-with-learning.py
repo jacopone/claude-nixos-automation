@@ -197,12 +197,12 @@ Examples:
             print("=" * 70)
 
             if result.stats:
-                print(f"\nStatistics:")
+                print("\nStatistics:")
                 for key, value in result.stats.items():
                     print(f"  {key}: {value}")
 
             if result.warnings:
-                print(f"\nWarnings:")
+                print("\nWarnings:")
                 for warning in result.warnings:
                     print(f"  ⚠️  {warning}")
 
@@ -251,7 +251,7 @@ def show_statistics(
 
     # Approval stats
     approval_stats = tracker.get_stats()
-    print(f"\n📋 Approval History:")
+    print("\n📋 Approval History:")
     print(f"  Total approvals (30 days): {approval_stats['total_approvals_30d']}")
     print(f"  Total approvals (7 days):  {approval_stats['total_approvals_7d']}")
     print(f"  Unique permissions (30d):  {approval_stats['unique_permissions_30d']}")
@@ -263,15 +263,15 @@ def show_statistics(
     print(f"  Patterns detected:         {pattern_stats['patterns_detected']}")
     print(f"  Patterns above threshold:  {pattern_stats['patterns_above_threshold']}")
 
-    if pattern_stats.get('high_confidence_patterns'):
-        print(f"\n✨ High Confidence Patterns:")
-        for pattern_type in pattern_stats['high_confidence_patterns']:
+    if pattern_stats.get("high_confidence_patterns"):
+        print("\n✨ High Confidence Patterns:")
+        for pattern_type in pattern_stats["high_confidence_patterns"]:
             print(f"  • {pattern_type}")
 
-    if pattern_stats.get('category_counts'):
-        print(f"\n📂 Category Breakdown:")
+    if pattern_stats.get("category_counts"):
+        print("\n📂 Category Breakdown:")
         for category, count in sorted(
-            pattern_stats['category_counts'].items(),
+            pattern_stats["category_counts"].items(),
             key=lambda x: x[1],
             reverse=True,
         )[:10]:

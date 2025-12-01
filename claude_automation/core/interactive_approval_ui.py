@@ -59,39 +59,47 @@ class InteractiveApprovalUI:
 
         # MCP optimizations
         for i, sug in enumerate(report.mcp_optimizations):
-            all_suggestions.append({
-                "type": "mcp",
-                "index": i,
-                "data": sug,
-                "description": sug.get("description", "MCP optimization")
-            })
+            all_suggestions.append(
+                {
+                    "type": "mcp",
+                    "index": i,
+                    "data": sug,
+                    "description": sug.get("description", "MCP optimization"),
+                }
+            )
 
         # Permission patterns
         for i, sug in enumerate(report.permission_patterns):
-            all_suggestions.append({
-                "type": "permission",
-                "index": i,
-                "data": sug,
-                "description": sug.get("description", "Permission pattern")
-            })
+            all_suggestions.append(
+                {
+                    "type": "permission",
+                    "index": i,
+                    "data": sug,
+                    "description": sug.get("description", "Permission pattern"),
+                }
+            )
 
         # Context optimizations
         for i, sug in enumerate(report.context_suggestions):
-            all_suggestions.append({
-                "type": "context",
-                "index": i,
-                "data": sug,
-                "description": sug.get("description", "Context optimization")
-            })
+            all_suggestions.append(
+                {
+                    "type": "context",
+                    "index": i,
+                    "data": sug,
+                    "description": sug.get("description", "Context optimization"),
+                }
+            )
 
         # Workflow patterns
         for i, sug in enumerate(report.workflow_patterns):
-            all_suggestions.append({
-                "type": "workflow",
-                "index": i,
-                "data": sug,
-                "description": sug.get("description", "Workflow pattern")
-            })
+            all_suggestions.append(
+                {
+                    "type": "workflow",
+                    "index": i,
+                    "data": sug,
+                    "description": sug.get("description", "Workflow pattern"),
+                }
+            )
 
         if not all_suggestions:
             return approved
@@ -104,7 +112,9 @@ class InteractiveApprovalUI:
             print(f"\n\n  Interrupted. Saved {len(approved)} approvals.")
             return approved
 
-        print(f"\n✓ Review complete. {len(approved)}/{len(all_suggestions)} suggestions approved.\n")
+        print(
+            f"\n✓ Review complete. {len(approved)}/{len(all_suggestions)} suggestions approved.\n"
+        )
         return approved
 
     def _print_review_header(self, total: int) -> None:
@@ -136,45 +146,50 @@ class InteractiveApprovalUI:
         approved = []
 
         for i, sug in enumerate(all_suggestions, 1):
-            print(f"\n{'='*70}")
-            print(f"[{i}/{len(all_suggestions)}] {sug['type'].upper()}: {sug['description']}")
-            print(f"{'='*70}")
+            print(f"\n{'=' * 70}")
+            print(
+                f"[{i}/{len(all_suggestions)}] {sug['type'].upper()}: {sug['description']}"
+            )
+            print(f"{'=' * 70}")
 
             # Display detailed information about the suggestion
             self._display_suggestion_details(sug)
 
-            print(f"\n{'─'*70}")
+            print(f"\n{'─' * 70}")
 
             # Get user decision
             decision = self._get_user_decision()
 
-            if decision == 'approve':
+            if decision == "approve":
                 approved.append(sug)
                 print("  ✓ Approved")
-            elif decision == 'reject':
+            elif decision == "reject":
                 # Log rejection silently
                 from claude_automation.analyzers.rejection_tracker import (
                     RejectionTracker,
                 )
+
                 tracker = RejectionTracker()
                 fingerprint = self._generate_fingerprint(sug)
                 tracker.log_rejection(
-                    suggestion_type=sug['type'],
+                    suggestion_type=sug["type"],
                     suggestion_fingerprint=fingerprint,
-                    project_path=sug.get('data', {}).get('project_path', '')
+                    project_path=sug.get("data", {}).get("project_path", ""),
                 )
                 print("  ✗ Rejected")
-            elif decision == 'approve_all':
+            elif decision == "approve_all":
                 # Approve this and all remaining
                 approved.append(sug)
                 approved.extend(all_suggestions[i:])
-                print(f"  ✓ Approved all {len(all_suggestions) - i + 1} remaining suggestions")
+                print(
+                    f"  ✓ Approved all {len(all_suggestions) - i + 1} remaining suggestions"
+                )
                 return approved
-            elif decision == 'skip_all':
+            elif decision == "skip_all":
                 # Skip all remaining
                 print(f"  Skipped {len(all_suggestions) - i + 1} remaining suggestions")
                 return approved
-            elif decision == 'quit':
+            elif decision == "quit":
                 print(f"\n  Saved {len(approved)} approvals. Exiting.")
                 return approved
 
@@ -190,16 +205,16 @@ class InteractiveApprovalUI:
         while True:
             choice = input("\n👉 Apply this change? [y/n/a/s/q]: ").lower().strip()
 
-            if choice == 'y':
-                return 'approve'
-            elif choice == 'n':
-                return 'reject'
-            elif choice == 'a':
-                return 'approve_all'
-            elif choice == 's':
-                return 'skip_all'
-            elif choice == 'q':
-                return 'quit'
+            if choice == "y":
+                return "approve"
+            elif choice == "n":
+                return "reject"
+            elif choice == "a":
+                return "approve_all"
+            elif choice == "s":
+                return "skip_all"
+            elif choice == "q":
+                return "quit"
             else:
                 print("  Invalid choice. Use y/n/a/s/q")
 
@@ -210,23 +225,23 @@ class InteractiveApprovalUI:
         Args:
             sug: Suggestion dict with type and data
         """
-        sug_type = sug['type']
-        data = sug['data']
+        sug_type = sug["type"]
+        data = sug["data"]
 
-        if sug_type == 'mcp':
+        if sug_type == "mcp":
             self._display_mcp_details(data)
-        elif sug_type == 'permission':
+        elif sug_type == "permission":
             self._display_permission_details(data)
-        elif sug_type == 'context':
+        elif sug_type == "context":
             self._display_context_details(data)
-        elif sug_type == 'workflow':
+        elif sug_type == "workflow":
             self._display_workflow_details(data)
 
     def _display_mcp_details(self, data: dict[str, Any]) -> None:
         """Display details for MCP optimization suggestion."""
-        server = data.get('server_name', 'Unknown')
-        impact = data.get('impact', 'No details')
-        priority = data.get('priority', 'MEDIUM')
+        server = data.get("server_name", "Unknown")
+        impact = data.get("impact", "No details")
+        priority = data.get("priority", "MEDIUM")
 
         print(f"\n📦 Server: {server}")
         print(f"⚡ Priority: {priority}")
@@ -236,10 +251,10 @@ class InteractiveApprovalUI:
         print("\n📝 What will change:")
         print("   • File: .claude/mcp.json (project-level MCP config)")
 
-        if 'never used' in impact.lower() or 'remove' in impact.lower():
+        if "never used" in impact.lower() or "remove" in impact.lower():
             print(f"   • Action: Remove '{server}' server entry from config")
             print("   • Result: Server won't load in future sessions")
-        elif 'move' in impact.lower() or 'project-level' in impact.lower():
+        elif "move" in impact.lower() or "project-level" in impact.lower():
             print("   • Action: Remove from ~/.claude.json (global config)")
             print("   • Action: Add to .claude/mcp.json (project-specific)")
             print("   • Result: Server only loads in relevant projects")
@@ -257,8 +272,8 @@ class InteractiveApprovalUI:
 
     def _display_permission_details(self, data: dict[str, Any]) -> None:
         """Display details for permission pattern suggestion."""
-        examples = data.get('examples', [])
-        description = data.get('description', 'Unknown pattern')
+        examples = data.get("examples", [])
+        description = data.get("description", "Unknown pattern")
 
         print(f"\n🔐 Pattern detected: {description}")
         print("\n📝 What will change:")
@@ -281,9 +296,9 @@ class InteractiveApprovalUI:
 
     def _display_context_details(self, data: dict[str, Any]) -> None:
         """Display details for context optimization suggestion."""
-        tokens = data.get('tokens', 0)
-        section = data.get('description', 'Unknown section')
-        reason = data.get('reason', 'Not specified')
+        tokens = data.get("tokens", 0)
+        section = data.get("description", "Unknown section")
+        reason = data.get("reason", "Not specified")
 
         print(f"\n📄 Section: {section}")
         print(f"💾 Token savings: ~{tokens}K tokens")
@@ -304,8 +319,8 @@ class InteractiveApprovalUI:
 
     def _display_workflow_details(self, data: dict[str, Any]) -> None:
         """Display details for workflow pattern suggestion."""
-        commands = data.get('commands', [])
-        occurrences = data.get('occurrences', 0)
+        commands = data.get("commands", [])
+        occurrences = data.get("occurrences", 0)
 
         print(f"\n🔄 Repeated {occurrences} times")
         print("📋 Command sequence:")
@@ -333,14 +348,14 @@ class InteractiveApprovalUI:
         Returns:
             Fingerprint string for matching rejections
         """
-        sug_type = sug['type']
-        data = sug['data']
+        sug_type = sug["type"]
+        data = sug["data"]
 
-        if sug_type == 'workflow':
-            commands = data.get('commands', [])
-            return '|'.join(commands)
-        elif sug_type == 'permission':
-            pattern = data.get('pattern', {})
-            return pattern.get('pattern_type', 'unknown')
+        if sug_type == "workflow":
+            commands = data.get("commands", [])
+            return "|".join(commands)
+        elif sug_type == "permission":
+            pattern = data.get("pattern", {})
+            return pattern.get("pattern_type", "unknown")
 
         return f"{sug_type}:unknown"

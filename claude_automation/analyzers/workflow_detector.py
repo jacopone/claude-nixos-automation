@@ -42,7 +42,6 @@ class WorkflowDetector(BaseAnalyzer):
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
-
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
         return "detect_patterns"
@@ -152,14 +151,15 @@ class WorkflowDetector(BaseAnalyzer):
 
         # Filter out previously rejected workflows
         from .rejection_tracker import RejectionTracker
+
         tracker = RejectionTracker()
-        rejections = tracker.get_recent_rejections(days=90, suggestion_type='workflow')
+        rejections = tracker.get_recent_rejections(days=90, suggestion_type="workflow")
         rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
 
         frequent_sequences = {
             seq: count
             for seq, count in frequent_sequences.items()
-            if '|'.join(seq) not in rejected_fingerprints
+            if "|".join(seq) not in rejected_fingerprints
         }
 
         if not frequent_sequences:

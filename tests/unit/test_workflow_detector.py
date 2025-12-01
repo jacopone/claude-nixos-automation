@@ -5,7 +5,6 @@ Tests workflow pattern detection from slash command sequences.
 """
 
 import tempfile
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -50,9 +49,6 @@ def test_log_command(detector):
 
 def test_get_recent_commands(detector):
     """Test T072: Retrieve recent commands within time window."""
-    # Log commands from different days
-    now = datetime.now()
-
     # Recent command (today)
     detector.log_command(
         command="/speckit.specify",
@@ -78,7 +74,9 @@ def test_workflow_detection(detector):
         detector.log_command("/speckit.plan", session_id, success=True)
 
     # Detect patterns (min 3 occurrences)
-    patterns = detector.detect_patterns(min_occurrences=3, days=30, max_sequence_length=5)
+    patterns = detector.detect_patterns(
+        min_occurrences=3, days=30, max_sequence_length=5
+    )
 
     # Should detect the 2-command and 3-command sequences
     assert len(patterns) > 0

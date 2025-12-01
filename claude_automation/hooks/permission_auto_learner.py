@@ -105,9 +105,7 @@ def analyze_and_suggest_permissions(project_path):
         # Initialize trackers
         tracker = ApprovalTracker()
         detector = PermissionPatternDetector(
-            approval_tracker=tracker,
-            min_occurrences=3,
-            confidence_threshold=0.75
+            approval_tracker=tracker, min_occurrences=3, confidence_threshold=0.75
         )
 
         # Detect patterns (last 30 days, project-specific)
@@ -116,16 +114,14 @@ def analyze_and_suggest_permissions(project_path):
         debug_log(f"Found {len(suggestions)} pattern suggestions")
 
         # Filter high-confidence suggestions (>= 0.8)
-        high_confidence = [
-            s for s in suggestions
-            if s.pattern.confidence >= 0.8
-        ]
+        high_confidence = [s for s in suggestions if s.pattern.confidence >= 0.8]
 
         return high_confidence
 
     except Exception as e:
         debug_log(f"Analysis failed: {e}")
         import traceback
+
         debug_log(traceback.format_exc())
         return []
 
@@ -165,21 +161,21 @@ def update_settings_file(project_path, new_rules):
         tuple: (success: bool, added_count: int)
     """
     try:
-        project_dir = Path(project_path.replace("-", "/", 2))  # Convert project_path format
+        project_dir = Path(
+            project_path.replace("-", "/", 2)
+        )  # Convert project_path format
         settings_file = project_dir / ".claude" / "settings.local.json"
 
         # Create if doesn't exist
         if not settings_file.exists():
             settings_file.parent.mkdir(parents=True, exist_ok=True)
             settings = {
-                "permissions": {
-                    "allow": []
-                },
+                "permissions": {"allow": []},
                 "_auto_generated_permissions": {
                     "enabled": True,
                     "last_updated": datetime.now().isoformat(),
-                    "rules_added": []
-                }
+                    "rules_added": [],
+                },
             }
         else:
             with open(settings_file) as f:
@@ -206,7 +202,9 @@ def update_settings_file(project_path, new_rules):
             if "_auto_generated_permissions" not in settings:
                 settings["_auto_generated_permissions"] = {}
 
-            settings["_auto_generated_permissions"]["last_updated"] = datetime.now().isoformat()
+            settings["_auto_generated_permissions"]["last_updated"] = (
+                datetime.now().isoformat()
+            )
             if "rules_added" not in settings["_auto_generated_permissions"]:
                 settings["_auto_generated_permissions"]["rules_added"] = []
             settings["_auto_generated_permissions"]["rules_added"].extend(added)
@@ -223,6 +221,7 @@ def update_settings_file(project_path, new_rules):
     except Exception as e:
         debug_log(f"Failed to update settings: {e}")
         import traceback
+
         debug_log(traceback.format_exc())
         return False, 0
 
@@ -358,6 +357,7 @@ See .claude/permissions_auto_generated.md for details.
     except Exception as e:
         debug_log(f"Unexpected error: {e}")
         import traceback
+
         debug_log(traceback.format_exc())
         sys.exit(0)
 

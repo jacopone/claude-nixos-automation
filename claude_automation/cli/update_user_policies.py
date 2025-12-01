@@ -48,9 +48,7 @@ def main():
     # Example file result
     example_result = results["example"]
     if example_result.success:
-        logger.info(
-            f"✅ Example template updated: {example_result.output_path}"
-        )
+        logger.info(f"✅ Example template updated: {example_result.output_path}")
     else:
         logger.error(
             f"❌ Failed to update example template: {', '.join(example_result.errors)}"
@@ -84,7 +82,9 @@ def main():
     logger.info("📚 Documentation:")
     logger.info("   - User file: Your customized policies (never auto-updated)")
     logger.info("   - Example file: Latest best practices (auto-updated on rebuild)")
-    logger.info("   - Compare: diff CLAUDE-USER-POLICIES.md CLAUDE-USER-POLICIES.md.example")
+    logger.info(
+        "   - Compare: diff CLAUDE-USER-POLICIES.md CLAUDE-USER-POLICIES.md.example"
+    )
 
     # Exit with appropriate status code
     sys.exit(0 if all(r.success for r in results.values()) else 1)

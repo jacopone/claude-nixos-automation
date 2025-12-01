@@ -6,7 +6,6 @@ Tests that both old-style and new-style imports work correctly.
 """
 
 
-
 class TestBackwardCompatibility:
     """Test that old import patterns still work."""
 

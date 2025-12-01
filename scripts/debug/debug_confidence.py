@@ -59,6 +59,8 @@ if git_matching:
         print(f"      {count:3d}× {perm}")
 
     base_conf = len(git_matching) / len(approvals)
-    print(f"\n   Base confidence: {base_conf:.3f} ({len(git_matching)}/{len(approvals)})")
+    print(
+        f"\n   Base confidence: {base_conf:.3f} ({len(git_matching)}/{len(approvals)})"
+    )
     print(f"   Meets min_occurrences=3? {len(git_matching) >= 3}")
     print(f"   Meets confidence=0.7? {base_conf >= 0.7}")

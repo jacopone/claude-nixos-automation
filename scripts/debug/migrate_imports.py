@@ -136,10 +136,10 @@ def analyze_file(file_path: Path) -> dict[str, set[str]]:
     content = file_path.read_text()
 
     # Pattern 1: Relative imports (from ..analyzers.approval_tracker import ApprovalTracker)
-    relative_pattern = r'from \.\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import ([\w\s,]+)'
+    relative_pattern = r"from \.\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import ([\w\s,]+)"
 
     # Pattern 2: Direct class imports (from claude_automation.analyzers.approval_tracker import ApprovalTracker)
-    direct_pattern = r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import ([\w\s,]+)'
+    direct_pattern = r"from claude_automation\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import ([\w\s,]+)"
 
     # Pattern 3: Already migrated (from claude_automation.analyzers import ApprovalTracker)
     # migrated_pattern = r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas) import ([\w\s,]+)'
@@ -150,7 +150,7 @@ def analyze_file(file_path: Path) -> dict[str, set[str]]:
             imports = match.group(2)
 
             # Parse the imports (handle multi-line and parentheses)
-            import_names = [name.strip() for name in imports.split(',')]
+            import_names = [name.strip() for name in imports.split(",")]
 
             if domain not in imports_by_domain:
                 imports_by_domain[domain] = set()
@@ -168,7 +168,7 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
     """
     content = file_path.read_text()
     original_content = content
-    lines = content.split('\n')
+    lines = content.split("\n")
 
     # Track what we're importing by domain
     imports_by_domain: dict[str, set[str]] = {}
@@ -179,7 +179,10 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
     # Relative imports pattern - can span multiple lines
     for i, line in enumerate(lines):
         # Pattern 1: Relative imports
-        match = re.match(r'from \.\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import (.+)', line)
+        match = re.match(
+            r"from \.\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import (.+)",
+            line,
+        )
         if match:
             domain = match.group(1)
             imports_str = match.group(2).strip()
@@ -188,16 +191,16 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
                 imports_by_domain[domain] = set()
 
             # Check if this is a multi-line import
-            if '(' in imports_str and ')' not in imports_str:
+            if "(" in imports_str and ")" not in imports_str:
                 # Multi-line import starting
                 lines_to_remove.add(i)
                 # Collect imports from subsequent lines
                 j = i + 1
-                while j < len(lines) and ')' not in lines[j]:
+                while j < len(lines) and ")" not in lines[j]:
                     import_line = lines[j].strip()
                     if import_line:
                         # Remove trailing comma
-                        import_line = import_line.rstrip(',').strip()
+                        import_line = import_line.rstrip(",").strip()
                         if import_line:
                             imports_by_domain[domain].add(import_line)
                     lines_to_remove.add(j)
@@ -205,25 +208,28 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
                 # Add the closing line
                 if j < len(lines):
                     last_line = lines[j].strip()
-                    if last_line and last_line != ')':
-                        last_line = last_line.rstrip(')').strip().rstrip(',').strip()
+                    if last_line and last_line != ")":
+                        last_line = last_line.rstrip(")").strip().rstrip(",").strip()
                         if last_line:
                             imports_by_domain[domain].add(last_line)
                     lines_to_remove.add(j)
-            elif '(' in imports_str and ')' in imports_str:
+            elif "(" in imports_str and ")" in imports_str:
                 # Single line with parentheses
-                imports_str = imports_str.strip('()').strip()
-                names = [n.strip() for n in imports_str.split(',') if n.strip()]
+                imports_str = imports_str.strip("()").strip()
+                names = [n.strip() for n in imports_str.split(",") if n.strip()]
                 imports_by_domain[domain].update(names)
                 lines_to_remove.add(i)
             else:
                 # Simple single-line import
-                names = [n.strip() for n in imports_str.split(',') if n.strip()]
+                names = [n.strip() for n in imports_str.split(",") if n.strip()]
                 imports_by_domain[domain].update(names)
                 lines_to_remove.add(i)
 
         # Pattern 2: Direct imports
-        match = re.match(r'from claude_automation\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import (.+)', line)
+        match = re.match(
+            r"from claude_automation\.(analyzers|generators|validators|scrapers|schemas)\.[\w_]+ import (.+)",
+            line,
+        )
         if match:
             domain = match.group(1)
             imports_str = match.group(2).strip()
@@ -232,15 +238,15 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
                 imports_by_domain[domain] = set()
 
             # Check if this is a multi-line import
-            if '(' in imports_str and ')' not in imports_str:
+            if "(" in imports_str and ")" not in imports_str:
                 # Multi-line import starting
                 lines_to_remove.add(i)
                 # Collect imports from subsequent lines
                 j = i + 1
-                while j < len(lines) and ')' not in lines[j]:
+                while j < len(lines) and ")" not in lines[j]:
                     import_line = lines[j].strip()
                     if import_line:
-                        import_line = import_line.rstrip(',').strip()
+                        import_line = import_line.rstrip(",").strip()
                         if import_line:
                             imports_by_domain[domain].add(import_line)
                     lines_to_remove.add(j)
@@ -248,31 +254,31 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
                 # Add the closing line
                 if j < len(lines):
                     last_line = lines[j].strip()
-                    if last_line and last_line != ')':
-                        last_line = last_line.rstrip(')').strip().rstrip(',').strip()
+                    if last_line and last_line != ")":
+                        last_line = last_line.rstrip(")").strip().rstrip(",").strip()
                         if last_line:
                             imports_by_domain[domain].add(last_line)
                     lines_to_remove.add(j)
-            elif '(' in imports_str and ')' in imports_str:
+            elif "(" in imports_str and ")" in imports_str:
                 # Single line with parentheses
-                imports_str = imports_str.strip('()').strip()
-                names = [n.strip() for n in imports_str.split(',') if n.strip()]
+                imports_str = imports_str.strip("()").strip()
+                names = [n.strip() for n in imports_str.split(",") if n.strip()]
                 imports_by_domain[domain].update(names)
                 lines_to_remove.add(i)
             else:
                 # Simple single-line import
-                names = [n.strip() for n in imports_str.split(',') if n.strip()]
+                names = [n.strip() for n in imports_str.split(",") if n.strip()]
                 imports_by_domain[domain].update(names)
                 lines_to_remove.add(i)
 
     # Remove old import lines
     new_lines = [line for i, line in enumerate(lines) if i not in lines_to_remove]
-    content = '\n'.join(new_lines)
+    content = "\n".join(new_lines)
 
     # Find where to insert new imports (after module docstring and other imports)
     # Look for the last import statement or after docstring
     import_insertion_point = 0
-    new_lines = content.split('\n')
+    new_lines = content.split("\n")
 
     # Skip module docstring if present
     in_docstring = False
@@ -295,11 +301,11 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
                 continue
 
         # Track import statements
-        if stripped.startswith('import ') or stripped.startswith('from '):
+        if stripped.startswith("import ") or stripped.startswith("from "):
             last_import_line = i
 
         # Found first non-import, non-comment, non-docstring, non-blank line
-        elif stripped and not stripped.startswith('#') and last_import_line >= 0:
+        elif stripped and not stripped.startswith("#") and last_import_line >= 0:
             # Insert after last import, before this line
             import_insertion_point = last_import_line + 1
             break
@@ -314,7 +320,9 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
         classes = sorted(imports_by_domain[domain])
         if len(classes) <= 3:
             # Single line
-            new_imports.append(f"from claude_automation.{domain} import {', '.join(classes)}")
+            new_imports.append(
+                f"from claude_automation.{domain} import {', '.join(classes)}"
+            )
         else:
             # Multi-line
             new_imports.append(f"from claude_automation.{domain} import (")
@@ -325,14 +333,17 @@ def migrate_file(file_path: Path, dry_run: bool = True) -> bool:
     # Insert new imports
     if new_imports:
         # Find right insertion point considering blank lines
-        while import_insertion_point < len(new_lines) and not new_lines[import_insertion_point].strip():
+        while (
+            import_insertion_point < len(new_lines)
+            and not new_lines[import_insertion_point].strip()
+        ):
             import_insertion_point += 1
 
-        new_lines.insert(import_insertion_point, '\n'.join(new_imports))
-        content = '\n'.join(new_lines)
+        new_lines.insert(import_insertion_point, "\n".join(new_imports))
+        content = "\n".join(new_lines)
 
     # Clean up multiple blank lines
-    content = re.sub(r'\n{4,}', '\n\n\n', content)
+    content = re.sub(r"\n{4,}", "\n\n\n", content)
 
     if content != original_content:
         if not dry_run:
@@ -380,8 +391,11 @@ def main():
             modified_count += 1
 
     print()
-    print(f"Summary: {modified_count}/{len(files_to_migrate)} files " +
-          ("would be" if dry_run else "were") + " modified")
+    print(
+        f"Summary: {modified_count}/{len(files_to_migrate)} files "
+        + ("would be" if dry_run else "were")
+        + " modified"
+    )
 
     if dry_run:
         print()

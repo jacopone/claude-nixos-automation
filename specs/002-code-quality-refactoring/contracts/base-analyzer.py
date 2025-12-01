@@ -135,6 +135,7 @@ class BaseAnalyzer(ABC):
 # CONTRACT COMPLIANCE EXAMPLES
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 class PermissionPatternDetector(BaseAnalyzer):
     """Example: Compliant analyzer implementation.
 
@@ -188,34 +189,38 @@ class ProjectArchetypeDetector(BaseAnalyzer):
 # TEST CONTRACT ASSERTIONS
 # ═════════════════════════════════════════════════════════════════════════════
 
+
 def test_base_analyzer_contract():
     """Contract tests that will be implemented in tests/contract/"""
 
     # Test 1: Constructor signature compliance
     import inspect
+
     sig = inspect.signature(BaseAnalyzer.__init__)
     params = list(sig.parameters.keys())
-    assert params == ['self', 'storage_dir', 'days'], \
+    assert params == ["self", "storage_dir", "days"], (
         "BaseAnalyzer constructor must have (self, storage_dir, days) parameters"
+    )
 
     # Test 2: Default parameter values
-    assert sig.parameters['storage_dir'].default is None
-    assert sig.parameters['days'].default == 30
+    assert sig.parameters["storage_dir"].default is None
+    assert sig.parameters["days"].default == 30
 
     # Test 3: Abstract method enforcement
     try:
         BaseAnalyzer()  # Should fail - can't instantiate abstract class
-        assert False, "Should not be able to instantiate BaseAnalyzer"
+        raise AssertionError("Should not be able to instantiate BaseAnalyzer")
     except TypeError as e:
         assert "abstract" in str(e).lower()
 
     # Test 4: Validation enforcement
     class TestAnalyzer(BaseAnalyzer):
-        def analyze(self): return []
+        def analyze(self):
+            return []
 
     try:
         TestAnalyzer(days=0)  # Should fail - days must be >= 1
-        assert False, "Should reject days=0"
+        raise AssertionError("Should reject days=0")
     except ValueError as e:
         assert "days" in str(e).lower()
 

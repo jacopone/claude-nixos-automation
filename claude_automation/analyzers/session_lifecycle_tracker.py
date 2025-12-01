@@ -81,7 +81,12 @@ class SessionLifecycleTracker(BaseAnalyzer):
                 with open(metadata_path, encoding="utf-8") as f:
                     data = json.load(f)
                     # Parse datetime strings
-                    for field in ["created_at", "analyzed_at", "insights_generated_at", "implemented_at"]:
+                    for field in [
+                        "created_at",
+                        "analyzed_at",
+                        "insights_generated_at",
+                        "implemented_at",
+                    ]:
                         if data.get(field):
                             data[field] = datetime.fromisoformat(data[field])
                     return SessionMetadata(**data)
@@ -111,23 +116,27 @@ class SessionLifecycleTracker(BaseAnalyzer):
 
             # Serialize with ISO timestamps
             data = metadata.model_dump()
-            for field in ["created_at", "analyzed_at", "insights_generated_at", "implemented_at"]:
+            for field in [
+                "created_at",
+                "analyzed_at",
+                "insights_generated_at",
+                "implemented_at",
+            ]:
                 if data.get(field):
                     data[field] = data[field].isoformat()
 
             with open(metadata_path, "w", encoding="utf-8") as f:
                 json.dump(data, f, indent=2)
 
-            logger.debug(f"Saved metadata for {session_file.name}: {metadata.lifecycle_stage.value}")
+            logger.debug(
+                f"Saved metadata for {session_file.name}: {metadata.lifecycle_stage.value}"
+            )
 
         except Exception as e:
             logger.warning(f"Could not save metadata for {session_file.name}: {e}")
 
     def mark_session(
-        self,
-        session_file: Path,
-        stage: SessionLifecycle,
-        notes: str | None = None
+        self, session_file: Path, stage: SessionLifecycle, notes: str | None = None
     ) -> SessionMetadata:
         """
         Mark a session at a specific lifecycle stage.
@@ -182,7 +191,9 @@ class SessionLifecycleTracker(BaseAnalyzer):
 
         return sessions
 
-    def get_sessions_by_stage(self, stage: SessionLifecycle) -> list[tuple[Path, SessionMetadata]]:
+    def get_sessions_by_stage(
+        self, stage: SessionLifecycle
+    ) -> list[tuple[Path, SessionMetadata]]:
         """
         Get all sessions at a specific lifecycle stage.
 
@@ -193,7 +204,9 @@ class SessionLifecycleTracker(BaseAnalyzer):
             List of (session_file, metadata) tuples for matching sessions
         """
         all_sessions = self.get_all_sessions()
-        return [(path, meta) for path, meta in all_sessions if meta.lifecycle_stage == stage]
+        return [
+            (path, meta) for path, meta in all_sessions if meta.lifecycle_stage == stage
+        ]
 
     def get_lifecycle_stats(self) -> LifecycleStats:
         """

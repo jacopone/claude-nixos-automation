@@ -143,12 +143,8 @@ class ToolUsageAnalyticsConfig(BaseModel):
 
     # Aggregate metrics
     total_commands_tracked: int = Field(0, ge=0, description="Total commands in logs")
-    human_tool_count: int = Field(
-        0, ge=0, description="Unique tools used by humans"
-    )
-    claude_tool_count: int = Field(
-        0, ge=0, description="Unique tools used by Claude"
-    )
+    human_tool_count: int = Field(0, ge=0, description="Unique tools used by humans")
+    claude_tool_count: int = Field(0, ge=0, description="Unique tools used by Claude")
 
     # Recommendations
     recommendations: list[ToolUsageRecommendation] = Field(

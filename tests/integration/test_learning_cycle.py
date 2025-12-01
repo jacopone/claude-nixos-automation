@@ -72,8 +72,7 @@ class TestApprovalToPatternToSuggestion:
 
         # Find git-related suggestion
         git_suggestions = [
-            s for s in suggestions
-            if "git" in s.pattern.pattern_type.lower()
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
         ]
         assert len(git_suggestions) > 0, "No git pattern detected"
 
@@ -88,7 +87,10 @@ class TestApprovalToPatternToSuggestion:
 
         # STEP 5: Verify suggestion is actionable
         # Proposed rule should be a valid permission string
-        assert "Bash(git" in git_suggestion.proposed_rule or "git" in git_suggestion.proposed_rule
+        assert (
+            "Bash(git" in git_suggestion.proposed_rule
+            or "git" in git_suggestion.proposed_rule
+        )
 
     def test_end_to_end_pytest_workflow(self, tracker, detector):
         """
@@ -113,8 +115,7 @@ class TestApprovalToPatternToSuggestion:
 
         # STEP 3: Verify pytest pattern detected
         pytest_suggestions = [
-            s for s in suggestions
-            if s.pattern.pattern_type == "pytest"
+            s for s in suggestions if s.pattern.pattern_type == "pytest"
         ]
         assert len(pytest_suggestions) > 0
 
@@ -175,10 +176,7 @@ class TestApprovalToPatternToSuggestion:
         suggestions = detector.detect_patterns(days=30, project_path=None)
 
         # STEP 3: Verify cross-project pattern detected
-        git_suggestions = [
-            s for s in suggestions
-            if "git" in s.pattern.pattern_type
-        ]
+        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type]
         assert len(git_suggestions) > 0
         # Total occurrences should be 5 (across both projects)
         assert git_suggestions[0].pattern.occurrences == 5
@@ -229,10 +227,7 @@ class TestApprovalToPatternToSuggestion:
         suggestions = high_threshold_detector.detect_patterns(days=30)
 
         # STEP 3: Git pattern should be excluded due to low confidence (< 0.9)
-        git_suggestions = [
-            s for s in suggestions
-            if "git" in s.pattern.pattern_type
-        ]
+        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type]
         assert len(git_suggestions) == 0  # Filtered out by confidence threshold
 
     def test_time_window_affects_pattern_detection(self, tracker, detector):

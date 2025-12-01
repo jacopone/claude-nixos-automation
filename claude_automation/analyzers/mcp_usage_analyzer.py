@@ -762,7 +762,7 @@ class MCPUsageAnalyzer:
                     tracker.mark_session(
                         log_file,
                         SessionLifecycle.ANALYZED,
-                        notes="Processed by MCP usage analyzer"
+                        notes="Processed by MCP usage analyzer",
                     )
                 except Exception as e:
                     logger.debug(f"Could not mark session {log_file.name}: {e}")

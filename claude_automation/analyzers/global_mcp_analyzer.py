@@ -74,7 +74,9 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
                     with open(cache_file) as f:
                         cached_paths = json.load(f)
                     projects = [Path(p) for p in cached_paths]
-                    logger.debug(f"Using cached project list ({len(projects)} projects, age: {cache_age:.0f}s)")
+                    logger.debug(
+                        f"Using cached project list ({len(projects)} projects, age: {cache_age:.0f}s)"
+                    )
                     return projects
                 except Exception as e:
                     logger.warning(f"Failed to load cache: {e}")
@@ -95,7 +97,7 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
 
         # Save to cache
         try:
-            with open(cache_file, 'w') as f:
+            with open(cache_file, "w") as f:
                 json.dump([str(p) for p in projects], f)
             logger.debug(f"Cached project list to {cache_file}")
         except Exception as e:
@@ -121,7 +123,6 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
 
         # Ensure file exists and is readable
         return mcp_config_path.exists() and mcp_config_path.is_file()
-
 
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
@@ -160,7 +161,9 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
         # Build report
         report = self._build_report()
 
-        logger.info(f"Global MCP analysis complete: {len(self.global_servers)} global, {len(self.project_servers)} project-specific servers")
+        logger.info(
+            f"Global MCP analysis complete: {len(self.global_servers)} global, {len(self.project_servers)} project-specific servers"
+        )
         return report
 
     def _analyze_global_config(self):
@@ -232,9 +235,13 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
                     self.project_servers[server_name] = server_info
                 else:
                     # Server is both global and project-specific
-                    logger.debug(f"Server {server_name} configured both globally and in {project_path.name}")
+                    logger.debug(
+                        f"Server {server_name} configured both globally and in {project_path.name}"
+                    )
 
-            logger.debug(f"Analyzed project {project_path.name}: {len(mcp_servers)} servers")
+            logger.debug(
+                f"Analyzed project {project_path.name}: {len(mcp_servers)} servers"
+            )
 
         except Exception as e:
             logger.warning(f"Failed to analyze project {project_path}: {e}")
@@ -334,7 +341,9 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
                 # Check if it's global
                 if usage.server_name in self.global_servers:
                     priority = 1  # High - affects all sessions
-                    action = "Consider moving to project-level config where actually needed"
+                    action = (
+                        "Consider moving to project-level config where actually needed"
+                    )
                 else:
                     priority = 2  # Medium
                     action = "Review if server is still needed in this project"
@@ -362,8 +371,12 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
 
         for server_name, roi in server_roi.items():
             usage = next(
-                (u for u in self.aggregated_usage.values() if u.server_name == server_name),
-                None
+                (
+                    u
+                    for u in self.aggregated_usage.values()
+                    if u.server_name == server_name
+                ),
+                None,
             )
 
             if usage and roi > high_value_threshold and usage.invocation_count > 10:
@@ -371,7 +384,7 @@ class GlobalMCPAnalyzer(BaseAnalyzer):
                     MCPUsageRecommendation(
                         server_name=server_name,
                         recommendation_type="high_value",
-                        reason=f"High value: {usage.invocation_count} calls, {usage.total_tokens//1000}K tokens, ROI: {roi:.1f}",
+                        reason=f"High value: {usage.invocation_count} calls, {usage.total_tokens // 1000}K tokens, ROI: {roi:.1f}",
                         action="Keep and prioritize in documentation",
                         priority=3,  # Low priority (informational)
                     )
@@ -669,9 +682,7 @@ class MCPUsageAnalyzer:
 
         return server_roi
 
-    def _build_utilization_metrics(
-        self, server_sessions: dict
-    ) -> list:
+    def _build_utilization_metrics(self, server_sessions: dict) -> list:
         """
         Build session utilization metrics.
 

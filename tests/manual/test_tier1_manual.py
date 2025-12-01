@@ -18,9 +18,9 @@ def test(name: str, func):
     """Run a test and track results."""
     global tests_passed, tests_failed
 
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print(f"Testing: {name}")
-    print('='*60)
+    print("=" * 60)
 
     try:
         func()
@@ -39,9 +39,9 @@ def test(name: str, func):
 
 def test_phase3_permission_learning():
     """Test Phase 3: Permission Learning"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 3: PERMISSION LEARNING")
-    print("="*80)
+    print("=" * 80)
 
     # Test 1: Import ApprovalTracker
     def test_import():
@@ -79,7 +79,9 @@ def test_phase3_permission_learning():
 
             # Log multiple git approvals
             for i in range(5):
-                tracker.log_approval("Bash(git status:*)", f"session-{i}", "/test/project")
+                tracker.log_approval(
+                    "Bash(git status:*)", f"session-{i}", "/test/project"
+                )
 
             # Detect patterns
             detector = PermissionPatternDetector(log_file)
@@ -89,7 +91,9 @@ def test_phase3_permission_learning():
             print(f"✓ Detected {len(patterns)} pattern(s)")
 
             for pattern in patterns:
-                print(f"  - {pattern.pattern_type}: {pattern.occurrences} occurrences, {pattern.confidence:.0%} confidence")
+                print(
+                    f"  - {pattern.pattern_type}: {pattern.occurrences} occurrences, {pattern.confidence:.0%} confidence"
+                )
 
     test("Detect permission patterns", test_detect_patterns)
 
@@ -106,7 +110,9 @@ def test_phase3_permission_learning():
 
             # Log multiple git approvals
             for i in range(5):
-                tracker.log_approval("Bash(git status:*)", f"session-{i}", "/test/project")
+                tracker.log_approval(
+                    "Bash(git status:*)", f"session-{i}", "/test/project"
+                )
 
             # Generate suggestions
             generator = IntelligentPermissionsGenerator(log_file)
@@ -123,9 +129,9 @@ def test_phase3_permission_learning():
 
 def test_phase4_global_mcp():
     """Test Phase 4: Global MCP Optimization"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 4: GLOBAL MCP OPTIMIZATION")
-    print("="*80)
+    print("=" * 80)
 
     # Test 1: Import GlobalMCPAnalyzer
     def test_import():
@@ -169,21 +175,29 @@ def test_phase4_global_mcp():
             project.mkdir()
             (project / ".claude").mkdir()
             (project / ".claude" / "mcp.json").write_text(
-                json.dumps({
-                    "mcpServers": {
-                        "mcp-nixos": {"command": "mcp-nixos"},
-                        "serena": {"command": "serena"}
+                json.dumps(
+                    {
+                        "mcpServers": {
+                            "mcp-nixos": {"command": "mcp-nixos"},
+                            "serena": {"command": "serena"},
+                        }
                     }
-                })
+                )
             )
 
             analyzer = GlobalMCPAnalyzer(home)
             report = analyzer.analyze_all_projects()
 
-            assert report.total_projects == 1, f"Expected 1 project, got {report.total_projects}"
-            assert report.total_servers == 2, f"Expected 2 servers, got {report.total_servers}"
+            assert report.total_projects == 1, (
+                f"Expected 1 project, got {report.total_projects}"
+            )
+            assert report.total_servers == 2, (
+                f"Expected 2 servers, got {report.total_servers}"
+            )
 
-            print(f"✓ Analyzed {report.total_projects} project(s), {report.total_servers} server(s)")
+            print(
+                f"✓ Analyzed {report.total_projects} project(s), {report.total_servers} server(s)"
+            )
 
     test("Analyze all MCP projects", test_analyze)
 
@@ -214,9 +228,9 @@ def test_phase4_global_mcp():
 
 def test_phase5_context_optimization():
     """Test Phase 5: Context Optimization"""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("PHASE 5: CONTEXT OPTIMIZATION")
-    print("="*80)
+    print("=" * 80)
 
     # Test 1: Import ContextOptimizer
     def test_import():
@@ -237,7 +251,7 @@ def test_phase5_context_optimization():
                 tokens_in_section=500,
                 relevance_score=0.9,
                 session_id="test-session",
-                query_context="User asked about eza"
+                query_context="User asked about eza",
             )
 
             assert log_file.exists(), "Log file should exist"
@@ -259,7 +273,7 @@ def test_phase5_context_optimization():
                     section_name="Test Section",
                     tokens_in_section=500,
                     relevance_score=0.8,
-                    session_id=f"session-{i}"
+                    session_id=f"session-{i}",
                 )
 
             stats = optimizer.get_section_usage_statistics(period_days=1)
@@ -287,14 +301,16 @@ def test_phase5_context_optimization():
                     section_name="Noise Section",
                     tokens_in_section=500,
                     relevance_score=0.0,
-                    session_id=f"session-{i}"
+                    session_id=f"session-{i}",
                 )
 
             noise = optimizer.identify_noise_sections(period_days=1)
 
             assert len(noise) == 1, f"Expected 1 noise section, got {len(noise)}"
             print(f"✓ Identified {len(noise)} noise section(s)")
-            print(f"  - {noise[0].section_name}: {noise[0].utilization_rate:.0%} utilization")
+            print(
+                f"  - {noise[0].section_name}: {noise[0].utilization_rate:.0%} utilization"
+            )
 
     test("Identify noise sections", test_noise)
 
@@ -312,7 +328,7 @@ def test_phase5_context_optimization():
                     section_name="Good Section",
                     tokens_in_section=500,
                     relevance_score=0.9,
-                    session_id=f"session-{i}"
+                    session_id=f"session-{i}",
                 )
 
             ratio = optimizer.calculate_effective_context_ratio(period_days=1)
@@ -336,13 +352,15 @@ def test_phase5_context_optimization():
                     section_name="Noise Section",
                     tokens_in_section=800,
                     relevance_score=0.0,
-                    session_id=f"session-{i}"
+                    session_id=f"session-{i}",
                 )
 
             suggestions = optimizer.analyze(period_days=1)
 
             assert len(suggestions) > 0, "Expected at least one suggestion"
-            prune_suggestions = [s for s in suggestions if s.optimization_type == "prune_section"]
+            prune_suggestions = [
+                s for s in suggestions if s.optimization_type == "prune_section"
+            ]
             assert len(prune_suggestions) > 0, "Expected at least one prune suggestion"
 
             print(f"✓ Generated {len(suggestions)} suggestion(s):")
@@ -357,21 +375,21 @@ def test_phase5_context_optimization():
 
 def main():
     """Run all tests."""
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TIER 1 COMPONENTS - END-TO-END TESTING")
-    print("="*80)
+    print("=" * 80)
 
     test_phase3_permission_learning()
     test_phase4_global_mcp()
     test_phase5_context_optimization()
 
     # Summary
-    print("\n" + "="*80)
+    print("\n" + "=" * 80)
     print("TEST SUMMARY")
-    print("="*80)
+    print("=" * 80)
     print(f"✓ Passed: {tests_passed}")
     print(f"✗ Failed: {tests_failed}")
-    print("="*80)
+    print("=" * 80)
 
     if tests_failed == 0:
         print("\n✓ All Tier 1 Components Working!")

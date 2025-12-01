@@ -26,21 +26,31 @@ class TestGeneratorContracts:
     @pytest.mark.parametrize("generator_class,name", ALL_GENERATORS)
     def test_generator_inherits_base_generator(self, generator_class, name):
         """Test T108: All generators inherit from BaseGenerator."""
-        assert issubclass(generator_class, BaseGenerator), f"{name} doesn't inherit from BaseGenerator"
+        assert issubclass(generator_class, BaseGenerator), (
+            f"{name} doesn't inherit from BaseGenerator"
+        )
 
     @pytest.mark.parametrize("generator_class,name", ALL_GENERATORS)
     def test_generator_declares_sources(self, generator_class, name):
         """Test T108: All generators declare MANUAL_SOURCES."""
         # Check class has MANUAL_SOURCES attribute
-        assert hasattr(generator_class, "MANUAL_SOURCES"), f"{name} missing MANUAL_SOURCES"
-        assert isinstance(generator_class.MANUAL_SOURCES, list), f"{name}.MANUAL_SOURCES not a list"
+        assert hasattr(generator_class, "MANUAL_SOURCES"), (
+            f"{name} missing MANUAL_SOURCES"
+        )
+        assert isinstance(generator_class.MANUAL_SOURCES, list), (
+            f"{name}.MANUAL_SOURCES not a list"
+        )
 
     @pytest.mark.parametrize("generator_class,name", ALL_GENERATORS)
     def test_generator_declares_artifacts(self, generator_class, name):
         """Test T108: All generators declare GENERATED_ARTIFACTS."""
         # Check class has GENERATED_ARTIFACTS attribute
-        assert hasattr(generator_class, "GENERATED_ARTIFACTS"), f"{name} missing GENERATED_ARTIFACTS"
-        assert isinstance(generator_class.GENERATED_ARTIFACTS, list), f"{name}.GENERATED_ARTIFACTS not a list"
+        assert hasattr(generator_class, "GENERATED_ARTIFACTS"), (
+            f"{name} missing GENERATED_ARTIFACTS"
+        )
+        assert isinstance(generator_class.GENERATED_ARTIFACTS, list), (
+            f"{name}.GENERATED_ARTIFACTS not a list"
+        )
 
     @pytest.mark.parametrize("generator_class,name", ALL_GENERATORS)
     def test_generator_has_generate_method(self, generator_class, name):
@@ -55,7 +65,9 @@ class TestGeneratorContracts:
         artifacts = set(generator_class.GENERATED_ARTIFACTS)
 
         overlap = sources & artifacts
-        assert len(overlap) == 0, f"{name} has overlapping sources and artifacts: {overlap}"
+        assert len(overlap) == 0, (
+            f"{name} has overlapping sources and artifacts: {overlap}"
+        )
 
 
 class TestBaseGeneratorInterface:

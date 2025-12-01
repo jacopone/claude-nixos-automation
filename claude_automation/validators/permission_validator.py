@@ -139,7 +139,16 @@ class PermissionValidator:
         - Glob(pattern)
         """
         # Known tools
-        known_tools = ["Bash", "Read", "Write", "Edit", "Glob", "Grep", "Task", "SlashCommand"]
+        known_tools = [
+            "Bash",
+            "Read",
+            "Write",
+            "Edit",
+            "Glob",
+            "Grep",
+            "Task",
+            "SlashCommand",
+        ]
 
         # Extract tool name
         tool_match = re.match(r"^(\w+)\(", permission)
@@ -224,8 +233,8 @@ class PermissionValidator:
         lines.append("PERMISSION VALIDATION REPORT")
         lines.append("=" * 60)
         lines.append(f"Total permissions: {total}")
-        lines.append(f"Valid: {valid} ({valid/total*100:.1f}%)")
-        lines.append(f"Failed: {failed} ({failed/total*100:.1f}%)")
+        lines.append(f"Valid: {valid} ({valid / total * 100:.1f}%)")
+        lines.append(f"Failed: {failed} ({failed / total * 100:.1f}%)")
         lines.append(f"Total errors: {errors_total}")
         lines.append(f"Total warnings: {warnings_total}")
         lines.append("")

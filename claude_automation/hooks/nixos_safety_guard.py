@@ -185,7 +185,9 @@ def check_protected_file(file_path):
 
     # Check if it's hardware-configuration.nix
     if file_name == "hardware-configuration.nix":
-        return True, f"""⚠️  NixOS Safety: Editing Auto-Generated File
+        return (
+            True,
+            f"""⚠️  NixOS Safety: Editing Auto-Generated File
 
 You're trying to edit: {file_path}
 
@@ -205,13 +207,16 @@ Example:
 
 To proceed with editing (not recommended): Re-run this operation
 To bypass this warning: export NIXOS_SAFETY_GUARD=0
-"""
+""",
+        )
 
     # Check if it's the old-style configuration.nix (when using flakes)
     if file_name == "configuration.nix":
         # Try to detect if system uses flakes
         if os.path.exists(os.path.join(os.path.dirname(file_path), "flake.nix")):
-            return True, f"""⚠️  NixOS Safety: Editing Legacy Configuration
+            return (
+                True,
+                f"""⚠️  NixOS Safety: Editing Legacy Configuration
 
 You're trying to edit: {file_path}
 
@@ -227,7 +232,8 @@ If you're using flakes, your configuration is likely in:
 
 To proceed anyway: Re-run this operation
 To bypass this warning: export NIXOS_SAFETY_GUARD=0
-"""
+""",
+            )
 
     return False, None
 

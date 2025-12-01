@@ -35,7 +35,9 @@ def main():
         elif (Path.home() / "nixos-config" / "flake.nix").exists():
             config_dir = Path.home() / "nixos-config"
         else:
-            logger.error("Could not find nixos-config directory. Please run from nixos-config or pass path as argument.")
+            logger.error(
+                "Could not find nixos-config directory. Please run from nixos-config or pass path as argument."
+            )
             return 1
 
         output_path = Path.home() / ".claude" / "CLAUDE.md"

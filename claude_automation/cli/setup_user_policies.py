@@ -118,18 +118,10 @@ def generate_custom_policies(preferences: UserPolicyPreferences) -> Path:
     if preferences.enable_git_policy and "git_policies" in all_practices:
         filtered_practices["git_policies"] = all_practices["git_policies"]
 
-    if (
-        preferences.enable_system_limitations
-        and "system_limitations" in all_practices
-    ):
-        filtered_practices["system_limitations"] = all_practices[
-            "system_limitations"
-        ]
+    if preferences.enable_system_limitations and "system_limitations" in all_practices:
+        filtered_practices["system_limitations"] = all_practices["system_limitations"]
 
-    if (
-        preferences.enable_doc_standards
-        and "documentation_standards" in all_practices
-    ):
+    if preferences.enable_doc_standards and "documentation_standards" in all_practices:
         filtered_practices["documentation_standards"] = all_practices[
             "documentation_standards"
         ]
@@ -137,21 +129,11 @@ def generate_custom_policies(preferences: UserPolicyPreferences) -> Path:
     if preferences.enable_code_quality and "code_quality" in all_practices:
         filtered_practices["code_quality"] = all_practices["code_quality"]
 
-    if (
-        preferences.enable_communication
-        and "communication_style" in all_practices
-    ):
-        filtered_practices["communication_style"] = all_practices[
-            "communication_style"
-        ]
+    if preferences.enable_communication and "communication_style" in all_practices:
+        filtered_practices["communication_style"] = all_practices["communication_style"]
 
-    if (
-        preferences.enable_project_mgmt
-        and "project_management" in all_practices
-    ):
-        filtered_practices["project_management"] = all_practices[
-            "project_management"
-        ]
+    if preferences.enable_project_mgmt and "project_management" in all_practices:
+        filtered_practices["project_management"] = all_practices["project_management"]
 
     # Generate the file with selected policies UNCOMMENTED
     from datetime import datetime
@@ -215,15 +197,11 @@ def main():
     print(
         f"  Documentation Standards: {'✅' if preferences.enable_doc_standards else '❌'}"
     )
-    print(
-        f"  Code Quality: {'✅' if preferences.enable_code_quality else '❌'}"
-    )
+    print(f"  Code Quality: {'✅' if preferences.enable_code_quality else '❌'}")
     print(
         f"  Communication Style: {'✅' if preferences.enable_communication else '❌'}"
     )
-    print(
-        f"  Project Management: {'✅' if preferences.enable_project_mgmt else '❌'}"
-    )
+    print(f"  Project Management: {'✅' if preferences.enable_project_mgmt else '❌'}")
     print("-" * 60 + "\n")
 
     confirm = questionary.confirm(

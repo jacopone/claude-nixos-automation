@@ -83,16 +83,25 @@ def main():
         if args.dry_run:
             logger.info("=== DRY RUN MODE ===")
             logger.info(f"Project: {config.project_path}")
-            logger.info(f"Packages.nix: {project_path / 'modules' / 'core' / 'packages.nix'}")
+            logger.info(
+                f"Packages.nix: {project_path / 'modules' / 'core' / 'packages.nix'}"
+            )
             logger.info("")
             logger.info(f"Total tools: {config.total_tools}")
-            logger.info(f"Used tools: {len(config.used_tools)} ({config.adoption_rate:.1f}%)")
+            logger.info(
+                f"Used tools: {len(config.used_tools)} ({config.adoption_rate:.1f}%)"
+            )
             logger.info(f"Dormant tools: {config.unused_tool_count}")
             logger.info(f"Human tools: {config.human_tool_count}")
             logger.info(f"Claude tools: {config.claude_tool_count}")
             logger.info("")
             logger.info("Top 5 tools:")
-            for i, tool in enumerate(sorted(config.used_tools, key=lambda t: t.total_invocations, reverse=True)[:5], 1):
+            for i, tool in enumerate(
+                sorted(
+                    config.used_tools, key=lambda t: t.total_invocations, reverse=True
+                )[:5],
+                1,
+            ):
                 logger.info(
                     f"  {i}. {tool.tool_name}: {tool.total_invocations} uses (H:{tool.human_invocations} C:{tool.claude_invocations})"
                 )
@@ -115,15 +124,11 @@ def main():
         if result.success:
             logger.info("✅ Tool usage analytics generated successfully")
             logger.info(f"   Output: {result.output_path}")
-            logger.info(
-                f"   Total tools: {result.stats.get('total_tools', 0)}"
-            )
+            logger.info(f"   Total tools: {result.stats.get('total_tools', 0)}")
             logger.info(
                 f"   Used tools: {result.stats.get('used_tools', 0)} ({result.stats.get('adoption_rate', 0):.1f}%)"
             )
-            logger.info(
-                f"   Dormant tools: {result.stats.get('dormant_tools', 0)}"
-            )
+            logger.info(f"   Dormant tools: {result.stats.get('dormant_tools', 0)}")
             logger.info(f"   Recommendations: {result.stats.get('recommendations', 0)}")
             logger.info("")
             logger.info("💡 Check your CLAUDE.md for the System Tool Usage section!")

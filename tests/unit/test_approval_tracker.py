@@ -172,8 +172,12 @@ class TestApprovalRetrieval:
 
         # Act
         approvals_all = tracker.get_recent_approvals(days=30)
-        approvals_project1 = tracker.get_recent_approvals(days=30, project_path=project1)
-        approvals_project2 = tracker.get_recent_approvals(days=30, project_path=project2)
+        approvals_project1 = tracker.get_recent_approvals(
+            days=30, project_path=project1
+        )
+        approvals_project2 = tracker.get_recent_approvals(
+            days=30, project_path=project2
+        )
 
         # Assert
         assert len(approvals_all) == 3

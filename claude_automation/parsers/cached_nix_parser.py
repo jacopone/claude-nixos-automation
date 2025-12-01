@@ -58,7 +58,7 @@ class CachedNixParser:
         try:
             # Convert to dict for JSON serialization
             data = result.dict()
-            with open(cache_path, 'w') as f:
+            with open(cache_path, "w") as f:
                 json.dump(data, f)
             logger.debug(f"Saved parsing result to cache: {cache_path}")
         except Exception as e:
@@ -116,6 +116,7 @@ class CachedNixParser:
     def clear_cache(self):
         """Clear all cached parsing results."""
         import shutil
+
         if self.cache_dir.exists():
             shutil.rmtree(self.cache_dir)
             self.cache_dir.mkdir(parents=True, exist_ok=True)

@@ -49,9 +49,7 @@ def analyze_project(project_path=None, days=30, min_confidence=0.75):
 
     tracker = ApprovalTracker()
     detector = PermissionPatternDetector(
-        approval_tracker=tracker,
-        min_occurrences=3,
-        confidence_threshold=min_confidence
+        approval_tracker=tracker, min_occurrences=3, confidence_threshold=min_confidence
     )
 
     # Detect patterns
@@ -70,7 +68,9 @@ def display_suggestions(suggestions, show_details=True):
     """
     if not suggestions:
         print("\n✓ No new permission patterns detected.")
-        print("  Your approval history is too sparse or permissions are already optimal.")
+        print(
+            "  Your approval history is too sparse or permissions are already optimal."
+        )
         return
 
     print(f"\n📊 Found {len(suggestions)} permission pattern suggestions:\n")
@@ -120,7 +120,9 @@ def apply_suggestions(suggestions, project_path):
     Returns:
         int: Number of rules added
     """
-    project_dir = Path(project_path.replace("-", "/", 2) if "-" in project_path else project_path)
+    project_dir = Path(
+        project_path.replace("-", "/", 2) if "-" in project_path else project_path
+    )
     settings_file = project_dir / ".claude" / "settings.local.json"
 
     # Load or create settings
@@ -153,7 +155,9 @@ def apply_suggestions(suggestions, project_path):
         if "_auto_generated_permissions" not in settings:
             settings["_auto_generated_permissions"] = {}
 
-        settings["_auto_generated_permissions"]["last_updated"] = datetime.now().isoformat()
+        settings["_auto_generated_permissions"]["last_updated"] = (
+            datetime.now().isoformat()
+        )
         settings["_auto_generated_permissions"]["tool"] = "permission_suggester.py"
         if "rules_added" not in settings["_auto_generated_permissions"]:
             settings["_auto_generated_permissions"]["rules_added"] = []
@@ -225,46 +229,39 @@ Examples:
 
   # Analyze with custom parameters
   python3 permission_suggester.py --days 60 --confidence 0.8
-        """
+        """,
     )
 
     parser.add_argument(
         "project_path",
         nargs="?",
-        help="Project directory to analyze (default: current directory)"
+        help="Project directory to analyze (default: current directory)",
     )
 
     parser.add_argument(
         "--analyze-all",
         action="store_true",
-        help="Analyze all projects in approval history"
+        help="Analyze all projects in approval history",
     )
 
     parser.add_argument(
         "--apply",
         action="store_true",
-        help="Auto-apply high-confidence suggestions to settings.local.json"
+        help="Auto-apply high-confidence suggestions to settings.local.json",
     )
 
     parser.add_argument(
-        "--days",
-        type=int,
-        default=30,
-        help="Days of history to analyze (default: 30)"
+        "--days", type=int, default=30, help="Days of history to analyze (default: 30)"
     )
 
     parser.add_argument(
         "--confidence",
         type=float,
         default=0.75,
-        help="Minimum confidence threshold 0-1 (default: 0.75)"
+        help="Minimum confidence threshold 0-1 (default: 0.75)",
     )
 
-    parser.add_argument(
-        "--json",
-        action="store_true",
-        help="Output results as JSON"
-    )
+    parser.add_argument("--json", action="store_true", help="Output results as JSON")
 
     args = parser.parse_args()
 
@@ -307,7 +304,7 @@ Examples:
         suggestions = analyze_project(
             project_path=str(project_path),
             days=args.days,
-            min_confidence=args.confidence
+            min_confidence=args.confidence,
         )
 
         if args.json:
@@ -345,6 +342,7 @@ Examples:
     except Exception as e:
         print(f"\n❌ Error: {e}", file=sys.stderr)
         import traceback
+
         traceback.print_exc()
         sys.exit(1)
 

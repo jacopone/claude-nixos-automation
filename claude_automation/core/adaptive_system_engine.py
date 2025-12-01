@@ -119,23 +119,35 @@ class AdaptiveSystemEngine:
 
         if health_report.failed_count > 0 or health_report.degraded_count > 0:
             print("\n⚠️  Warning: Some analyzers have issues")
-            print(f"   • Healthy: {health_report.healthy_count}/{health_report.total_analyzers}")
+            print(
+                f"   • Healthy: {health_report.healthy_count}/{health_report.total_analyzers}"
+            )
             if health_report.degraded_count > 0:
                 print(f"   • Degraded: {health_report.degraded_count} (missing data)")
             if health_report.failed_count > 0:
-                print(f"   • Failed: {health_report.failed_count} (configuration errors)")
+                print(
+                    f"   • Failed: {health_report.failed_count} (configuration errors)"
+                )
 
             # Show brief details for unhealthy analyzers
             for status in health_report.analyzer_statuses:
                 if not status.is_healthy:
                     print(f"   • {status.analyzer_name}: {status.status_message}")
                     if status.missing_prerequisites:
-                        print(f"     Missing: {', '.join(status.missing_prerequisites)}")
+                        print(
+                            f"     Missing: {', '.join(status.missing_prerequisites)}"
+                        )
 
-            print("\n💡 Some suggestions may be limited. Continuing with available analyzers...\n")
-            logger.warning(f"Analyzer health: {health_report.health_percentage:.0f}% ({health_report.healthy_count}/{health_report.total_analyzers} healthy)")
+            print(
+                "\n💡 Some suggestions may be limited. Continuing with available analyzers...\n"
+            )
+            logger.warning(
+                f"Analyzer health: {health_report.health_percentage:.0f}% ({health_report.healthy_count}/{health_report.total_analyzers} healthy)"
+            )
         else:
-            logger.debug(f"All analyzers healthy ({health_report.total_analyzers}/{ health_report.total_analyzers})")
+            logger.debug(
+                f"All analyzers healthy ({health_report.total_analyzers}/{health_report.total_analyzers})"
+            )
 
         # Phase 1: Collect insights from all learners
         # If components filter provided, only run specified components
@@ -221,7 +233,9 @@ class AdaptiveSystemEngine:
         logger.info("✅ Learning cycle complete")
         return report
 
-    def _run_analyzers_parallel(self, tasks: list[tuple[str, callable]]) -> dict[str, any]:
+    def _run_analyzers_parallel(
+        self, tasks: list[tuple[str, callable]]
+    ) -> dict[str, any]:
         """
         Run multiple analyzer methods in parallel.
 
@@ -254,7 +268,9 @@ class AdaptiveSystemEngine:
                 except Exception as e:
                     logger.error(f"✗ {component_name} analysis failed: {e}")
                     # Return empty result on failure (maintains compatibility)
-                    results[component_name] = [] if component_name != "meta_learning" else {}
+                    results[component_name] = (
+                        [] if component_name != "meta_learning" else {}
+                    )
 
         return results
 
@@ -286,7 +302,9 @@ class AdaptiveSystemEngine:
 
             # Convert recommendations to suggestions
             suggestions = []
-            for rec in report.recommendations[: self.config.max_suggestions_per_component]:
+            for rec in report.recommendations[
+                : self.config.max_suggestions_per_component
+            ]:
                 suggestions.append(
                     {
                         "description": rec.reason,

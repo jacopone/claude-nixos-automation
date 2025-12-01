@@ -53,35 +53,35 @@ class ImprovementApplicator:
             return
 
         # Show confirmation summary before applying
-        print("\n" + "="*70)
+        print("\n" + "=" * 70)
         print("📋 FINAL CONFIRMATION - Changes to be applied:")
-        print("="*70)
+        print("=" * 70)
 
         for i, sug in enumerate(approved, 1):
-            sug_type = sug['type']
-            data = sug['data']
+            sug_type = sug["type"]
+            data = sug["data"]
 
-            if sug_type == 'mcp':
-                server = data.get('server_name', 'Unknown')
+            if sug_type == "mcp":
+                server = data.get("server_name", "Unknown")
                 print(f"\n{i}. MCP: Remove server '{server}'")
                 print("   File: .claude/mcp.json")
-            elif sug_type == 'permission':
-                desc = data.get('description', 'Unknown pattern')
+            elif sug_type == "permission":
+                desc = data.get("description", "Unknown pattern")
                 print(f"\n{i}. Permission: Auto-approve '{desc}'")
                 print("   File: .claude/settings.local.json")
-            elif sug_type == 'context':
-                section = data.get('description', 'Unknown section')
+            elif sug_type == "context":
+                section = data.get("description", "Unknown section")
                 print(f"\n{i}. Context: Remove '{section}'")
                 print("   File: CLAUDE.md")
-            elif sug_type == 'workflow':
-                desc = data.get('description', 'Unknown workflow')
+            elif sug_type == "workflow":
+                desc = data.get("description", "Unknown workflow")
                 print(f"\n{i}. Workflow: Create slash command for '{desc}'")
                 print("   File: .claude/commands/<new>.md")
 
-        print("\n" + "─"*70)
+        print("\n" + "─" * 70)
         try:
             confirm = input("\n👉 Proceed with these changes? [y/N]: ").lower().strip()
-            if confirm != 'y':
+            if confirm != "y":
                 print("\n⚠️  Changes cancelled. No modifications made.")
                 return
         except (KeyboardInterrupt, EOFError):
@@ -93,26 +93,26 @@ class ImprovementApplicator:
         # Group by type
         by_type = {}
         for sug in approved:
-            sug_type = sug['type']
+            sug_type = sug["type"]
             if sug_type not in by_type:
                 by_type[sug_type] = []
-            by_type[sug_type].append(sug['data'])
+            by_type[sug_type].append(sug["data"])
 
         # Apply MCP optimizations
-        if 'mcp' in by_type:
-            self._apply_mcp_optimizations(by_type['mcp'])
+        if "mcp" in by_type:
+            self._apply_mcp_optimizations(by_type["mcp"])
 
         # Apply permission patterns
-        if 'permission' in by_type:
-            self._apply_permission_patterns(by_type['permission'])
+        if "permission" in by_type:
+            self._apply_permission_patterns(by_type["permission"])
 
         # Apply context optimizations
-        if 'context' in by_type:
-            self._apply_context_optimizations(by_type['context'])
+        if "context" in by_type:
+            self._apply_context_optimizations(by_type["context"])
 
         # Apply workflow patterns
-        if 'workflow' in by_type:
-            self._apply_workflow_patterns(by_type['workflow'])
+        if "workflow" in by_type:
+            self._apply_workflow_patterns(by_type["workflow"])
 
         print("✓ All improvements applied successfully\n")
 
@@ -125,44 +125,60 @@ class ImprovementApplicator:
         logger.info(f"Applying {len(optimizations)} MCP optimizations")
 
         for opt in optimizations:
-            server_name = opt.get('server_name', 'unknown')
-            action = opt.get('impact', '')  # Field is called 'impact' in the dict
+            server_name = opt.get("server_name", "unknown")
+            action = opt.get("impact", "")  # Field is called 'impact' in the dict
 
             try:
                 # Parse action to determine config location
                 # Format: "Remove from global (~/.claude.json)" or "Remove from project (nixos-config)"
-                if 'global' in action:
-                    config_path = Path.home() / '.claude.json'
-                    location_type = 'global'
-                    location_desc = '~/.claude.json'
-                elif 'project' in action:
+                if "global" in action:
+                    config_path = Path.home() / ".claude.json"
+                    location_type = "global"
+                    location_desc = "~/.claude.json"
+                elif "project" in action:
                     # Extract project name from "Remove from project (PROJECT_NAME)"
-                    match = re.search(r'project \(([^)]+)\)', action)
+                    match = re.search(r"project \(([^)]+)\)", action)
                     if not match:
-                        logger.error(f"Could not parse project name from action: {action}")
-                        print(f"  ✗ MCP: {server_name} - Failed (could not parse project name)")
+                        logger.error(
+                            f"Could not parse project name from action: {action}"
+                        )
+                        print(
+                            f"  ✗ MCP: {server_name} - Failed (could not parse project name)"
+                        )
                         continue
 
                     project_name = match.group(1)
                     config_path = self._find_project_mcp_config(project_name)
-                    location_type = 'project'
-                    location_desc = f'{project_name}/.claude/mcp.json'
+                    location_type = "project"
+                    location_desc = f"{project_name}/.claude/mcp.json"
 
                     if not config_path:
-                        logger.error(f"Could not find .claude/mcp.json for project: {project_name}")
-                        print(f"  ✗ MCP: {server_name} - Failed (project config not found)")
+                        logger.error(
+                            f"Could not find .claude/mcp.json for project: {project_name}"
+                        )
+                        print(
+                            f"  ✗ MCP: {server_name} - Failed (project config not found)"
+                        )
                         continue
                 else:
-                    logger.error(f"Could not determine config location from action: {action}")
+                    logger.error(
+                        f"Could not determine config location from action: {action}"
+                    )
                     print(f"  ✗ MCP: {server_name} - Failed (unknown location)")
                     continue
 
                 # Remove server from config
-                if self._remove_server_from_config(config_path, server_name, location_type):
+                if self._remove_server_from_config(
+                    config_path, server_name, location_type
+                ):
                     print(f"  ✓ MCP: Removed '{server_name}' from {location_desc}")
-                    logger.info(f"Successfully removed {server_name} from {location_desc}")
+                    logger.info(
+                        f"Successfully removed {server_name} from {location_desc}"
+                    )
                 else:
-                    print(f"  ✗ MCP: Failed to remove '{server_name}' from {location_desc}")
+                    print(
+                        f"  ✗ MCP: Failed to remove '{server_name}' from {location_desc}"
+                    )
 
             except Exception as e:
                 logger.error(f"Error removing {server_name}: {e}")
@@ -196,7 +212,9 @@ class ImprovementApplicator:
         logger.warning(f"Could not find .claude/mcp.json for project: {project_name}")
         return None
 
-    def _remove_server_from_config(self, config_path: Path, server_name: str, location_type: str) -> bool:
+    def _remove_server_from_config(
+        self, config_path: Path, server_name: str, location_type: str
+    ) -> bool:
         """
         Remove a server from MCP configuration file.
 
@@ -214,23 +232,23 @@ class ImprovementApplicator:
                 logger.error(f"Config file not found: {config_path}")
                 return False
 
-            with open(config_path, encoding='utf-8') as f:
+            with open(config_path, encoding="utf-8") as f:
                 config = json.load(f)
 
             # Check if server exists
-            mcp_servers = config.get('mcpServers', {})
+            mcp_servers = config.get("mcpServers", {})
             if server_name not in mcp_servers:
                 logger.warning(f"Server '{server_name}' not found in {config_path}")
                 return False
 
             # Remove server
             del mcp_servers[server_name]
-            config['mcpServers'] = mcp_servers
+            config["mcpServers"] = mcp_servers
 
             # Write back
-            with open(config_path, 'w', encoding='utf-8') as f:
+            with open(config_path, "w", encoding="utf-8") as f:
                 json.dump(config, f, indent=2)
-                f.write('\n')  # Add trailing newline
+                f.write("\n")  # Add trailing newline
 
             logger.info(f"Removed '{server_name}' from {config_path}")
             return True
@@ -254,11 +272,11 @@ class ImprovementApplicator:
 
         try:
             result = subprocess.run(
-                ['git', 'status', '--porcelain'],
+                ["git", "status", "--porcelain"],
                 cwd=Path.cwd(),
                 capture_output=True,
                 text=True,
-                timeout=5
+                timeout=5,
             )
 
             # Empty output = clean working directory
@@ -299,7 +317,7 @@ class ImprovementApplicator:
         # Load or initialize settings
         try:
             if target_file.exists():
-                with open(target_file, encoding='utf-8') as f:
+                with open(target_file, encoding="utf-8") as f:
                     settings = json.load(f)
             else:
                 settings = {}
@@ -313,18 +331,18 @@ class ImprovementApplicator:
             return
 
         # Ensure permissions structure exists
-        if 'permissions' not in settings:
-            settings['permissions'] = {}
-        if 'allow' not in settings['permissions']:
-            settings['permissions']['allow'] = []
+        if "permissions" not in settings:
+            settings["permissions"] = {}
+        if "allow" not in settings["permissions"]:
+            settings["permissions"]["allow"] = []
 
         # Track changes
         added_count = 0
 
         # Apply each pattern
         for pattern in patterns:
-            description = pattern.get('description', 'unknown pattern')
-            examples = pattern.get('examples', [])
+            description = pattern.get("description", "unknown pattern")
+            examples = pattern.get("examples", [])
 
             # Generate permission rules from pattern
             # For minimal implementation, use examples directly
@@ -332,8 +350,8 @@ class ImprovementApplicator:
 
             for rule in rules:
                 # Avoid duplicates
-                if rule not in settings['permissions']['allow']:
-                    settings['permissions']['allow'].append(rule)
+                if rule not in settings["permissions"]["allow"]:
+                    settings["permissions"]["allow"].append(rule)
                     added_count += 1
                     logger.info(f"Added permission rule: {rule}")
 
@@ -345,26 +363,28 @@ class ImprovementApplicator:
 
                 # Write to temporary file first
                 with tempfile.NamedTemporaryFile(
-                    mode='w',
+                    mode="w",
                     dir=target_file.parent,
                     delete=False,
-                    suffix='.tmp',
-                    encoding='utf-8'
+                    suffix=".tmp",
+                    encoding="utf-8",
                 ) as tmp:
                     json.dump(settings, tmp, indent=2)
-                    tmp.write('\n')  # Add trailing newline
+                    tmp.write("\n")  # Add trailing newline
                     tmp_path = tmp.name
 
                 # Atomic rename
                 os.replace(tmp_path, target_file)
-                print(f"  ✓ Permission: Added {added_count} rules to {target_file.relative_to(Path.cwd())}")
+                print(
+                    f"  ✓ Permission: Added {added_count} rules to {target_file.relative_to(Path.cwd())}"
+                )
                 logger.info(f"Successfully applied {added_count} permission rules")
             except Exception as e:
                 logger.error(f"Error writing {target_file}: {e}")
                 print("  ✗ Permission patterns: Error writing settings file")
                 # Clean up temp file if it exists
                 try:
-                    if 'tmp_path' in locals() and Path(tmp_path).exists():
+                    if "tmp_path" in locals() and Path(tmp_path).exists():
                         Path(tmp_path).unlink()
                 except Exception:
                     pass
@@ -372,7 +392,9 @@ class ImprovementApplicator:
             print("  ℹ️  Permission: No new rules to add (all already exist)")
             logger.info("No new permission rules needed")
 
-    def _extract_permission_rules(self, description: str, examples: list[str]) -> list[str]:
+    def _extract_permission_rules(
+        self, description: str, examples: list[str]
+    ) -> list[str]:
         """
         Extract permission rules from pattern description and examples.
 
@@ -391,11 +413,11 @@ class ImprovementApplicator:
             for ex in examples[:5]:  # Limit to 5 examples
                 # Extract tool and command pattern
                 # "Bash(git status)" -> "Bash(git status:*)"
-                if '(' in ex and ')' in ex:
+                if "(" in ex and ")" in ex:
                     # Already has parameters
-                    if ':' not in ex:
+                    if ":" not in ex:
                         # Add wildcard if not already parameterized
-                        rule = ex.replace(')', ':*)')
+                        rule = ex.replace(")", ":*)")
                     else:
                         rule = ex
                     rules.append(rule)
@@ -405,13 +427,18 @@ class ImprovementApplicator:
         # Fallback: Generate from description
         if not rules:
             desc_lower = description.lower()
-            if 'git' in desc_lower and ('read' in desc_lower or 'status' in desc_lower):
-                rules = ["Bash(git status:*)", "Bash(git log:*)", "Bash(git diff:*)", "Bash(git show:*)"]
-            elif 'pytest' in desc_lower or 'test' in desc_lower:
+            if "git" in desc_lower and ("read" in desc_lower or "status" in desc_lower):
+                rules = [
+                    "Bash(git status:*)",
+                    "Bash(git log:*)",
+                    "Bash(git diff:*)",
+                    "Bash(git show:*)",
+                ]
+            elif "pytest" in desc_lower or "test" in desc_lower:
                 rules = ["Bash(pytest:*)"]
-            elif 'ruff' in desc_lower:
+            elif "ruff" in desc_lower:
                 rules = ["Bash(ruff:*)"]
-            elif 'nix' in desc_lower:
+            elif "nix" in desc_lower:
                 rules = ["Bash(nix:*)"]
             else:
                 # Very conservative fallback
@@ -425,7 +452,7 @@ class ImprovementApplicator:
         logger.info(f"Applying {len(optimizations)} context optimizations")
 
         for opt in optimizations:
-            description = opt.get('description', 'unknown optimization')
+            description = opt.get("description", "unknown optimization")
 
             # TODO: Modify CLAUDE.md files
             # For now, log what would be done
@@ -453,9 +480,9 @@ class ImprovementApplicator:
         commands_dir.mkdir(parents=True, exist_ok=True)
 
         for pattern in patterns:
-            description = pattern.get('description', 'unknown workflow')
-            commands = pattern.get('commands', [])
-            occurrences = pattern.get('occurrences', 0)
+            description = pattern.get("description", "unknown workflow")
+            commands = pattern.get("commands", [])
+            occurrences = pattern.get("occurrences", 0)
 
             if not commands:
                 logger.warning(f"Workflow pattern has no commands: {description}")
@@ -466,7 +493,9 @@ class ImprovementApplicator:
             cmd_file = commands_dir / f"{cmd_name}.md"
 
             # Generate command content
-            content = self._generate_command_content(description, commands, occurrences, cmd_name)
+            content = self._generate_command_content(
+                description, commands, occurrences, cmd_name
+            )
 
             # Write command file atomically
             try:
@@ -475,25 +504,27 @@ class ImprovementApplicator:
 
                 # Write to temporary file first
                 with tempfile.NamedTemporaryFile(
-                    mode='w',
+                    mode="w",
                     dir=commands_dir,
                     delete=False,
-                    suffix='.tmp',
-                    encoding='utf-8'
+                    suffix=".tmp",
+                    encoding="utf-8",
                 ) as tmp:
                     tmp.write(content)
                     tmp_path = tmp.name
 
                 # Atomic rename
                 os.replace(tmp_path, cmd_file)
-                print(f"  ✓ Workflow: Created /{cmd_name} (.claude/commands/{cmd_name}.md)")
+                print(
+                    f"  ✓ Workflow: Created /{cmd_name} (.claude/commands/{cmd_name}.md)"
+                )
                 logger.info(f"Created workflow command: {cmd_file}")
             except Exception as e:
                 logger.error(f"Failed to create workflow command {cmd_name}: {e}")
                 print(f"  ✗ Workflow: {cmd_name} - Error: {e}")
                 # Clean up temp file if it exists
                 try:
-                    if 'tmp_path' in locals() and Path(tmp_path).exists():
+                    if "tmp_path" in locals() and Path(tmp_path).exists():
                         Path(tmp_path).unlink()
                 except Exception:
                     pass
@@ -515,22 +546,22 @@ class ImprovementApplicator:
         parts = []
         for cmd in commands:
             # Remove leading slash and extract meaningful parts
-            clean = cmd.lstrip('/').replace('.', '-')
+            clean = cmd.lstrip("/").replace(".", "-")
             # Take last part if hyphenated
-            if '-' in clean:
-                parts.append(clean.split('-')[-1])
+            if "-" in clean:
+                parts.append(clean.split("-")[-1])
             else:
                 parts.append(clean)
 
         # Combine with workflow prefix
         if parts:
-            base_name = 'workflow-' + '-'.join(parts[:3])  # Max 3 parts
+            base_name = "workflow-" + "-".join(parts[:3])  # Max 3 parts
         else:
-            base_name = 'workflow'
+            base_name = "workflow"
 
         # Sanitize
-        base_name = re.sub(r'[^a-z0-9-]', '', base_name.lower())
-        base_name = base_name or 'workflow'
+        base_name = re.sub(r"[^a-z0-9-]", "", base_name.lower())
+        base_name = base_name or "workflow"
 
         # Ensure uniqueness by appending counter if needed
         name = base_name
@@ -541,7 +572,9 @@ class ImprovementApplicator:
 
         return name
 
-    def _generate_command_content(self, description: str, commands: list[str], occurrences: int, cmd_name: str) -> str:
+    def _generate_command_content(
+        self, description: str, commands: list[str], occurrences: int, cmd_name: str
+    ) -> str:
         """
         Generate markdown content for workflow command.
 
@@ -584,21 +617,27 @@ Automatically runs:
         for cmd in commands:
             content += f"- {cmd}\n"
 
-        content += """
+        content += (
+            """
 
 ## Notes
 
 - This is an auto-generated workflow based on your usage patterns
 - Edit or delete this file if the workflow needs adjustment
-- File location: `.claude/commands/""" + cmd_name + """.md`
+- File location: `.claude/commands/"""
+            + cmd_name
+            + """.md`
 
 ---
 *Auto-generated by adaptive learning system*
 """
+        )
 
         return content
 
-    def update_meta_learning(self, report: LearningReport, approved: list[dict]) -> None:
+    def update_meta_learning(
+        self, report: LearningReport, approved: list[dict]
+    ) -> None:
         """
         Update meta-learning based on user feedback.
 
@@ -607,7 +646,9 @@ Automatically runs:
             approved: List of approved suggestions
         """
         acceptance_rate = (
-            len(approved) / report.total_suggestions if report.total_suggestions > 0 else 1.0
+            len(approved) / report.total_suggestions
+            if report.total_suggestions > 0
+            else 1.0
         )
 
         self.meta_learner.record_session(

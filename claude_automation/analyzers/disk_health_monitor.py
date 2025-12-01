@@ -99,7 +99,7 @@ class DiskHealthMonitor(BaseAnalyzer):
             months_until_full = self.tracker.calculate_months_until_full(
                 current_mb=total_bytes // (1024**2),
                 available_gb=available_bytes // (1024**3),
-                growth_mb_per_month=growth_mb_per_month
+                growth_mb_per_month=growth_mb_per_month,
             )
 
         # Step 6: Build report
@@ -154,16 +154,11 @@ class DiskHealthMonitor(BaseAnalyzer):
             Tuple of (total_bytes, file_count)
         """
         return self._get_directory_size(
-            self.projects_dir,
-            pattern="*.jsonl",
-            count_files=True
+            self.projects_dir, pattern="*.jsonl", count_files=True
         )
 
     def _get_directory_size(
-        self,
-        directory: Path,
-        pattern: str = "*",
-        count_files: bool = False
+        self, directory: Path, pattern: str = "*", count_files: bool = False
     ) -> int | tuple[int, int]:
         """
         Calculate total size of files in a directory recursively.
@@ -232,10 +227,13 @@ class DiskHealthMonitor(BaseAnalyzer):
             logger.error(f"Could not get disk space: {e}")
             # Return zero values to trigger RED alert
             from collections import namedtuple
-            DiskStat = namedtuple('DiskStat', ['total', 'used', 'free'])
+
+            DiskStat = namedtuple("DiskStat", ["total", "used", "free"])
             return DiskStat(total=0, used=0, free=0)
 
-    def _assess_risk(self, total_bytes: int, total_disk_bytes: int) -> tuple[RiskLevel, str]:
+    def _assess_risk(
+        self, total_bytes: int, total_disk_bytes: int
+    ) -> tuple[RiskLevel, str]:
         """
         Assess disk usage risk level.
 

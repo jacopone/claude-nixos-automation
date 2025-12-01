@@ -75,7 +75,9 @@ class TestPatternDetection:
 
         # Assert
         assert len(suggestions) > 0
-        git_suggestions = [s for s in suggestions if s.pattern.pattern_type == "git_read_only"]
+        git_suggestions = [
+            s for s in suggestions if s.pattern.pattern_type == "git_read_only"
+        ]
         assert len(git_suggestions) == 1
 
         git_pattern = git_suggestions[0].pattern
@@ -101,7 +103,9 @@ class TestPatternDetection:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        pytest_suggestions = [s for s in suggestions if s.pattern.pattern_type == "pytest"]
+        pytest_suggestions = [
+            s for s in suggestions if s.pattern.pattern_type == "pytest"
+        ]
         assert len(pytest_suggestions) == 1
         assert pytest_suggestions[0].pattern.occurrences == 3
 
@@ -124,7 +128,9 @@ class TestPatternDetection:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        cli_suggestions = [s for s in suggestions if s.pattern.pattern_type == "modern_cli"]
+        cli_suggestions = [
+            s for s in suggestions if s.pattern.pattern_type == "modern_cli"
+        ]
         assert len(cli_suggestions) == 1
         assert cli_suggestions[0].pattern.occurrences == 4
 
@@ -182,10 +188,7 @@ class TestPatternDetection:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Should not detect pattern from old approvals
-        git_suggestions = [
-            s for s in suggestions
-            if "git" in s.pattern.pattern_type
-        ]
+        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type]
         assert len(git_suggestions) == 0
 
     def test_pattern_detection_with_project_filter(self, tracker, detector):
@@ -200,7 +203,7 @@ class TestPatternDetection:
 
         # Add different commands to project2 across multiple sessions
         for i in range(3):
-            tracker.log_approval("Bash(pytest:*)", f"session-{i+10}", project2)
+            tracker.log_approval("Bash(pytest:*)", f"session-{i + 10}", project2)
 
         # Act
         suggestions_all = detector.detect_patterns(days=30)
@@ -212,8 +215,7 @@ class TestPatternDetection:
         # Project1 should have git patterns if detected
         if suggestions_project1:
             git_in_project1 = any(
-                "git" in s.pattern.pattern_type
-                for s in suggestions_project1
+                "git" in s.pattern.pattern_type for s in suggestions_project1
             )
             assert git_in_project1
 
@@ -248,15 +250,23 @@ class TestConfidenceScoring:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Git should definitely be detected
-        assert len(suggestions) >= 1, f"Expected at least 1 pattern, got {len(suggestions)}"
+        assert len(suggestions) >= 1, (
+            f"Expected at least 1 pattern, got {len(suggestions)}"
+        )
 
-        git_suggestion = next((s for s in suggestions if "git" in s.pattern.pattern_type), None)
+        git_suggestion = next(
+            (s for s in suggestions if "git" in s.pattern.pattern_type), None
+        )
         assert git_suggestion is not None, "Git pattern not detected"
 
         # If pytest also detected, verify git has higher confidence (more sessions)
-        pytest_suggestion = next((s for s in suggestions if s.pattern.pattern_type == "pytest"), None)
+        pytest_suggestion = next(
+            (s for s in suggestions if s.pattern.pattern_type == "pytest"), None
+        )
         if pytest_suggestion is not None:
-            assert git_suggestion.pattern.confidence > pytest_suggestion.pattern.confidence
+            assert (
+                git_suggestion.pattern.confidence > pytest_suggestion.pattern.confidence
+            )
 
     def test_confidence_bonus_for_consistency(self, tracker, detector):
         """Verify confidence bonus for repeated identical permissions."""
@@ -446,7 +456,10 @@ class TestPatternStats:
         assert stats["total_approvals"] == 8
         assert stats["patterns_detected"] >= 1
         assert "category_counts" in stats
-        assert stats["category_counts"]["git_read_only"] == 5 or stats["category_counts"]["git_all_safe"] == 5
+        assert (
+            stats["category_counts"]["git_read_only"] == 5
+            or stats["category_counts"]["git_all_safe"] == 5
+        )
 
 
 if __name__ == "__main__":

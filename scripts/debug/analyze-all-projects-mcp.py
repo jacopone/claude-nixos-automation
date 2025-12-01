@@ -152,27 +152,31 @@ class GlobalMCPAnalyzer:
         # Calculate aggregated metrics
         total_servers = len(self.global_servers)
         connected_servers = sum(
-            1 for s in self.global_servers.values() if s.status == MCPServerStatus.CONNECTED
+            1
+            for s in self.global_servers.values()
+            if s.status == MCPServerStatus.CONNECTED
         )
 
         # Aggregate tool usage by server
-        usage_by_server = defaultdict(lambda: {
-            "invocation_count": 0,
-            "total_tokens": 0,
-            "success_count": 0,
-            "error_count": 0,
-        })
+        usage_by_server = defaultdict(
+            lambda: {
+                "invocation_count": 0,
+                "total_tokens": 0,
+                "success_count": 0,
+                "error_count": 0,
+            }
+        )
 
         for usage in self.global_tool_usage:
-            usage_by_server[usage.server_name]["invocation_count"] += usage.invocation_count
+            usage_by_server[usage.server_name]["invocation_count"] += (
+                usage.invocation_count
+            )
             usage_by_server[usage.server_name]["total_tokens"] += usage.total_tokens
             usage_by_server[usage.server_name]["success_count"] += usage.success_count
             usage_by_server[usage.server_name]["error_count"] += usage.error_count
 
         # Find high-priority recommendations
-        high_priority_recs = [
-            r for r in self.global_recommendations if r.priority == 1
-        ]
+        high_priority_recs = [r for r in self.global_recommendations if r.priority == 1]
 
         # Calculate total sessions analyzed
         total_sessions = sum(
@@ -207,12 +211,18 @@ class GlobalMCPAnalyzer:
         lines.append(f"Projects Scanned: {report['total_projects']}")
         lines.append(f"Total Sessions: {report['total_sessions_analyzed']}")
         lines.append("")
-        lines.append(f"📊 Servers: {report['connected_servers']}/{report['total_servers']} connected")
+        lines.append(
+            f"📊 Servers: {report['connected_servers']}/{report['total_servers']} connected"
+        )
         lines.append("")
 
         # List servers by scope
-        global_servers = [s for s in report['servers'] if 'global' in s.config_location.lower()]
-        project_servers = [s for s in report['servers'] if 'project' in s.config_location.lower()]
+        global_servers = [
+            s for s in report["servers"] if "global" in s.config_location.lower()
+        ]
+        project_servers = [
+            s for s in report["servers"] if "project" in s.config_location.lower()
+        ]
 
         if global_servers:
             lines.append(f"Global Servers ({len(global_servers)}):")
@@ -224,38 +234,48 @@ class GlobalMCPAnalyzer:
             lines.append(f"\nProject-Level Servers ({len(project_servers)}):")
             for server in project_servers:
                 status_icon = "✓" if server.status == "connected" else "✗"
-                lines.append(f"  {status_icon} {server.name} ({server.config_location})")
+                lines.append(
+                    f"  {status_icon} {server.name} ({server.config_location})"
+                )
 
         # Show usage stats
-        if report['usage_by_server']:
+        if report["usage_by_server"]:
             lines.append("\n📈 Usage Statistics:")
             for server_name, stats in sorted(
-                report['usage_by_server'].items(),
-                key=lambda x: x[1]['invocation_count'],
-                reverse=True
+                report["usage_by_server"].items(),
+                key=lambda x: x[1]["invocation_count"],
+                reverse=True,
             ):
-                invocations = stats['invocation_count']
-                tokens = stats['total_tokens']
-                lines.append(f"  • {server_name}: {invocations} calls, {tokens:,} tokens")
+                invocations = stats["invocation_count"]
+                tokens = stats["total_tokens"]
+                lines.append(
+                    f"  • {server_name}: {invocations} calls, {tokens:,} tokens"
+                )
 
         # Show utilization
-        if report['utilization']:
+        if report["utilization"]:
             lines.append("\n⚡ Utilization Rates:")
             for util in sorted(
-                report['utilization'],
-                key=lambda x: x.utilization_rate if hasattr(x, 'utilization_rate') else 0,
-                reverse=True
+                report["utilization"],
+                key=lambda x: x.utilization_rate
+                if hasattr(x, "utilization_rate")
+                else 0,
+                reverse=True,
             ):
-                util_rate = util.utilization_rate if hasattr(util, 'utilization_rate') else 0
+                util_rate = (
+                    util.utilization_rate if hasattr(util, "utilization_rate") else 0
+                )
                 lines.append(
                     f"  • {util.server_name}: {util_rate:.1f}% "
                     f"({util.used_sessions}/{util.loaded_sessions} sessions)"
                 )
 
         # Show high-priority recommendations
-        if report['high_priority_recommendations']:
-            lines.append(f"\n⚠️  High-Priority Actions ({len(report['high_priority_recommendations'])}):")
-            for rec in report['high_priority_recommendations'][:5]:
+        if report["high_priority_recommendations"]:
+            lines.append(
+                f"\n⚠️  High-Priority Actions ({len(report['high_priority_recommendations'])}):"
+            )
+            for rec in report["high_priority_recommendations"][:5]:
                 lines.append(f"  • {rec.server_name}: {rec.reason}")
                 lines.append(f"    → {rec.action}")
 
@@ -280,7 +300,9 @@ class GlobalMCPAnalyzer:
                 {
                     "name": s.name,
                     "type": s.type,
-                    "status": s.status.value if hasattr(s.status, 'value') else s.status,
+                    "status": s.status.value
+                    if hasattr(s.status, "value")
+                    else s.status,
                     "config_location": s.config_location,
                     "description": s.description,
                 }
@@ -294,7 +316,9 @@ class GlobalMCPAnalyzer:
                     "total_sessions": u.total_sessions,
                     "loaded_sessions": u.loaded_sessions,
                     "used_sessions": u.used_sessions,
-                    "utilization_rate": u.utilization_rate if hasattr(u, 'utilization_rate') else 0,
+                    "utilization_rate": u.utilization_rate
+                    if hasattr(u, "utilization_rate")
+                    else 0,
                     "estimated_overhead_tokens": u.estimated_overhead_tokens,
                 }
                 for u in report["utilization"]

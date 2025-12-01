@@ -27,11 +27,17 @@ class PolicyMetadata(BaseModel):
     name: str = Field(..., description="Policy name")
     category: str = Field(..., description="Policy category")
     description: str = Field(..., description="Policy description")
-    recommended: bool = Field(default=False, description="Is this recommended for most users")
+    recommended: bool = Field(
+        default=False, description="Is this recommended for most users"
+    )
     source: str = Field(..., description="Source of this policy")
     platform: str | None = Field(None, description="Platform-specific (e.g., NixOS)")
-    added_date: datetime = Field(default_factory=datetime.now, description="When policy was added")
-    version: str = Field(default="2.0", description="Version when policy was introduced")
+    added_date: datetime = Field(
+        default_factory=datetime.now, description="When policy was added"
+    )
+    version: str = Field(
+        default="2.0", description="Version when policy was introduced"
+    )
 
 
 class ScrapedPolicy(BaseModel):
@@ -41,7 +47,9 @@ class ScrapedPolicy(BaseModel):
     category: str
     description: str
     source_url: str
-    confidence: float = Field(default=1.0, ge=0.0, le=1.0, description="Confidence score")
+    confidence: float = Field(
+        default=1.0, ge=0.0, le=1.0, description="Confidence score"
+    )
     scraped_at: datetime = Field(default_factory=datetime.now)
 
 
@@ -50,7 +58,9 @@ class PolicyVersionInfo(BaseModel):
 
     last_updated: datetime = Field(default_factory=datetime.now)
     policies_count: int = Field(default=0, description="Total number of policies")
-    new_since_last: list[str] = Field(default_factory=list, description="New policy names")
+    new_since_last: list[str] = Field(
+        default_factory=list, description="New policy names"
+    )
     version: str = Field(default="2.0")
 
 

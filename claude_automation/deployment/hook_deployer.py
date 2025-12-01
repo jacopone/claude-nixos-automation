@@ -321,11 +321,11 @@ def main():
         print("=" * 50)
         print(f"Deployed: {'✓' if status['deployed'] else '✗'}")
         print(f"\nHooks present: {len(status['hooks_present'])}")
-        for hook in status['hooks_present']:
+        for hook in status["hooks_present"]:
             print(f"  ✓ {hook}")
-        if status['hooks_missing']:
+        if status["hooks_missing"]:
             print(f"\nHooks missing: {len(status['hooks_missing'])}")
-            for hook in status['hooks_missing']:
+            for hook in status["hooks_missing"]:
                 print(f"  ✗ {hook}")
         print(f"\nConfiguration: {'✓' if status['config_present'] else '✗'}")
         return

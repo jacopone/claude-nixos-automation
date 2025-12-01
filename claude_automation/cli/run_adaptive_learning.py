@@ -135,7 +135,9 @@ Examples:
     logger.info(f"  Min occurrences: {config.min_occurrences}")
     logger.info(f"  Confidence threshold: {config.confidence_threshold}")
     logger.info(f"  Analysis period: {config.analysis_period_days} days")
-    logger.info(f"  Max suggestions per component: {config.max_suggestions_per_component}")
+    logger.info(
+        f"  Max suggestions per component: {config.max_suggestions_per_component}"
+    )
     logger.info(f"  Meta-learning: {config.enable_meta_learning}")
 
     if args.dry_run:
@@ -185,15 +187,19 @@ Examples:
             has_content = True
             print("\n  🌐 MCP Server Optimizations:")
             for opt in report.mcp_optimizations[:5]:
-                server = opt.get('server_name', 'Unknown')
-                reason = opt.get('description', opt.get('impact', 'No details'))
-                priority = opt.get('priority', 'MEDIUM')
+                server = opt.get("server_name", "Unknown")
+                reason = opt.get("description", opt.get("impact", "No details"))
+                priority = opt.get("priority", "MEDIUM")
 
                 # Make it actionable
-                if 'never used' in reason.lower():
-                    action = f"Disable '{server}' (unused, wastes tokens on every session)"
-                elif 'low utilization' in reason.lower() or 'poor' in reason.lower():
-                    action = f"Move '{server}' to project-level (only 6-10% utilization)"
+                if "never used" in reason.lower():
+                    action = (
+                        f"Disable '{server}' (unused, wastes tokens on every session)"
+                    )
+                elif "low utilization" in reason.lower() or "poor" in reason.lower():
+                    action = (
+                        f"Move '{server}' to project-level (only 6-10% utilization)"
+                    )
                 else:
                     action = f"{server}: {reason}"
 
@@ -202,19 +208,25 @@ Examples:
 
             # Calculate tangible impact
             total_servers = len(report.mcp_optimizations)
-            print(f"\n     💡 Impact: ~{total_servers * 2000} tokens saved per session (faster responses)")
+            print(
+                f"\n     💡 Impact: ~{total_servers * 2000} tokens saved per session (faster responses)"
+            )
 
         # Permission Patterns
         if report.permission_patterns and len(report.permission_patterns) > 0:
             has_content = True
             print("\n  🔐 Permission Auto-Approvals:")
             for pattern in report.permission_patterns[:3]:
-                if hasattr(pattern, 'description'):
+                if hasattr(pattern, "description"):
                     desc = pattern.description
-                    impact = pattern.impact_estimate if hasattr(pattern, 'impact_estimate') else "reduces prompts"
+                    impact = (
+                        pattern.impact_estimate
+                        if hasattr(pattern, "impact_estimate")
+                        else "reduces prompts"
+                    )
                 elif isinstance(pattern, dict):
-                    desc = pattern.get('description', 'Unknown pattern')
-                    impact = pattern.get('impact', 'reduces prompts')
+                    desc = pattern.get("description", "Unknown pattern")
+                    impact = pattern.get("impact", "reduces prompts")
                 else:
                     continue
 
@@ -223,21 +235,32 @@ Examples:
         # Context Optimizations
         if report.context_suggestions and len(report.context_suggestions) > 0:
             has_content = True
-            tokens_saved = sum(s.get('tokens', 0) if isinstance(s, dict) else 0 for s in report.context_suggestions)
-            print(f"\n  📝 Context Optimizations: {len(report.context_suggestions)} sections")
-            print(f"     💡 Impact: ~{tokens_saved}K tokens saved (unused CLAUDE.md sections)")
+            tokens_saved = sum(
+                s.get("tokens", 0) if isinstance(s, dict) else 0
+                for s in report.context_suggestions
+            )
+            print(
+                f"\n  📝 Context Optimizations: {len(report.context_suggestions)} sections"
+            )
+            print(
+                f"     💡 Impact: ~{tokens_saved}K tokens saved (unused CLAUDE.md sections)"
+            )
 
         # Workflow Shortcuts
         if report.workflow_patterns and len(report.workflow_patterns) > 0:
             has_content = True
-            print(f"\n  🔄 Workflow Shortcuts: {len(report.workflow_patterns)} repeated command sequences")
+            print(
+                f"\n  🔄 Workflow Shortcuts: {len(report.workflow_patterns)} repeated command sequences"
+            )
             print("     💡 Impact: Faster workflows (combine frequently-used commands)")
 
         if not has_content:
             print("\n  ℹ️  Analyzed but found no high-confidence optimizations")
 
         print("\n  " + "=" * 68)
-        print(f"  📊 Total: {report.total_suggestions} optimizations | System health: {report.meta_insights.get('system_health', 0):.0%}")
+        print(
+            f"  📊 Total: {report.total_suggestions} optimizations | System health: {report.meta_insights.get('system_health', 0):.0%}"
+        )
         print("  " + "=" * 68)
         print("")
 

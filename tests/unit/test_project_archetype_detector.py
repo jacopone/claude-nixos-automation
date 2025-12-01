@@ -36,7 +36,9 @@ def create_project_structure(base_path: Path, name: str, archetype: str):
         (project_dir / "tests").mkdir(exist_ok=True)
         (project_dir / "tests" / "test_example.py").write_text("def test_foo(): pass")
     elif archetype == "typescript-vitest":
-        (project_dir / "package.json").write_text('{"devDependencies": {"vitest": "1.0.0"}}')
+        (project_dir / "package.json").write_text(
+            '{"devDependencies": {"vitest": "1.0.0"}}'
+        )
         (project_dir / "vitest.config.ts").write_text("export default {}")
     elif archetype == "rust-cargo":
         (project_dir / "Cargo.toml").write_text("[package]\nname = 'test'\n")
@@ -54,7 +56,9 @@ def create_project_structure(base_path: Path, name: str, archetype: str):
 def test_archetype_detection_python_pytest(detector, temp_projects_dir):
     """Test T090: Detect Python/pytest archetype."""
     # Create Python/pytest project
-    project = create_project_structure(temp_projects_dir, "test-python", "python-pytest")
+    project = create_project_structure(
+        temp_projects_dir, "test-python", "python-pytest"
+    )
 
     # Detect archetype
     archetype = detector.detect_archetype(project)
@@ -109,9 +113,7 @@ def test_pattern_transfer_permissions(detector, temp_projects_dir):
     # Create source project with permissions
     source = create_project_structure(temp_projects_dir, "source", "python-pytest")
     source_settings = source / ".claude" / "settings.local.json"
-    source_settings.write_text(
-        '{"autoApprove": ["Bash(pytest:*)"]}'
-    )
+    source_settings.write_text('{"autoApprove": ["Bash(pytest:*)"]}')
 
     # Create target project
     target = create_project_structure(temp_projects_dir, "target", "python-pytest")
@@ -169,7 +171,9 @@ def test_new_project_pattern_application(detector, temp_projects_dir):
     detector.build_knowledge_base(list(temp_projects_dir.iterdir()))
 
     # Create new project
-    new_project = create_project_structure(temp_projects_dir, "new-project", "python-pytest")
+    new_project = create_project_structure(
+        temp_projects_dir, "new-project", "python-pytest"
+    )
 
     # Find and apply patterns
     opportunities = detector.find_transfer_opportunities(new_project)
@@ -186,7 +190,9 @@ def test_new_project_pattern_application(detector, temp_projects_dir):
 def test_cross_archetype_no_transfer(detector, temp_projects_dir):
     """Test that patterns don't transfer across incompatible archetypes."""
     # Create Python project with pytest
-    python_project = create_project_structure(temp_projects_dir, "python", "python-pytest")
+    python_project = create_project_structure(
+        temp_projects_dir, "python", "python-pytest"
+    )
     python_settings = python_project / ".claude" / "settings.local.json"
     python_settings.write_text('{"autoApprove": ["Bash(pytest:*)"]}')
 
@@ -245,9 +251,15 @@ def test_find_similar_projects(detector, temp_projects_dir):
     ts1 = create_project_structure(temp_projects_dir, "ts1", "typescript-vitest")
 
     # Add patterns to Python projects so they get learned
-    (py1 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(pytest:*)"]}')
-    (py2 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(ruff:*)"]}')
-    (ts1 / ".claude" / "settings.local.json").write_text('{"autoApprove": ["Bash(vitest:*)"]}')
+    (py1 / ".claude" / "settings.local.json").write_text(
+        '{"autoApprove": ["Bash(pytest:*)"]}'
+    )
+    (py2 / ".claude" / "settings.local.json").write_text(
+        '{"autoApprove": ["Bash(ruff:*)"]}'
+    )
+    (ts1 / ".claude" / "settings.local.json").write_text(
+        '{"autoApprove": ["Bash(vitest:*)"]}'
+    )
 
     # Build knowledge base
     detector.build_knowledge_base(list(temp_projects_dir.iterdir()))

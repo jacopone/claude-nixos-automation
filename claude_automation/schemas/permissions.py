@@ -114,5 +114,7 @@ class SuggestionRejectionEntry(BaseModel):
     def validate_type(cls, v):
         """Validate suggestion type."""
         if v not in {"workflow", "permission", "mcp", "context"}:
-            raise ValueError("suggestion_type must be 'workflow', 'permission', 'mcp', or 'context'")
+            raise ValueError(
+                "suggestion_type must be 'workflow', 'permission', 'mcp', or 'context'"
+            )
         return v

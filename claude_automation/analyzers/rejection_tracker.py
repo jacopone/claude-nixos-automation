@@ -73,7 +73,9 @@ class RejectionTracker:
                 json_line = entry.model_dump_json()
                 f.write(json_line + "\n")
 
-            logger.debug(f"Logged rejection: {suggestion_type}:{suggestion_fingerprint}")
+            logger.debug(
+                f"Logged rejection: {suggestion_type}:{suggestion_fingerprint}"
+            )
 
             # Invalidate cache
             self._cache = None
@@ -160,7 +162,8 @@ class RejectionTracker:
 
         cutoff = datetime.now(UTC) - timedelta(days=days)
         filtered = [
-            r for r in self._cache
+            r
+            for r in self._cache
             if r.timestamp >= cutoff
             and (suggestion_type is None or r.suggestion_type == suggestion_type)
         ]
@@ -176,10 +179,16 @@ class RejectionTracker:
         rejections_90d = self.get_recent_rejections(days=90)
         rejections_30d = self.get_recent_rejections(days=30)
 
-        workflow_rejections = [r for r in rejections_90d if r.suggestion_type == 'workflow']
-        permission_rejections = [r for r in rejections_90d if r.suggestion_type == 'permission']
-        mcp_rejections = [r for r in rejections_90d if r.suggestion_type == 'mcp']
-        context_rejections = [r for r in rejections_90d if r.suggestion_type == 'context']
+        workflow_rejections = [
+            r for r in rejections_90d if r.suggestion_type == "workflow"
+        ]
+        permission_rejections = [
+            r for r in rejections_90d if r.suggestion_type == "permission"
+        ]
+        mcp_rejections = [r for r in rejections_90d if r.suggestion_type == "mcp"]
+        context_rejections = [
+            r for r in rejections_90d if r.suggestion_type == "context"
+        ]
 
         return {
             "total_rejections_90d": len(rejections_90d),

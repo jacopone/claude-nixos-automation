@@ -80,7 +80,6 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         self.patterns_file = patterns_file
         self.patterns_file.parent.mkdir(parents=True, exist_ok=True)
 
-
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
         return "detect_archetype"
@@ -106,9 +105,7 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         scores: dict[str, tuple[list[str], float]] = {}
 
         for archetype, indicators in self.ARCHETYPE_INDICATORS.items():
-            matched_indicators, score = self._score_archetype(
-                project_path, indicators
-            )
+            matched_indicators, score = self._score_archetype(project_path, indicators)
             if score > 0:
                 scores[archetype] = (matched_indicators, score)
 
@@ -347,7 +344,9 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         else:
             return f"Apply {pattern.pattern_type} configuration"
 
-    def transfer_pattern(self, target_project: Path, suggestion: TransferSuggestion) -> bool:
+    def transfer_pattern(
+        self, target_project: Path, suggestion: TransferSuggestion
+    ) -> bool:
         """
         Apply a transfer suggestion.
 
@@ -365,7 +364,9 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         # 3. Validate changes
         # 4. Report success/failure
 
-        logger.info(f"Applied pattern transfer to {target_project}: {suggestion.description}")
+        logger.info(
+            f"Applied pattern transfer to {target_project}: {suggestion.description}"
+        )
         return True
 
     # Test API compatibility aliases and missing methods
@@ -395,7 +396,7 @@ class ProjectArchetypeDetector(BaseAnalyzer):
                 knowledge_base[arch_name] = {
                     "count": 0,
                     "projects": [],
-                    "common_patterns": []
+                    "common_patterns": [],
                 }
 
             knowledge_base[arch_name]["count"] += 1
@@ -420,6 +421,7 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         if settings_file.exists():
             try:
                 import json
+
                 with open(settings_file) as f:
                     settings = json.load(f)
                     if "autoApprove" in settings:
@@ -429,7 +431,7 @@ class ProjectArchetypeDetector(BaseAnalyzer):
                                 source_archetype=archetype.archetype,
                                 pattern_type="permission",
                                 pattern_data={"pattern": pattern},
-                                applicability_score=0.8
+                                applicability_score=0.8,
                             )
             except Exception as e:
                 logger.debug(f"Failed to learn permissions from {project}: {e}")
@@ -439,16 +441,22 @@ class ProjectArchetypeDetector(BaseAnalyzer):
         if mcp_file.exists():
             try:
                 import json
+
                 with open(mcp_file) as f:
                     mcp_config = json.load(f)
                     if "mcpServers" in mcp_config:
-                        for server_name, server_config in mcp_config["mcpServers"].items():
+                        for server_name, server_config in mcp_config[
+                            "mcpServers"
+                        ].items():
                             self.learn_pattern(
                                 source_project=str(project),
                                 source_archetype=archetype.archetype,
                                 pattern_type="mcp_server",
-                                pattern_data={"name": server_name, "config": server_config},
-                                applicability_score=0.7
+                                pattern_data={
+                                    "name": server_name,
+                                    "config": server_config,
+                                },
+                                applicability_score=0.7,
                             )
             except Exception as e:
                 logger.debug(f"Failed to learn MCP config from {project}: {e}")

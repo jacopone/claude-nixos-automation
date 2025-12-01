@@ -163,9 +163,7 @@ class TestGlobalUsageAggregation:
             analyzer = GlobalMCPAnalyzer(home)
 
             # NPM server
-            assert (
-                analyzer._detect_server_type({"command": "npx"}) == MCPServerType.NPM
-            )
+            assert analyzer._detect_server_type({"command": "npx"}) == MCPServerType.NPM
             assert (
                 analyzer._detect_server_type({"command": "node"}) == MCPServerType.NPM
             )
@@ -234,7 +232,9 @@ class TestUnderutilizedDetection:
                 r.recommendation_type == "remove_unused"
                 for r in analyzer.recommendations
             )
-            assert any(r.server_name == "unused-server" for r in analyzer.recommendations)
+            assert any(
+                r.server_name == "unused-server" for r in analyzer.recommendations
+            )
 
     def test_generate_recommendations_skips_global_servers(self):
         """Test that global servers are not recommended for removal."""

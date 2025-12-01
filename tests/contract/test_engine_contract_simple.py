@@ -16,6 +16,7 @@ class TestEngineContractSimple:
             from claude_automation.core.adaptive_system_engine import (
                 AdaptiveSystemEngine,
             )
+
             assert AdaptiveSystemEngine is not None
         except ImportError as e:
             if "jinja2" in str(e):
@@ -28,6 +29,7 @@ class TestEngineContractSimple:
             from claude_automation.core.adaptive_system_engine import (
                 AdaptiveSystemEngine,
             )
+
             assert hasattr(AdaptiveSystemEngine, "run_full_learning_cycle")
         except ImportError as e:
             if "jinja2" in str(e):

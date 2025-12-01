@@ -105,7 +105,9 @@ class TestSectionTracking:
             assert isinstance(section_a, SectionUsage)
             assert section_a.total_references == 2
             assert section_a.total_tokens == 500
-            assert section_a.avg_relevance == pytest.approx(0.8, rel=0.01)  # (0.9+0.7)/2
+            assert section_a.avg_relevance == pytest.approx(
+                0.8, rel=0.01
+            )  # (0.9+0.7)/2
 
             # Verify Section B stats
             assert "Section B" in stats

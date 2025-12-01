@@ -35,7 +35,9 @@ class DiskHealthTracker(BaseAnalyzer):
         """
         super().__init__(**kwargs)
 
-        self.history_file = Path.home() / ".claude" / "learning" / "disk_health_history.jsonl"
+        self.history_file = (
+            Path.home() / ".claude" / "learning" / "disk_health_history.jsonl"
+        )
         self.history_file.parent.mkdir(parents=True, exist_ok=True)
 
     def _get_analysis_method_name(self) -> str:
@@ -56,7 +58,9 @@ class DiskHealthTracker(BaseAnalyzer):
                 data["timestamp"] = snapshot.timestamp.isoformat()
                 f.write(json.dumps(data) + "\n")
 
-            logger.debug(f"Recorded snapshot: {snapshot.total_mb}MB at {snapshot.timestamp}")
+            logger.debug(
+                f"Recorded snapshot: {snapshot.total_mb}MB at {snapshot.timestamp}"
+            )
 
         except Exception as e:
             logger.warning(f"Could not record snapshot: {e}")
@@ -124,7 +128,9 @@ class DiskHealthTracker(BaseAnalyzer):
 
         # Need at least 2 snapshots to calculate growth
         if len(snapshots) < 2:
-            logger.debug("Insufficient history for growth calculation (need 2+ snapshots)")
+            logger.debug(
+                "Insufficient history for growth calculation (need 2+ snapshots)"
+            )
             return None
 
         first = snapshots[0]
@@ -151,10 +157,7 @@ class DiskHealthTracker(BaseAnalyzer):
         return growth_per_month
 
     def calculate_months_until_full(
-        self,
-        current_mb: int,
-        available_gb: int,
-        growth_mb_per_month: float
+        self, current_mb: int, available_gb: int, growth_mb_per_month: float
     ) -> float | None:
         """
         Project months until disk fills based on growth rate.

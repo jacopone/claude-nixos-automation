@@ -17,9 +17,7 @@ print("🔍 Testing Permission Pattern Detection\n")
 # Initialize
 tracker = ApprovalTracker()
 detector = PermissionPatternDetector(
-    approval_tracker=tracker,
-    min_occurrences=3,
-    confidence_threshold=0.7
+    approval_tracker=tracker, min_occurrences=3, confidence_threshold=0.7
 )
 
 # Get approval stats
@@ -50,4 +48,6 @@ if patterns:
         print()
 else:
     print("\n❌ No patterns detected - checking thresholds...")
-    print(f"   Current thresholds: min={detector.min_occurrences}, conf={detector.confidence_threshold}")
+    print(
+        f"   Current thresholds: min={detector.min_occurrences}, conf={detector.confidence_threshold}"
+    )

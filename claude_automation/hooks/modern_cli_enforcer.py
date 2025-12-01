@@ -38,12 +38,12 @@ TOOL_MAPPINGS = {
 # Patterns to detect legacy tool usage in bash commands
 # More sophisticated detection to avoid false positives
 LEGACY_TOOL_PATTERNS = {
-    "find": r'\bfind\s+',  # find with arguments
-    "ls": r'\bls\s+',      # ls with arguments or flags
-    "grep": r'\bgrep\s+',  # grep with arguments
-    "cat": r'\bcat\s+',    # cat with arguments
-    "du": r'\bdu\s+',      # du with arguments
-    "ps": r'\bps\s+',      # ps with arguments
+    "find": r"\bfind\s+",  # find with arguments
+    "ls": r"\bls\s+",  # ls with arguments or flags
+    "grep": r"\bgrep\s+",  # grep with arguments
+    "cat": r"\bcat\s+",  # cat with arguments
+    "du": r"\bdu\s+",  # du with arguments
+    "ps": r"\bps\s+",  # ps with arguments
 }
 
 
@@ -114,7 +114,7 @@ def rewrite_command(command, legacy, modern):
         return rewrites[legacy](command)
 
     # Fallback: simple substitution
-    return re.sub(r'\b' + legacy + r'\b', modern, command)
+    return re.sub(r"\b" + legacy + r"\b", modern, command)
 
 
 def rewrite_find_to_fd(command):
@@ -135,39 +135,39 @@ def rewrite_find_to_fd(command):
             return f'fd "{fd_pattern}" {path}'
 
     # Fallback: suggest fd with note
-    return 'fd  # Note: Complex find syntax may need manual adjustment'
+    return "fd  # Note: Complex find syntax may need manual adjustment"
 
 
 def rewrite_ls_to_eza(command):
     """Rewrite ls command to eza."""
     # ls -la -> eza -la
     # ls -l -> eza -l
-    return re.sub(r'\bls\b', 'eza', command)
+    return re.sub(r"\bls\b", "eza", command)
 
 
 def rewrite_grep_to_rg(command):
     """Rewrite grep command to rg (ripgrep)."""
     # grep -r "pattern" -> rg "pattern"
     # grep "pattern" file -> rg "pattern" file
-    return re.sub(r'\bgrep\s+(-r\s+)?', 'rg ', command)
+    return re.sub(r"\bgrep\s+(-r\s+)?", "rg ", command)
 
 
 def rewrite_cat_to_bat(command):
     """Rewrite cat command to bat."""
     # cat file.py -> bat file.py
     # Exception: cat in pipes should stay as cat (bat adds formatting)
-    if '|' in command and command.index('cat') < command.index('|'):
+    if "|" in command and command.index("cat") < command.index("|"):
         # cat is being piped, likely for content not viewing
         return command  # Keep cat for piping
 
-    return re.sub(r'\bcat\b', 'bat', command)
+    return re.sub(r"\bcat\b", "bat", command)
 
 
 def rewrite_du_to_dust(command):
     """Rewrite du command to dust."""
     # du -h -> dust
     # du -sh -> dust
-    return re.sub(r'\bdu\s+(-[a-z]+\s+)?', 'dust ', command)
+    return re.sub(r"\bdu\s+(-[a-z]+\s+)?", "dust ", command)
 
 
 def rewrite_ps_to_procs(command):
@@ -176,13 +176,13 @@ def rewrite_ps_to_procs(command):
     # ps aux | grep firefox -> procs firefox
 
     # Pattern: ps aux | grep <process>
-    match = re.search(r'ps\s+aux\s*\|\s*grep\s+(\S+)', command)
+    match = re.search(r"ps\s+aux\s*\|\s*grep\s+(\S+)", command)
     if match:
         process = match.group(1)
-        return f'procs {process}'
+        return f"procs {process}"
 
     # Simple ps aux -> procs
-    return re.sub(r'\bps\s+aux\b', 'procs', command)
+    return re.sub(r"\bps\s+aux\b", "procs", command)
 
 
 def format_warning(legacy, modern, rewritten, description):

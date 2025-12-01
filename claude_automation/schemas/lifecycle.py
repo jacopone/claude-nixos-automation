@@ -40,37 +40,30 @@ class SessionMetadata(BaseModel):
 
     session_file: str = Field(..., description="Path to session .jsonl file")
     lifecycle_stage: SessionLifecycle = Field(
-        default=SessionLifecycle.RAW,
-        description="Current lifecycle stage"
+        default=SessionLifecycle.RAW, description="Current lifecycle stage"
     )
 
     # Timestamps for lifecycle transitions
     created_at: datetime = Field(
-        default_factory=datetime.now,
-        description="When session was created"
+        default_factory=datetime.now, description="When session was created"
     )
-    analyzed_at: datetime | None = Field(
-        None,
-        description="When session was analyzed"
-    )
+    analyzed_at: datetime | None = Field(None, description="When session was analyzed")
     insights_generated_at: datetime | None = Field(
-        None,
-        description="When insights were extracted"
+        None, description="When insights were extracted"
     )
     implemented_at: datetime | None = Field(
-        None,
-        description="When insights were implemented"
+        None, description="When insights were implemented"
     )
 
     # Optional metadata
-    project_name: str | None = Field(None, description="Project this session belongs to")
+    project_name: str | None = Field(
+        None, description="Project this session belongs to"
+    )
     insights_summary: str | None = Field(
-        None,
-        description="Brief summary of insights extracted"
+        None, description="Brief summary of insights extracted"
     )
     implementation_notes: str | None = Field(
-        None,
-        description="Notes about how insights were implemented"
+        None, description="Notes about how insights were implemented"
     )
 
     @property
@@ -84,7 +77,7 @@ class SessionMetadata(BaseModel):
         return self.lifecycle_stage in (
             SessionLifecycle.RAW,
             SessionLifecycle.ANALYZED,
-            SessionLifecycle.INSIGHTS_GENERATED
+            SessionLifecycle.INSIGHTS_GENERATED,
         )
 
     @property
@@ -102,16 +95,14 @@ class LifecycleStats(BaseModel):
 
     total_sessions: int = Field(..., ge=0, description="Total number of sessions")
     raw_count: int = Field(0, ge=0, description="Sessions not yet analyzed")
-    analyzed_count: int = Field(0, ge=0, description="Sessions analyzed but no insights")
+    analyzed_count: int = Field(
+        0, ge=0, description="Sessions analyzed but no insights"
+    )
     insights_generated_count: int = Field(
-        0,
-        ge=0,
-        description="Sessions with documented insights"
+        0, ge=0, description="Sessions with documented insights"
     )
     implemented_count: int = Field(
-        0,
-        ge=0,
-        description="Sessions with insights implemented (safe to cleanup)"
+        0, ge=0, description="Sessions with insights implemented (safe to cleanup)"
     )
 
     @property

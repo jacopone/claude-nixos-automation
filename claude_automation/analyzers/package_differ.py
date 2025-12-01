@@ -49,7 +49,9 @@ class PackageDiffer:
             nixos_config_path: Path to nixos-config directory (for git analysis)
         """
         self.nixos_config_path = (
-            Path(nixos_config_path) if nixos_config_path else Path.home() / "nixos-config"
+            Path(nixos_config_path)
+            if nixos_config_path
+            else Path.home() / "nixos-config"
         )
 
     def get_current_generation(self) -> int:
@@ -171,7 +173,9 @@ class PackageDiffer:
             return None
 
         if not previous_path:
-            logger.warning(f"Generation {previous_gen} not found, comparing against empty set")
+            logger.warning(
+                f"Generation {previous_gen} not found, comparing against empty set"
+            )
             previous_packages = set()
         else:
             previous_packages = self.get_generation_packages(previous_path)

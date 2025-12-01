@@ -4,7 +4,6 @@ Contract tests for AdaptiveSystemEngine (Phase 10).
 Verifies engine orchestrates all analyzers correctly.
 """
 
-
 from claude_automation.core.adaptive_system_engine import AdaptiveSystemEngine
 
 
@@ -26,17 +25,29 @@ class TestEngineContract:
         engine = AdaptiveSystemEngine()
 
         # Should have Tier 1 analyzers
-        assert hasattr(engine, "approval_tracker") or hasattr(engine, "_approval_tracker")
-        assert hasattr(engine, "permission_detector") or hasattr(engine, "_permission_detector")
+        assert hasattr(engine, "approval_tracker") or hasattr(
+            engine, "_approval_tracker"
+        )
+        assert hasattr(engine, "permission_detector") or hasattr(
+            engine, "_permission_detector"
+        )
         assert hasattr(engine, "mcp_analyzer") or hasattr(engine, "_mcp_analyzer")
-        assert hasattr(engine, "context_optimizer") or hasattr(engine, "_context_optimizer")
+        assert hasattr(engine, "context_optimizer") or hasattr(
+            engine, "_context_optimizer"
+        )
 
         # Should have Tier 2 analyzers
-        assert hasattr(engine, "workflow_detector") or hasattr(engine, "_workflow_detector")
-        assert hasattr(engine, "instruction_tracker") or hasattr(engine, "_instruction_tracker")
+        assert hasattr(engine, "workflow_detector") or hasattr(
+            engine, "_workflow_detector"
+        )
+        assert hasattr(engine, "instruction_tracker") or hasattr(
+            engine, "_instruction_tracker"
+        )
 
         # Should have Tier 3 analyzers
-        assert hasattr(engine, "archetype_detector") or hasattr(engine, "_archetype_detector")
+        assert hasattr(engine, "archetype_detector") or hasattr(
+            engine, "_archetype_detector"
+        )
         assert hasattr(engine, "meta_learner") or hasattr(engine, "_meta_learner")
 
     def test_engine_has_analyze_methods(self):

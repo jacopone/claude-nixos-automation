@@ -97,8 +97,13 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                 return GenerationResult(
                     success=True,
                     output_path=str(target_file),
-                    warnings=["No patterns detected - continue using Claude Code to build history"],
-                    stats={"patterns_detected": 0, "mode": "global" if global_mode else "project"},
+                    warnings=[
+                        "No patterns detected - continue using Claude Code to build history"
+                    ],
+                    stats={
+                        "patterns_detected": 0,
+                        "mode": "global" if global_mode else "project",
+                    },
                 )
 
             logger.info(f"Detected {len(patterns)} patterns")
@@ -190,9 +195,7 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
         for pattern in patterns:
             # Check if pattern type already learned
             if pattern.pattern.pattern_type in learned_patterns:
-                logger.debug(
-                    f"Pattern {pattern.pattern.pattern_type} already learned"
-                )
+                logger.debug(f"Pattern {pattern.pattern.pattern_type} already learned")
                 continue
 
             # Check if proposed rules already in allow list
@@ -274,7 +277,9 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
 
             # Prompt for approval
             try:
-                response = input("\nAdd this permission pattern? [Y/n]: ").strip().lower()
+                response = (
+                    input("\nAdd this permission pattern? [Y/n]: ").strip().lower()
+                )
                 if response in ["", "y", "yes"]:
                     accepted.append(pattern)
                     print("✅ Approved")

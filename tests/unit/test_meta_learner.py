@@ -25,7 +25,7 @@ def meta_learner(temp_data_dir):
     """Create MetaLearner instance with temp data directory."""
     return MetaLearner(
         metrics_file=temp_data_dir / "metrics.jsonl",
-        thresholds_file=temp_data_dir / "thresholds.json"
+        thresholds_file=temp_data_dir / "thresholds.json",
     )
 
 
@@ -125,9 +125,7 @@ def test_threshold_adjustment_low_acceptance(meta_learner):
     adjustments = meta_learner.suggest_threshold_adjustments()
 
     # Should recommend increasing threshold for workflow_detection
-    workflow_adj = [
-        adj for adj in adjustments if adj.component == "workflow_detection"
-    ]
+    workflow_adj = [adj for adj in adjustments if adj.component == "workflow_detection"]
     assert len(workflow_adj) > 0
     assert workflow_adj[0].recommended_threshold > 0.7
 
@@ -199,7 +197,9 @@ def test_confidence_scoring_calibration(meta_learner):
     calibration = meta_learner.get_confidence_calibration("test_component")
 
     # High confidence suggestions should have higher acceptance rates
-    assert calibration["high_confidence_accuracy"] > calibration["low_confidence_accuracy"]
+    assert (
+        calibration["high_confidence_accuracy"] > calibration["low_confidence_accuracy"]
+    )
 
 
 def test_component_health_status(meta_learner):
@@ -291,7 +291,7 @@ def test_suggestion_history_persistence(meta_learner, temp_data_dir):
     # Create new meta-learner instance with same data dir
     new_meta_learner = MetaLearner(
         metrics_file=temp_data_dir / "metrics.jsonl",
-        thresholds_file=temp_data_dir / "thresholds.json"
+        thresholds_file=temp_data_dir / "thresholds.json",
     )
 
     # Should still have the suggestion

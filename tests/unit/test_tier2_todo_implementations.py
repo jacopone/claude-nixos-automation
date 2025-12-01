@@ -63,26 +63,46 @@ class TestGlobalMCPAnalyzerRecommendations:
         # Use project_servers for unused/error-prone (global servers are skipped for unused detection)
         analyzer.project_servers = {
             "unused": MCPServerInfo(
-                name="unused", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                name="unused",
+                type=MCPServerType.UNKNOWN,
+                command="test",
+                args=[],
+                status=MCPServerStatus.UNKNOWN,
+                description="",
+                is_configured=True,
                 config_location="project",
             ),
             "error-prone": MCPServerInfo(
-                name="error-prone", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                name="error-prone",
+                type=MCPServerType.UNKNOWN,
+                command="test",
+                args=[],
+                status=MCPServerStatus.UNKNOWN,
+                description="",
+                is_configured=True,
                 config_location="project",
             ),
             "duplicate": MCPServerInfo(  # Same as global - will trigger duplicate warning
-                name="duplicate", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                name="duplicate",
+                type=MCPServerType.UNKNOWN,
+                command="test",
+                args=[],
+                status=MCPServerStatus.UNKNOWN,
+                description="",
+                is_configured=True,
                 config_location="project",
-            )
+            ),
         }
 
         analyzer.global_servers = {
             "duplicate": MCPServerInfo(
-                name="duplicate", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                name="duplicate",
+                type=MCPServerType.UNKNOWN,
+                command="test",
+                args=[],
+                status=MCPServerStatus.UNKNOWN,
+                description="",
+                is_configured=True,
                 config_location="global",
             ),
         }
@@ -131,8 +151,13 @@ class TestGlobalMCPAnalyzerRecommendations:
         # Use project_servers (global servers are skipped for unused detection)
         analyzer.project_servers = {
             "unused": MCPServerInfo(
-                name="unused", type=MCPServerType.UNKNOWN, command="test", args=[],
-                status=MCPServerStatus.UNKNOWN, description="", is_configured=True,
+                name="unused",
+                type=MCPServerType.UNKNOWN,
+                command="test",
+                args=[],
+                status=MCPServerStatus.UNKNOWN,
+                description="",
+                is_configured=True,
                 config_location="project",
             )
         }
@@ -156,7 +181,10 @@ class TestGlobalMCPAnalyzerRecommendations:
         # Verify sorting
         if len(analyzer.recommendations) > 1:
             for i in range(len(analyzer.recommendations) - 1):
-                assert analyzer.recommendations[i].priority <= analyzer.recommendations[i+1].priority
+                assert (
+                    analyzer.recommendations[i].priority
+                    <= analyzer.recommendations[i + 1].priority
+                )
 
 
 class TestContextOptimizerGapDetection:
@@ -180,7 +208,9 @@ class TestContextOptimizerGapDetection:
             for i in range(10)  # 10 accesses
         ]
 
-        with patch.object(optimizer.usage_tracker, "get_recent_accesses", return_value=mock_accesses):
+        with patch.object(
+            optimizer.usage_tracker, "get_recent_accesses", return_value=mock_accesses
+        ):
             gaps = optimizer.identify_context_gaps(days=30)
 
         # Verify gaps were identified
@@ -241,35 +271,54 @@ class TestTier2TodoCompletion:
     def test_no_todo_comments_in_tier2_analyzers(self):
         """Verify that critical TODO comments are removed from Tier 2 analyzers."""
         # Read the analyzer files
-        global_mcp_file = Path(__file__).parent.parent.parent / "claude_automation" / "analyzers" / "global_mcp_analyzer.py"
-        context_opt_file = Path(__file__).parent.parent.parent / "claude_automation" / "analyzers" / "context_optimizer.py"
+        global_mcp_file = (
+            Path(__file__).parent.parent.parent
+            / "claude_automation"
+            / "analyzers"
+            / "global_mcp_analyzer.py"
+        )
+        context_opt_file = (
+            Path(__file__).parent.parent.parent
+            / "claude_automation"
+            / "analyzers"
+            / "context_optimizer.py"
+        )
 
         global_mcp_content = global_mcp_file.read_text()
         context_opt_content = context_opt_file.read_text()
 
         # Check for specific TODOs that were marked as issues
-        assert "TODO: Implement sophisticated recommendations" not in global_mcp_content, \
-            "GlobalMCPAnalyzer still has TODO for recommendations"
+        assert (
+            "TODO: Implement sophisticated recommendations" not in global_mcp_content
+        ), "GlobalMCPAnalyzer still has TODO for recommendations"
 
-        assert "TODO: Implement by analyzing session logs" not in context_opt_content, \
+        assert "TODO: Implement by analyzing session logs" not in context_opt_content, (
             "ContextOptimizer still has TODO for gap detection"
+        )
 
         # Verify implementation signatures exist
-        assert "_recommend_remove_unused" in global_mcp_content, \
+        assert "_recommend_remove_unused" in global_mcp_content, (
             "Should have _recommend_remove_unused method"
-        assert "_recommend_fix_underutilized" in global_mcp_content, \
+        )
+        assert "_recommend_fix_underutilized" in global_mcp_content, (
             "Should have _recommend_fix_underutilized method"
-        assert "_recommend_promote_high_value" in global_mcp_content, \
+        )
+        assert "_recommend_promote_high_value" in global_mcp_content, (
             "Should have _recommend_promote_high_value method"
-        assert "_recommend_fix_errors" in global_mcp_content, \
+        )
+        assert "_recommend_fix_errors" in global_mcp_content, (
             "Should have _recommend_fix_errors method"
-        assert "_recommend_deduplicate" in global_mcp_content, \
+        )
+        assert "_recommend_deduplicate" in global_mcp_content, (
             "Should have _recommend_deduplicate method"
+        )
 
-        assert "_extract_common_keywords" in context_opt_content, \
+        assert "_extract_common_keywords" in context_opt_content, (
             "Should have _extract_common_keywords method"
-        assert "_analyze_undocumented_tools" in context_opt_content, \
+        )
+        assert "_analyze_undocumented_tools" in context_opt_content, (
             "Should have _analyze_undocumented_tools method"
+        )
 
 
 if __name__ == "__main__":

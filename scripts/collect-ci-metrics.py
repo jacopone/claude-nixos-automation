@@ -272,7 +272,9 @@ class CIMetricsCollector:
         if "coverage_percentage" in coverage:
             pct = coverage["coverage_percentage"]
             status = "✅" if coverage.get("coverage_meets_threshold") else "❌"
-            print(f"Coverage: {status} {pct}% (threshold: {coverage.get('coverage_threshold', 'N/A')}%)")
+            print(
+                f"Coverage: {status} {pct}% (threshold: {coverage.get('coverage_threshold', 'N/A')}%)"
+            )
 
         # Tests
         exec_time = self.metrics["metrics"].get("execution_time", {})
@@ -314,9 +316,7 @@ def main() -> int:
     parser.add_argument(
         "--repo", help="Repository in owner/repo format (auto-detected if not provided)"
     )
-    parser.add_argument(
-        "--json", help="Export metrics as JSON to specified file"
-    )
+    parser.add_argument("--json", help="Export metrics as JSON to specified file")
     parser.add_argument(
         "--prometheus",
         help="Export metrics in Prometheus format to specified file",

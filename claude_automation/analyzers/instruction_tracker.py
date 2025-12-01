@@ -34,13 +34,10 @@ class InstructionEffectivenessTracker(BaseAnalyzer):
             log_file: Path to JSONL log file (default: ~/.claude/learning/policy_violations.jsonl)
         """
         if log_file is None:
-            log_file = (
-                Path.home() / ".claude" / "learning" / "policy_violations.jsonl"
-            )
+            log_file = Path.home() / ".claude" / "learning" / "policy_violations.jsonl"
 
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
-
 
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
@@ -80,9 +77,7 @@ class InstructionEffectivenessTracker(BaseAnalyzer):
             with open(self.log_file, "a", encoding="utf-8") as f:
                 f.write(violation.model_dump_json() + "\n")
 
-            logger.debug(
-                f"Logged policy violation: {policy_name} ({violation_type})"
-            )
+            logger.debug(f"Logged policy violation: {policy_name} ({violation_type})")
 
     def get_recent_violations(
         self, days: int = 30, policy_name: str | None = None
@@ -237,9 +232,7 @@ class InstructionEffectivenessTracker(BaseAnalyzer):
 
         # Generate suggested wording
         current_wording = f"Original policy: {policy_name}"
-        suggested_wording = self._suggest_policy_rewording(
-            policy_name, most_common
-        )
+        suggested_wording = self._suggest_policy_rewording(policy_name, most_common)
 
         # Determine priority
         if effectiveness.effectiveness_score < 0.5:
@@ -258,9 +251,7 @@ class InstructionEffectivenessTracker(BaseAnalyzer):
             priority=priority,
         )
 
-    def _suggest_policy_rewording(
-        self, policy_name: str, violation_type: str
-    ) -> str:
+    def _suggest_policy_rewording(self, policy_name: str, violation_type: str) -> str:
         """
         Suggest improved wording for a policy.
 

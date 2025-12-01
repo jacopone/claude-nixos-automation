@@ -14,6 +14,7 @@ class TestGeneratorContractsSimple:
         """Test T108: BaseGenerator class exists."""
         try:
             from claude_automation.generators.base_generator import BaseGenerator
+
             assert BaseGenerator is not None
         except ImportError as e:
             if "jinja2" in str(e):
@@ -24,6 +25,7 @@ class TestGeneratorContractsSimple:
         """Test T108: SystemGenerator class exists."""
         try:
             from claude_automation.generators.system_generator import SystemGenerator
+
             assert SystemGenerator is not None
         except ImportError as e:
             if "jinja2" in str(e):
@@ -36,6 +38,7 @@ class TestGeneratorContractsSimple:
             from claude_automation.generators.permissions_generator import (
                 PermissionsGenerator,
             )
+
             assert PermissionsGenerator is not None
         except ImportError as e:
             if "jinja2" in str(e):
@@ -48,6 +51,7 @@ class TestGeneratorContractsSimple:
             from claude_automation.generators.intelligent_permissions_generator import (
                 IntelligentPermissionsGenerator,
             )
+
             assert IntelligentPermissionsGenerator is not None
         except ImportError as e:
             if "jinja2" in str(e):

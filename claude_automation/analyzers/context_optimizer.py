@@ -39,7 +39,6 @@ class ContextUsageTracker:
         self.log_file = log_file
         self.log_file.parent.mkdir(parents=True, exist_ok=True)
 
-
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
         return "analyze"
@@ -75,7 +74,9 @@ class ContextUsageTracker:
         with open(self.log_file, "a", encoding="utf-8") as f:
             f.write(entry.model_dump_json() + "\n")
 
-        logger.debug(f"Logged section access: {section_name} (relevance: {relevance_score:.2f})")
+        logger.debug(
+            f"Logged section access: {section_name} (relevance: {relevance_score:.2f})"
+        )
 
     def get_recent_accesses(self, days: int = 30) -> list[ContextAccessLog]:
         """
@@ -193,7 +194,11 @@ class ContextOptimizer(BaseAnalyzer):
     - Pruning candidates
     """
 
-    def __init__(self, log_file: Path | None = None, usage_tracker: ContextUsageTracker | None = None):
+    def __init__(
+        self,
+        log_file: Path | None = None,
+        usage_tracker: ContextUsageTracker | None = None,
+    ):
         """
         Initialize context optimizer.
 
@@ -283,9 +288,7 @@ class ContextOptimizer(BaseAnalyzer):
 
         # Sort by wasted tokens (loads * tokens per load * waste rate)
         noise_sections.sort(
-            key=lambda s: s.total_loads
-            * s.total_tokens
-            * (1 - s.utilization_rate),
+            key=lambda s: s.total_loads * s.total_tokens * (1 - s.utilization_rate),
             reverse=True,
         )
 
@@ -412,10 +415,7 @@ class ContextOptimizer(BaseAnalyzer):
 
         # Find sections with high load but low relevance
         for section_usage in usage_stats.values():
-            if (
-                section_usage.total_loads > 5
-                and section_usage.avg_relevance < 0.3
-            ):
+            if section_usage.total_loads > 5 and section_usage.avg_relevance < 0.3:
                 gaps.append(
                     f"Section '{section_usage.section_name}' loaded frequently "
                     f"but low relevance - may need better content"
@@ -448,7 +448,7 @@ class ContextOptimizer(BaseAnalyzer):
                 ContextOptimization(
                     optimization_type="prune_section",
                     section_name=noise.section_name,
-                    reason=f"Loaded {noise.total_loads} times but only {noise.utilization_rate*100:.1f}% utilization",
+                    reason=f"Loaded {noise.total_loads} times but only {noise.utilization_rate * 100:.1f}% utilization",
                     impact=f"Save ~{noise.total_tokens} tokens per load",
                     token_savings=noise.total_tokens,
                     priority=priority,
@@ -558,13 +558,10 @@ class ContextOptimizer(BaseAnalyzer):
         # Gap Type 1: High load, low relevance
         # (Section exists but doesn't answer the actual query)
         for section_usage in usage_stats.values():
-            if (
-                section_usage.total_loads > 5
-                and section_usage.avg_relevance < 0.3
-            ):
+            if section_usage.total_loads > 5 and section_usage.avg_relevance < 0.3:
                 gaps.append(
                     f"Section '{section_usage.section_name}' loaded {section_usage.total_loads} times "
-                    f"but only {section_usage.avg_relevance*100:.0f}% relevant - needs better/different content"
+                    f"but only {section_usage.avg_relevance * 100:.0f}% relevant - needs better/different content"
                 )
 
         # Gap Type 2: Analyze query contexts for missing topics
@@ -613,9 +610,34 @@ class ContextOptimizer(BaseAnalyzer):
 
         # Remove common stop words
         stop_words = {
-            "the", "a", "an", "and", "or", "but", "is", "are", "was", "were",
-            "in", "on", "at", "to", "for", "of", "with", "by", "from", "as",
-            "how", "what", "when", "where", "why", "which", "who", "that",
+            "the",
+            "a",
+            "an",
+            "and",
+            "or",
+            "but",
+            "is",
+            "are",
+            "was",
+            "were",
+            "in",
+            "on",
+            "at",
+            "to",
+            "for",
+            "of",
+            "with",
+            "by",
+            "from",
+            "as",
+            "how",
+            "what",
+            "when",
+            "where",
+            "why",
+            "which",
+            "who",
+            "that",
         }
 
         # Tokenize (simple split) and filter
@@ -629,9 +651,7 @@ class ContextOptimizer(BaseAnalyzer):
         word_counts = Counter(words)
         return [word for word, count in word_counts.most_common(10) if count >= 2]
 
-    def _analyze_undocumented_tools(
-        self, sessions_dir: Path, days: int
-    ) -> list[str]:
+    def _analyze_undocumented_tools(self, sessions_dir: Path, days: int) -> list[str]:
         """
         Analyze session logs to find tools used but not documented.
 
@@ -646,6 +666,7 @@ class ContextOptimizer(BaseAnalyzer):
 
         try:
             from datetime import datetime, timedelta
+
             cutoff = datetime.now() - timedelta(days=days)
 
             # Track tool invocations
@@ -715,7 +736,10 @@ class ContextOptimizer(BaseAnalyzer):
 
         # Check if any high-relevance accesses mention this tool
         for access in accesses:
-            if access.relevance_score > 0.7 and tool_name.lower() in access.section_name.lower():
+            if (
+                access.relevance_score > 0.7
+                and tool_name.lower() in access.section_name.lower()
+            ):
                 return True
 
         # If we don't find it in recent high-relevance accesses, assume missing

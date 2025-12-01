@@ -161,17 +161,21 @@ class PermissionPatternDetector(BaseAnalyzer):
 
         if settings_file.exists():
             try:
-                with open(settings_file, encoding='utf-8') as f:
+                with open(settings_file, encoding="utf-8") as f:
                     settings = json.load(f)
-                allow_list = settings.get('permissions', {}).get('allow', [])
+                allow_list = settings.get("permissions", {}).get("allow", [])
                 existing = set(allow_list)
-                logger.debug(f"Loaded {len(existing)} existing patterns from settings.local.json")
+                logger.debug(
+                    f"Loaded {len(existing)} existing patterns from settings.local.json"
+                )
             except (json.JSONDecodeError, KeyError) as e:
                 logger.warning(f"Could not load existing patterns: {e}")
 
         return existing
 
-    def _pattern_already_approved(self, pattern: 'PermissionPattern', existing_patterns: set[str]) -> bool:
+    def _pattern_already_approved(
+        self, pattern: "PermissionPattern", existing_patterns: set[str]
+    ) -> bool:
         """
         Check if a detected pattern is already covered by existing patterns.
 
@@ -190,9 +194,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                 return True
             # Check if covered by wildcard patterns
             for existing in existing_patterns:
-                if existing.endswith('**)') or existing.endswith(':*)'):
+                if existing.endswith("**)") or existing.endswith(":*)"):
                     # Wildcard pattern - check if it covers our example
-                    prefix = existing.replace('**)', '').replace(':*)', '')
+                    prefix = existing.replace("**)", "").replace(":*)", "")
                     if example.startswith(prefix):
                         return True
         return False
@@ -249,14 +253,16 @@ class PermissionPatternDetector(BaseAnalyzer):
 
         # Filter out previously rejected permission patterns
         from .rejection_tracker import RejectionTracker
+
         tracker = RejectionTracker()
-        rejections = tracker.get_recent_rejections(days=90, suggestion_type='permission')
+        rejections = tracker.get_recent_rejections(
+            days=90, suggestion_type="permission"
+        )
         rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
 
         # Filter detected patterns (rejected)
         detected_patterns = [
-            p for p in detected_patterns
-            if p.pattern_type not in rejected_fingerprints
+            p for p in detected_patterns if p.pattern_type not in rejected_fingerprints
         ]
 
         # Filter out patterns already approved in settings.local.json
@@ -264,15 +270,20 @@ class PermissionPatternDetector(BaseAnalyzer):
         if existing_patterns:
             original_count = len(detected_patterns)
             detected_patterns = [
-                p for p in detected_patterns
+                p
+                for p in detected_patterns
                 if not self._pattern_already_approved(p, existing_patterns)
             ]
             filtered_count = original_count - len(detected_patterns)
             if filtered_count > 0:
-                logger.info(f"Filtered {filtered_count} patterns (already in settings.local.json)")
+                logger.info(
+                    f"Filtered {filtered_count} patterns (already in settings.local.json)"
+                )
 
         if not detected_patterns:
-            logger.info("All permission patterns were previously rejected or already approved")
+            logger.info(
+                "All permission patterns were previously rejected or already approved"
+            )
             return []
 
         # Create suggestions from patterns
@@ -309,7 +320,9 @@ class PermissionPatternDetector(BaseAnalyzer):
             PermissionPattern if detected, None otherwise
         """
         # Use tier-specific min_occurrences or fall back to default
-        min_occ = min_occurrences if min_occurrences is not None else self.min_occurrences
+        min_occ = (
+            min_occurrences if min_occurrences is not None else self.min_occurrences
+        )
 
         # Find matching approvals
         matching_approvals = []
@@ -410,7 +423,9 @@ class PermissionPatternDetector(BaseAnalyzer):
         matching_permissions = {a.permission for a in matching_approvals}
         recency_bonus = 0.05 if recent_permissions & matching_permissions else 0.0
 
-        confidence = base + session_bonus + project_bonus + consistency_bonus + recency_bonus
+        confidence = (
+            base + session_bonus + project_bonus + consistency_bonus + recency_bonus
+        )
         return min(1.0, confidence)
 
     def _create_suggestion(
@@ -550,7 +565,9 @@ class PermissionPatternDetector(BaseAnalyzer):
             "total_approvals": len(approvals),
             "patterns_detected": len(suggestions),
             "patterns_above_threshold": sum(
-                1 for s in suggestions if s.pattern.confidence >= self.confidence_threshold
+                1
+                for s in suggestions
+                if s.pattern.confidence >= self.confidence_threshold
             ),
             "category_counts": dict(category_counts),
             "high_confidence_patterns": [

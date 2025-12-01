@@ -22,7 +22,10 @@ TIER1_ANALYZERS = [
     (ApprovalTracker, "ApprovalTracker"),
     (GlobalMCPAnalyzer, "GlobalMCPAnalyzer"),
     (ContextOptimizer, "ContextOptimizer"),
-    (InstructionEffectivenessTracker, "InstructionEffectivenessTracker"),  # Moved from Tier 2
+    (
+        InstructionEffectivenessTracker,
+        "InstructionEffectivenessTracker",
+    ),  # Moved from Tier 2
 ]
 
 # Tier 2 Analyzers (pattern detection)
@@ -81,7 +84,14 @@ class TestAnalyzerContracts:
         methods = dir(analyzer_class)
 
         # Should have logging or tracking methods
-        logging_methods = ["log_approval", "log_access", "log_section_access", "log_session", "analyze_all_projects", "track"]
+        logging_methods = [
+            "log_approval",
+            "log_access",
+            "log_section_access",
+            "log_session",
+            "analyze_all_projects",
+            "track",
+        ]
 
         has_logging = any(method in methods for method in logging_methods)
         assert has_logging, f"{name} missing logging capability"
@@ -164,6 +174,7 @@ class TestGlobalMCPAnalyzerContract:
     def test_can_analyze_all_projects(self):
         """Test T107: GlobalMCPAnalyzer.analyze_all_projects() works."""
         from pathlib import Path
+
         analyzer = GlobalMCPAnalyzer(home_dir=Path("/tmp"))
 
         # Should be able to analyze (may return empty report)
@@ -220,6 +231,7 @@ class TestInstructionTrackerContract:
     def test_can_get_effectiveness_score(self):
         """Test T107: InstructionEffectivenessTracker.get_effectiveness_score() works."""
         from claude_automation.schemas import InstructionEffectiveness
+
         tracker = InstructionEffectivenessTracker()
 
         # Log a session first
@@ -258,7 +270,9 @@ class TestMetaLearnerContract:
         # Use temp directory to avoid dependency on home directory
         metrics_file = tmp_path / "meta_metrics.jsonl"
         thresholds_file = tmp_path / "thresholds.json"
-        learner = MetaLearner(metrics_file=metrics_file, thresholds_file=thresholds_file)
+        learner = MetaLearner(
+            metrics_file=metrics_file, thresholds_file=thresholds_file
+        )
 
         # Should return health metrics
         metrics = learner.get_health_metrics()
@@ -269,7 +283,9 @@ class TestMetaLearnerContract:
         # Use temp directory to avoid dependency on home directory
         metrics_file = tmp_path / "meta_metrics.jsonl"
         thresholds_file = tmp_path / "thresholds.json"
-        learner = MetaLearner(metrics_file=metrics_file, thresholds_file=thresholds_file)
+        learner = MetaLearner(
+            metrics_file=metrics_file, thresholds_file=thresholds_file
+        )
 
         # Should return adjustment suggestions
         adjustments = learner.suggest_threshold_adjustments()

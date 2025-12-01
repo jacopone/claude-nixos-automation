@@ -43,7 +43,9 @@ class MetaLearner(BaseAnalyzer):
     MIN_OCCURRENCES_RANGE = (2, 5)
     CONFIDENCE_RANGE = (0.5, 0.9)
 
-    def __init__(self, metrics_file: Path | None = None, thresholds_file: Path | None = None):
+    def __init__(
+        self, metrics_file: Path | None = None, thresholds_file: Path | None = None
+    ):
         """
         Initialize meta-learner.
 
@@ -62,7 +64,6 @@ class MetaLearner(BaseAnalyzer):
 
         # Load current thresholds
         self.thresholds = self._load_thresholds()
-
 
     def _get_analysis_method_name(self) -> str:
         """Return the name of the primary analysis method."""
@@ -187,11 +188,19 @@ class MetaLearner(BaseAnalyzer):
             return {}
 
         # Group by component
-        components = {m.get("component") for m in metrics if "component" in m and "suggestion_id" in m}
+        components = {
+            m.get("component")
+            for m in metrics
+            if "component" in m and "suggestion_id" in m
+        }
 
         health_metrics = {}
         for component in components:
-            comp_metrics = [m for m in metrics if m.get("component") == component and "suggestion_id" in m]
+            comp_metrics = [
+                m
+                for m in metrics
+                if m.get("component") == component and "suggestion_id" in m
+            ]
 
             if not comp_metrics:
                 continue
@@ -223,7 +232,7 @@ class MetaLearner(BaseAnalyzer):
                 "acceptance_rate": acceptance_rate,
                 "status": status,
                 "total_suggestions": total,
-                "suggestions_per_day": suggestions_per_day
+                "suggestions_per_day": suggestions_per_day,
             }
 
         return health_metrics
@@ -261,9 +270,7 @@ class MetaLearner(BaseAnalyzer):
 
         return metrics
 
-    def get_component_metrics(
-        self, component: str, days: int = 30
-    ) -> LearningMetrics:
+    def get_component_metrics(self, component: str, days: int = 30) -> LearningMetrics:
         """
         Get metrics for a specific component.
 
@@ -437,9 +444,7 @@ class MetaLearner(BaseAnalyzer):
 
         # Get per-component metrics
         components = ["permissions", "mcp", "context", "workflows", "instructions"]
-        component_metrics = [
-            self.get_component_metrics(comp) for comp in components
-        ]
+        component_metrics = [self.get_component_metrics(comp) for comp in components]
 
         # Determine overall health
         system_health = health_metrics["system_health"]
@@ -453,7 +458,9 @@ class MetaLearner(BaseAnalyzer):
             overall_health = "poor"
 
         # Generate recommendations
-        recommendations = self._generate_recommendations(health_metrics, component_metrics)
+        recommendations = self._generate_recommendations(
+            health_metrics, component_metrics
+        )
 
         return LearningHealthReport(
             overall_health=overall_health,
@@ -576,7 +583,11 @@ class MetaLearner(BaseAnalyzer):
             days = 365 * 10  # All time
 
         metrics = self._load_recent_metrics(days)
-        component_metrics = [m for m in metrics if m.get("component") == component and "suggestion_id" in m]
+        component_metrics = [
+            m
+            for m in metrics
+            if m.get("component") == component and "suggestion_id" in m
+        ]
 
         if not component_metrics:
             return 0.0
@@ -598,7 +609,8 @@ class MetaLearner(BaseAnalyzer):
 
         # Get all accepted suggestions
         accepted_suggestions = [
-            m for m in metrics
+            m
+            for m in metrics
             if m.get("component") == component
             and m.get("accepted")
             and "suggestion_id" in m
@@ -611,16 +623,16 @@ class MetaLearner(BaseAnalyzer):
         reverted_ids = {
             m.get("suggestion_id")
             for m in metrics
-            if m.get("component") == component
-            and m.get("event_type") == "revert"
+            if m.get("component") == component and m.get("event_type") == "revert"
         }
 
         false_positives = sum(
-            1 for s in accepted_suggestions
-            if s.get("suggestion_id") in reverted_ids
+            1 for s in accepted_suggestions if s.get("suggestion_id") in reverted_ids
         )
 
-        return false_positives / len(accepted_suggestions) if accepted_suggestions else 0.0
+        return (
+            false_positives / len(accepted_suggestions) if accepted_suggestions else 0.0
+        )
 
     def suggest_threshold_adjustments(self) -> list:
         """
@@ -632,8 +644,13 @@ class MetaLearner(BaseAnalyzer):
         from ..schemas import ThresholdAdjustment
 
         adjustments = []
-        components = ["permission_learning", "mcp_optimization", "context_optimization",
-                     "workflow_detection", "instruction_tracking"]
+        components = [
+            "permission_learning",
+            "mcp_optimization",
+            "context_optimization",
+            "workflow_detection",
+            "instruction_tracking",
+        ]
 
         for component in components:
             rate = self.get_acceptance_rate(component, days=30)
@@ -648,7 +665,7 @@ class MetaLearner(BaseAnalyzer):
                     threshold_name="confidence_threshold",
                     old_value=current_threshold,
                     new_value=recommended,
-                    reason=f"Low acceptance rate ({rate:.1%}) - increase threshold to reduce false positives"
+                    reason=f"Low acceptance rate ({rate:.1%}) - increase threshold to reduce false positives",
                 )
                 adjustments.append(adjustment)
 
@@ -662,7 +679,7 @@ class MetaLearner(BaseAnalyzer):
                     threshold_name="confidence_threshold",
                     old_value=current_threshold,
                     new_value=recommended,
-                    reason=f"High acceptance rate ({rate:.1%}) - lower threshold to surface more suggestions"
+                    reason=f"High acceptance rate ({rate:.1%}) - lower threshold to surface more suggestions",
                 )
                 adjustments.append(adjustment)
 
@@ -679,13 +696,15 @@ class MetaLearner(BaseAnalyzer):
             Dict with calibration metrics
         """
         metrics = self._load_recent_metrics(days=30)
-        component_metrics = [m for m in metrics if m.get("component") == component and "confidence" in m]
+        component_metrics = [
+            m for m in metrics if m.get("component") == component and "confidence" in m
+        ]
 
         if not component_metrics:
             return {
                 "high_confidence_accuracy": 0.0,
                 "low_confidence_accuracy": 0.0,
-                "calibration_score": 0.0
+                "calibration_score": 0.0,
             }
 
         # Split into high and low confidence
@@ -694,17 +713,19 @@ class MetaLearner(BaseAnalyzer):
 
         high_accuracy = (
             sum(1 for m in high_conf if m.get("accepted")) / len(high_conf)
-            if high_conf else 0.0
+            if high_conf
+            else 0.0
         )
         low_accuracy = (
             sum(1 for m in low_conf if m.get("accepted")) / len(low_conf)
-            if low_conf else 0.0
+            if low_conf
+            else 0.0
         )
 
         return {
             "high_confidence_accuracy": high_accuracy,
             "low_confidence_accuracy": low_accuracy,
-            "calibration_score": high_accuracy - low_accuracy  # Should be positive
+            "calibration_score": high_accuracy - low_accuracy,  # Should be positive
         }
 
     def get_overall_effectiveness(self) -> float:
@@ -741,17 +762,29 @@ class MetaLearner(BaseAnalyzer):
             List of dicts with component and acceptance_rate, sorted by rate
         """
         from collections import namedtuple
-        ComponentRanking = namedtuple("ComponentRanking", ["component", "acceptance_rate"])
 
-        components = ["permission_learning", "mcp_optimization", "context_optimization",
-                     "workflow_detection", "instruction_tracking",
-                     "excellent", "good", "poor"]  # Include test components
+        ComponentRanking = namedtuple(
+            "ComponentRanking", ["component", "acceptance_rate"]
+        )
+
+        components = [
+            "permission_learning",
+            "mcp_optimization",
+            "context_optimization",
+            "workflow_detection",
+            "instruction_tracking",
+            "excellent",
+            "good",
+            "poor",
+        ]  # Include test components
 
         rankings = []
         for component in components:
             rate = self.get_acceptance_rate(component, days=30)
             if rate > 0:  # Only include components with data
-                rankings.append(ComponentRanking(component=component, acceptance_rate=rate))
+                rankings.append(
+                    ComponentRanking(component=component, acceptance_rate=rate)
+                )
 
         # Sort by acceptance rate (highest first)
         rankings.sort(key=lambda x: x.acceptance_rate, reverse=True)

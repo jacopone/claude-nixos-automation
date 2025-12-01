@@ -20,9 +20,9 @@ class CircularImportError(Exception):
     def __init__(self, cycle_path: list[str]):
         self.cycle_path = cycle_path
         self.message = (
-            f"\n{'='*80}\n"
+            f"\n{'=' * 80}\n"
             f"❌ CIRCULAR IMPORT DETECTED\n"
-            f"{'='*80}\n\n"
+            f"{'=' * 80}\n\n"
             f"Cycle path: {' → '.join(cycle_path)}\n\n"
             f"This violates domain boundary rules. The '{cycle_path[0]}' domain\n"
             f"cannot import from the '{cycle_path[1]}' domain.\n\n"
@@ -30,7 +30,7 @@ class CircularImportError(Exception):
             f"  1. Move shared types to the 'core' domain\n"
             f"  2. Update imports to reference 'core.py'\n"
             f"  3. Review contracts/schema-domains.md for boundary rules\n\n"
-            f"{'='*80}\n"
+            f"{'=' * 80}\n"
         )
         super().__init__(self.message)
 

@@ -192,7 +192,9 @@ class AnalyzerHealthChecker:
         print("🏥 ANALYZER HEALTH REPORT")
         print("=" * 70)
 
-        print(f"\n📊 Overall Health: {report.health_level} ({report.health_percentage:.0f}%)")
+        print(
+            f"\n📊 Overall Health: {report.health_level} ({report.health_percentage:.0f}%)"
+        )
         print(f"   • Healthy: {report.healthy_count}/{report.total_analyzers}")
         print(f"   • Degraded: {report.degraded_count}")
         print(f"   • Failed: {report.failed_count}")
@@ -200,10 +202,14 @@ class AnalyzerHealthChecker:
         # Group by health status
         healthy = [s for s in report.analyzer_statuses if s.is_healthy]
         degraded = [
-            s for s in report.analyzer_statuses if not s.is_healthy and s.missing_prerequisites
+            s
+            for s in report.analyzer_statuses
+            if not s.is_healthy and s.missing_prerequisites
         ]
         failed = [
-            s for s in report.analyzer_statuses if not s.is_healthy and not s.missing_prerequisites
+            s
+            for s in report.analyzer_statuses
+            if not s.is_healthy and not s.missing_prerequisites
         ]
 
         # Show healthy analyzers (brief)
@@ -227,7 +233,11 @@ class AnalyzerHealthChecker:
                 print(f"   • {status.analyzer_name}: {status.status_message}")
                 if status.last_error:
                     # Truncate long errors
-                    error_msg = status.last_error[:100] + "..." if len(status.last_error) > 100 else status.last_error
+                    error_msg = (
+                        status.last_error[:100] + "..."
+                        if len(status.last_error) > 100
+                        else status.last_error
+                    )
                     print(f"     Error: {error_msg}")
 
         print("\n" + "=" * 70 + "\n")
@@ -255,7 +265,11 @@ def validate_permission_learning() -> tuple[bool, str, list[str]]:
 
     # Check if file is readable and non-empty
     if approval_db.stat().st_size == 0:
-        return False, "Approval history is empty", ["permission_approvals.jsonl (empty)"]
+        return (
+            False,
+            "Approval history is empty",
+            ["permission_approvals.jsonl (empty)"],
+        )
 
     return True, "Ready", []
 

@@ -4,7 +4,6 @@ Integration test for source/artifact protection.
 Tests end-to-end protection of source files from being overwritten.
 """
 
-
 import pytest
 
 from claude_automation.generators import SystemGenerator
@@ -160,7 +159,9 @@ class TestSourceArtifactProtection:
                 GENERATED_ARTIFACTS = ["CLAUDE.md"]
 
                 def generate(self):
-                    return GenerationResult(success=True, output_path="", errors=[], warnings=[], stats={})
+                    return GenerationResult(
+                        success=True, output_path="", errors=[], warnings=[], stats={}
+                    )
 
             BadGenerator()
 

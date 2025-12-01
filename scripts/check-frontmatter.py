@@ -18,14 +18,14 @@ import sys
 from pathlib import Path
 
 # ANSI color codes
-RED = '\033[91m'
-GREEN = '\033[92m'
-YELLOW = '\033[93m'
-RESET = '\033[0m'
+RED = "\033[91m"
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RESET = "\033[0m"
 
 # Files to exclude from frontmatter check
 EXCLUDE_FILES = [
-    'CLAUDE.md',  # Auto-generated file
+    "CLAUDE.md",  # Auto-generated file
 ]
 
 
@@ -33,14 +33,14 @@ def get_staged_markdown_files():
     """Get list of staged markdown files from git."""
     try:
         result = subprocess.run(
-            ['git', 'diff', '--cached', '--name-only', '--diff-filter=ACM'],
+            ["git", "diff", "--cached", "--name-only", "--diff-filter=ACM"],
             capture_output=True,
             text=True,
-            check=True
+            check=True,
         )
-        files = result.stdout.strip().split('\n')
+        files = result.stdout.strip().split("\n")
         # Filter for markdown files only
-        md_files = [f for f in files if f.endswith('.md') and f]
+        md_files = [f for f in files if f.endswith(".md") and f]
         return md_files
     except subprocess.CalledProcessError:
         print(f"{RED}Error: Failed to get staged files from git{RESET}")
@@ -50,9 +50,9 @@ def get_staged_markdown_files():
 def has_frontmatter(file_path):
     """Check if a markdown file has YAML frontmatter."""
     try:
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             first_line = f.readline().strip()
-            return first_line == '---'
+            return first_line == "---"
     except FileNotFoundError:
         # File might have been deleted
         return True

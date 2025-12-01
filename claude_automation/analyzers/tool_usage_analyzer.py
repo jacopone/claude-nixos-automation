@@ -40,9 +40,7 @@ class ToolUsageAnalyzer:
     def __init__(self, project_path: Path):
         """Initialize analyzer with project path."""
         self.project_path = project_path.resolve()
-        self.packages_nix_path = (
-            self.project_path / "modules" / "core" / "packages.nix"
-        )
+        self.packages_nix_path = self.project_path / "modules" / "core" / "packages.nix"
         self.fish_log_path = (
             Path.home() / ".local" / "share" / "fish" / "command-source.jsonl"
         )
@@ -141,7 +139,7 @@ class ToolUsageAnalyzer:
 
             # Match simple package: helix  # Description - URL
             match = re.match(
-                r'\s+(\w+[\w.-]*)\s+#\s+(.+?)(?:\s+-\s+(https?://\S+))?$', line
+                r"\s+(\w+[\w.-]*)\s+#\s+(.+?)(?:\s+-\s+(https?://\S+))?$", line
             )
             if match:
                 name, desc, url = match.groups()
@@ -178,7 +176,7 @@ class ToolUsageAnalyzer:
                 continue
 
             # Match direct package references: pkgs.something
-            match = re.search(r'pkgs\.(\w+[\w.-]*)', line)
+            match = re.search(r"pkgs\.(\w+[\w.-]*)", line)
             if match and not line.strip().startswith("#"):
                 name = match.group(1)
                 # Skip if already found
@@ -268,7 +266,10 @@ class ToolUsageAnalyzer:
                     tool_name = get_canonical_tool_name(command_name)
 
                     # Skip if not an installed tool
-                    if tool_name not in tool_names and tool_name not in ALL_CATEGORIZED_TOOLS:
+                    if (
+                        tool_name not in tool_names
+                        and tool_name not in ALL_CATEGORIZED_TOOLS
+                    ):
                         continue
 
                     # Initialize if first time seeing this tool

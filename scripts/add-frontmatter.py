@@ -21,10 +21,10 @@ from datetime import datetime
 from pathlib import Path
 
 # ANSI color codes for output
-GREEN = '\033[92m'
-YELLOW = '\033[93m'
-RED = '\033[91m'
-RESET = '\033[0m'
+GREEN = "\033[92m"
+YELLOW = "\033[93m"
+RED = "\033[91m"
+RESET = "\033[0m"
 
 # Repository root
 REPO_ROOT = Path(__file__).parent.parent
@@ -38,27 +38,22 @@ RULES = [
     ("FINAL_STATUS.md", "archived", "session-note", "ephemeral", "2025-10-01"),
     ("*_SUMMARY.md", "archived", "session-note", "ephemeral", "2025-10-01"),
     ("*_COMPLETE.md", "archived", "session-note", "ephemeral", "2025-10-01"),
-
     # Architectural documentation
     ("CONSTITUTION.md", "active", "architecture", "persistent", "2024-01-01"),
     ("CLAUDE_ORCHESTRATION.md", "active", "architecture", "persistent", "2024-01-01"),
     ("THE_CLOSED_LOOP.md", "active", "architecture", "persistent", "2024-01-01"),
-
     # Guides and reference docs
     ("TESTING.md", "active", "guide", "persistent", "2024-01-01"),
     ("README.md", "active", "reference", "persistent", "2024-01-01"),
     ("CONTRIBUTING.md", "active", "guide", "persistent", "2024-01-01"),
     ("COMMON_TASKS.md", "active", "guide", "persistent", "2024-01-01"),
-
     # Planning documents in specs/
     ("specs/*/spec.md", "active", "planning", "persistent", None),
     ("specs/*/plan.md", "active", "planning", "persistent", None),
     ("specs/*/research.md", "active", "planning", "persistent", None),
     ("specs/*/tasks.md", "active", "planning", "persistent", None),
-
     # Session notes in .claude/sessions/
     (".claude/sessions/*.md", "archived", "session-note", "ephemeral", None),
-
     # Documentation in docs/
     ("docs/**/*.md", "active", "guide", "persistent", None),
 ]
@@ -72,6 +67,7 @@ EXCLUDE_FILES = [
 def matches_pattern(file_path: Path, pattern: str) -> bool:
     """Check if file path matches a glob pattern."""
     from fnmatch import fnmatch
+
     rel_path = file_path.relative_to(REPO_ROOT)
     return fnmatch(str(rel_path), pattern)
 
@@ -97,14 +93,16 @@ def classify_file(file_path: Path) -> tuple:
 def has_frontmatter(file_path: Path) -> bool:
     """Check if file already has YAML frontmatter."""
     try:
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             first_line = f.readline().strip()
-            return first_line == '---'
+            return first_line == "---"
     except Exception:
         return False
 
 
-def generate_frontmatter(status: str, file_type: str, lifecycle: str, created: str) -> str:
+def generate_frontmatter(
+    status: str, file_type: str, lifecycle: str, created: str
+) -> str:
     """Generate YAML frontmatter block."""
     updated = datetime.now().strftime("%Y-%m-%d")
     return f"""---
@@ -127,7 +125,7 @@ def add_frontmatter_to_file(file_path: Path) -> bool:
     """
     try:
         # Read existing content
-        with open(file_path, encoding='utf-8') as f:
+        with open(file_path, encoding="utf-8") as f:
             content = f.read()
 
         # Classify file
@@ -138,7 +136,7 @@ def add_frontmatter_to_file(file_path: Path) -> bool:
         new_content = frontmatter + content
 
         # Write back
-        with open(file_path, 'w', encoding='utf-8') as f:
+        with open(file_path, "w", encoding="utf-8") as f:
             f.write(new_content)
 
         return True
@@ -155,10 +153,13 @@ def find_markdown_files() -> list:
         if md_file.name in EXCLUDE_FILES:
             continue
         # Skip .git directory
-        if '.git' in md_file.parts:
+        if ".git" in md_file.parts:
             continue
         # Skip node_modules, venv, etc.
-        if any(exclude in md_file.parts for exclude in ['node_modules', 'venv', '.venv', '__pycache__']):
+        if any(
+            exclude in md_file.parts
+            for exclude in ["node_modules", "venv", ".venv", "__pycache__"]
+        ):
             continue
         markdown_files.append(md_file)
     return markdown_files
@@ -166,10 +167,10 @@ def find_markdown_files() -> list:
 
 def main():
     """Main execution function."""
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Adding YAML frontmatter to markdown files")
     print(f"Repository: {REPO_ROOT}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     # Find all markdown files
     markdown_files = find_markdown_files()
@@ -194,12 +195,12 @@ def main():
                 errors += 1
 
     # Summary
-    print(f"\n{'='*60}")
+    print(f"\n{'=' * 60}")
     print("Summary:")
     print(f"  Processed: {processed}")
     print(f"  Skipped: {skipped}")
     print(f"  Errors: {errors}")
-    print(f"{'='*60}\n")
+    print(f"{'=' * 60}\n")
 
     return 0 if errors == 0 else 1
 

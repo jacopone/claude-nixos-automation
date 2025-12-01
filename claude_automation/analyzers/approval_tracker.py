@@ -57,9 +57,10 @@ class ApprovalTracker:
             # Optionally compress old archives
             import gzip
             import shutil
-            compressed_path = archive_path.with_suffix('.jsonl.gz')
-            with open(archive_path, 'rb') as f_in:
-                with gzip.open(compressed_path, 'wb') as f_out:
+
+            compressed_path = archive_path.with_suffix(".jsonl.gz")
+            with open(archive_path, "rb") as f_in:
+                with gzip.open(compressed_path, "wb") as f_out:
                     shutil.copyfileobj(f_in, f_out)
             archive_path.unlink()  # Remove uncompressed
             logger.info(f"Compressed archive: {compressed_path.name}")
@@ -183,7 +184,9 @@ class ApprovalTracker:
         approvals = self.get_recent_approvals(days=days)
         return {a.permission for a in approvals}
 
-    def get_approvals_by_project(self, days: int = 30) -> dict[str, list[PermissionApprovalEntry]]:
+    def get_approvals_by_project(
+        self, days: int = 30
+    ) -> dict[str, list[PermissionApprovalEntry]]:
         """
         Group approvals by project.
 
@@ -245,7 +248,9 @@ class ApprovalTracker:
                 for data in kept_approvals:
                     f.write(json.dumps(data) + "\n")
 
-            logger.info(f"Cleared {removed_count} old approvals (older than {days} days)")
+            logger.info(
+                f"Cleared {removed_count} old approvals (older than {days} days)"
+            )
             return removed_count
 
         except Exception as e:

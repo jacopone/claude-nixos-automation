@@ -83,7 +83,9 @@ def test_effectiveness_score(tracker):
         )
 
     # Calculate effectiveness
-    effectiveness = tracker.get_effectiveness_score(policy_name, total_sessions, days=30)
+    effectiveness = tracker.get_effectiveness_score(
+        policy_name, total_sessions, days=30
+    )
 
     # Verify calculations
     assert effectiveness.policy_name == policy_name
@@ -315,15 +317,9 @@ def test_suggestions_sorted_by_priority(tracker):
 def test_get_stats(tracker):
     """Test statistics generation."""
     # Log violations with different severities
-    tracker.log_session(
-        "s1", "Policy A", False, "type1", "details", severity="high"
-    )
-    tracker.log_session(
-        "s2", "Policy A", False, "type2", "details", severity="medium"
-    )
-    tracker.log_session(
-        "s3", "Policy B", False, "type1", "details", severity="low"
-    )
+    tracker.log_session("s1", "Policy A", False, "type1", "details", severity="high")
+    tracker.log_session("s2", "Policy A", False, "type2", "details", severity="medium")
+    tracker.log_session("s3", "Policy B", False, "type1", "details", severity="low")
 
     # Get stats
     stats = tracker.get_stats(days=30)

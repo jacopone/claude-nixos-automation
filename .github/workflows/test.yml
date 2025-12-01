@@ -30,21 +30,16 @@ jobs:
       - name: Run tests
         run: nix develop --command pytest -v
 
-      - name: Check code formatting (black)
-        run: nix develop --command black --check .
+      - name: Check code formatting (ruff)
+        run: nix develop --command ruff format --check .
 
       - name: Lint with ruff
         run: nix develop --command ruff check .
-
-      - name: Type check with mypy
-        run: nix develop --command mypy claude_automation/
-        continue-on-error: true  # Don't fail on type errors initially
 
       - name: Display test summary
         if: always()
         run: |
           echo "## Test Results Summary" >> $GITHUB_STEP_SUMMARY
           echo "✅ Tests completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Code formatting checked" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Linting completed" >> $GITHUB_STEP_SUMMARY
-          echo "✅ Type checking completed" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Code formatting checked (ruff format)" >> $GITHUB_STEP_SUMMARY
+          echo "✅ Linting completed (ruff check)" >> $GITHUB_STEP_SUMMARY

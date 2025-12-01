@@ -4,7 +4,6 @@ Unit tests for BaseGenerator.
 Tests source/artifact protection and generation header functionality.
 """
 
-from datetime import datetime
 from pathlib import Path
 
 import pytest
@@ -39,7 +38,9 @@ class OverlappingGenerator(BaseGenerator):
 
     def generate(self) -> GenerationResult:
         """Dummy generate method."""
-        return GenerationResult(success=True, output_path="", errors=[], warnings=[], stats={})
+        return GenerationResult(
+            success=True, output_path="", errors=[], warnings=[], stats={}
+        )
 
 
 class DuplicateSourcesGenerator(BaseGenerator):
@@ -50,7 +51,9 @@ class DuplicateSourcesGenerator(BaseGenerator):
 
     def generate(self) -> GenerationResult:
         """Dummy generate method."""
-        return GenerationResult(success=True, output_path="", errors=[], warnings=[], stats={})
+        return GenerationResult(
+            success=True, output_path="", errors=[], warnings=[], stats={}
+        )
 
 
 class TestBaseGeneratorDeclarations:
@@ -85,7 +88,9 @@ class TestBaseGeneratorDeclarations:
             GENERATED_ARTIFACTS = []
 
             def generate(self):
-                return GenerationResult(success=True, output_path="", errors=[], warnings=[], stats={})
+                return GenerationResult(
+                    success=True, output_path="", errors=[], warnings=[], stats={}
+                )
 
         gen = EmptyGenerator()
         assert len(gen.MANUAL_SOURCES) == 0
@@ -225,9 +230,7 @@ class TestBaseGeneratorWriteArtifact:
 
     def test_header_includes_timestamp(self, generator, artifact_path):
         """Test that header includes generation timestamp."""
-        before = datetime.now()
         result = generator.write_artifact(artifact_path, "Content")
-        after = datetime.now()
 
         assert result.success
 
@@ -356,7 +359,9 @@ class TestBaseGeneratorAbstractMethod:
             GENERATED_ARTIFACTS = []
 
             def generate(self):
-                return GenerationResult(success=True, output_path="", errors=[], warnings=[], stats={})
+                return GenerationResult(
+                    success=True, output_path="", errors=[], warnings=[], stats={}
+                )
 
         gen = CompleteGenerator()
         assert gen is not None

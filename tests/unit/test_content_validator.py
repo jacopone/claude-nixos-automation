@@ -224,7 +224,10 @@ class TestContentValidator:
         result = validator.validate_content_tiered(content, "system")
 
         # Should have warnings about placeholders
-        assert any("placeholder" in w.lower() or "TODO" in w or "FIXME" in w for w in result.warnings)
+        assert any(
+            "placeholder" in w.lower() or "TODO" in w or "FIXME" in w
+            for w in result.warnings
+        )
 
     # =========================================================================
     # Info/Statistics Tests

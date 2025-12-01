@@ -57,7 +57,10 @@ class ProjectArchetype(BaseModel):
                 return "cargo"
             elif "python" in self.archetype.lower():
                 return "pip"
-            elif "typescript" in self.archetype.lower() or "javascript" in self.archetype.lower():
+            elif (
+                "typescript" in self.archetype.lower()
+                or "javascript" in self.archetype.lower()
+            ):
                 return "npm"
             return parts[1]
         return self.archetype

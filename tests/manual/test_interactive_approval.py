@@ -34,7 +34,7 @@ def main():
         confidence_threshold=0.3,  # Low threshold for testing
         analysis_period_days=90,
         max_suggestions_per_component=5,
-        enable_meta_learning=True
+        enable_meta_learning=True,
     )
 
     # Initialize engine
@@ -49,9 +49,14 @@ def main():
     print("=" * 70)
     print(f"\nTotal suggestions found: {report.total_suggestions}")
     print(f"Estimated improvements: {report.estimated_improvements}")
-    print("\nIf you were prompted to approve suggestions, the interactive flow is working! ✓")
-    print("If you saw NO prompts, there were no suggestions found (system already optimal).")
+    print(
+        "\nIf you were prompted to approve suggestions, the interactive flow is working! ✓"
+    )
+    print(
+        "If you saw NO prompts, there were no suggestions found (system already optimal)."
+    )
     print("")
+
 
 if __name__ == "__main__":
     try:
@@ -62,5 +67,6 @@ if __name__ == "__main__":
     except Exception as e:
         print(f"\n\nTest failed with error: {e}")
         import traceback
+
         traceback.print_exc()
         sys.exit(1)

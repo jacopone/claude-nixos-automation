@@ -90,7 +90,9 @@ def print_report(report):
 
     # Data Size section
     print("  Data Size:")
-    print(f"     • Session logs: {report.session_logs_mb}MB ({report.session_count} sessions)")
+    print(
+        f"     • Session logs: {report.session_logs_mb}MB ({report.session_count} sessions)"
+    )
     print(f"     • Learning cache: {report.learning_data_mb}MB (patterns, metrics)")
 
     if report.archives_mb > 0:

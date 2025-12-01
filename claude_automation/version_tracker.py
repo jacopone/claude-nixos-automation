@@ -52,9 +52,7 @@ class PolicyVersionTracker:
         except Exception as e:
             logger.error(f"Failed to save version file: {e}")
 
-    def detect_new_policies(
-        self, current_policies: dict[str, list[dict]]
-    ) -> set[str]:
+    def detect_new_policies(self, current_policies: dict[str, list[dict]]) -> set[str]:
         """
         Detect which policies are new since last update.
 
@@ -90,9 +88,7 @@ class PolicyVersionTracker:
 
         return new_policies
 
-    def mark_policy_as_new(
-        self, policy: dict, new_policies: set[str]
-    ) -> dict:
+    def mark_policy_as_new(self, policy: dict, new_policies: set[str]) -> dict:
         """
         Add 'is_new' flag to policy if it's in the new set.
 

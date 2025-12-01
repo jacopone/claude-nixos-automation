@@ -81,7 +81,7 @@ class GenerationHeader(BaseModel):
         """Generate HTML comment format for markdown files."""
         sources = ", ".join(self.source_files) if self.source_files else "N/A"
         return f"""<!--
-{'=' * 60}
+{"=" * 60}
   {self.warning_message}
 
   Generated: {self.generated_at.isoformat()}
@@ -89,5 +89,5 @@ class GenerationHeader(BaseModel):
   Sources: {sources}
 
   To modify, edit source files and regenerate.
-{'=' * 60}
+{"=" * 60}
 -->"""
