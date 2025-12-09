@@ -65,15 +65,15 @@ Examples:
     parser.add_argument(
         "--min-occurrences",
         type=int,
-        default=3,
-        help="Minimum occurrences for pattern detection (default: 3)",
+        default=1,
+        help="Minimum occurrences for pattern detection (default: 1 for faster learning)",
     )
 
     parser.add_argument(
         "--confidence",
         type=float,
-        default=0.7,
-        help="Minimum confidence threshold (0-1, default: 0.7)",
+        default=0.5,
+        help="Minimum confidence threshold (0-1, default: 0.5 for faster learning)",
     )
 
     parser.add_argument(

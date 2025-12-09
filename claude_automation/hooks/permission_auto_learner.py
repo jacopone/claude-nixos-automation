@@ -59,7 +59,7 @@ def get_invocation_counter(session_id):
         return 0
 
 
-def should_analyze(session_id, check_interval=50):
+def should_analyze(session_id, check_interval=20):
     """
     Determine if we should run pattern analysis.
 
@@ -67,7 +67,8 @@ def should_analyze(session_id, check_interval=50):
 
     Args:
         session_id: Current session ID
-        check_interval: How often to analyze (default: every 50 tool uses)
+        check_interval: How often to analyze (default: every 20 tool uses)
+                       Lowered from 50 for faster learning feedback
 
     Returns:
         bool: True if should analyze now
@@ -102,10 +103,12 @@ def analyze_and_suggest_permissions(project_path):
             PermissionPatternDetector,
         )
 
-        # Initialize trackers
+        # Initialize trackers with lower thresholds for faster learning
         tracker = ApprovalTracker()
         detector = PermissionPatternDetector(
-            approval_tracker=tracker, min_occurrences=3, confidence_threshold=0.75
+            approval_tracker=tracker,
+            min_occurrences=1,  # Lowered from 3 for faster learning
+            confidence_threshold=0.5,  # Lowered from 0.75
         )
 
         # Detect patterns (last 30 days, project-specific)
@@ -113,8 +116,9 @@ def analyze_and_suggest_permissions(project_path):
 
         debug_log(f"Found {len(suggestions)} pattern suggestions")
 
-        # Filter high-confidence suggestions (>= 0.8)
-        high_confidence = [s for s in suggestions if s.pattern.confidence >= 0.8]
+        # Filter suggestions with decent confidence (>= 0.6, lowered from 0.8)
+        # This allows faster auto-approval of patterns you've approved multiple times
+        high_confidence = [s for s in suggestions if s.pattern.confidence >= 0.6]
 
         return high_confidence
 

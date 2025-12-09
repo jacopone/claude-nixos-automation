@@ -105,23 +105,27 @@ class PermissionPatternDetector(BaseAnalyzer):
     }
 
     # Tiered detection configuration
+    # NOTE: Lowered thresholds for faster learning (2024-12 tuning)
+    # - TIER_1: Single approval is enough for safe read-only tools
+    # - TIER_2: 2 approvals for dev tools (was 3)
+    # - TIER_3: 3 approvals for risky operations (was 5)
     TIER_CONFIG = {
         "TIER_1_SAFE": {
-            "min_occurrences": 2,
+            "min_occurrences": 1,  # Single approval = intentional
             "time_window_days": 7,
-            "confidence_threshold": 0.5,
+            "confidence_threshold": 0.4,  # Lower bar for safe tools
             "description": "Safe read-only tools",
         },
         "TIER_2_MODERATE": {
-            "min_occurrences": 3,
+            "min_occurrences": 2,  # Reduced from 3
             "time_window_days": 14,
-            "confidence_threshold": 0.7,
+            "confidence_threshold": 0.6,  # Reduced from 0.7
             "description": "Development and testing tools",
         },
         "TIER_3_RISKY": {
-            "min_occurrences": 5,
+            "min_occurrences": 3,  # Reduced from 5
             "time_window_days": 30,
-            "confidence_threshold": 0.8,
+            "confidence_threshold": 0.7,  # Reduced from 0.8
             "description": "Write operations and risky commands",
         },
     }
