@@ -1,9 +1,10 @@
 ---
-status: active
+status: archived
 created: 2025-01-24
-updated: 2025-01-24
+updated: 2025-12-18
 type: architecture
 lifecycle: persistent
+archive_reason: Superseded by current rebuild-nixos implementation. Kept for historical reference.
 ---
 
 # rebuild-nixos Phase Execution Architecture

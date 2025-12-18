@@ -157,6 +157,21 @@ claude_automation/
 └── validators/       # Content validation
 ```
 
+### Documentation
+
+| Document | Description |
+|----------|-------------|
+| [Project Constitution](docs/architecture/CONSTITUTION.md) | Design principles and decisions |
+| [Implementation Summary](docs/architecture/IMPLEMENTATION_COMPLETE.md) | What was built and why |
+
+### Specifications
+
+| Spec | Description |
+|------|-------------|
+| [001: Source/Artifact Architecture](specs/001-source-artifact-architecture/spec.md) | Template and output structure |
+| [002: Code Quality Refactoring](specs/002-code-quality-refactoring/spec.md) | Quality gates and standards |
+| [003: Documentation Governance](specs/003-doc-governance-cleanup/spec.md) | Doc lifecycle management |
+
 ## Development
 
 ```bash
