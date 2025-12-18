@@ -136,14 +136,20 @@ class TestPatternDetection:
 
     def test_no_pattern_below_threshold(self, tracker, detector):
         """Verify patterns below min_occurrences are not detected."""
-        # Arrange - Only 1 occurrence (below TIER_1_SAFE threshold of 2)
-        tracker.log_approval("Bash(git status:*)", "session", "/project")
+        # Arrange - Only 1 occurrence of a TIER_2_MODERATE command
+        # TIER_2 requires min_occurrences=2, so 1 should not trigger detection
+        # Note: TIER_1_SAFE (git, eza, bat) only needs 1 occurrence now
+        tracker.log_approval("Bash(pytest:*)", "session", "/project")
 
         # Act
         suggestions = detector.detect_patterns(days=30)
 
-        # Assert - Should not detect pattern with only 1 occurrence
-        assert len(suggestions) == 0
+        # Assert - Should not detect pytest pattern with only 1 occurrence
+        # (TIER_2_MODERATE requires 2 minimum)
+        pytest_suggestions = [
+            s for s in suggestions if s.pattern.pattern_type == "pytest_testing"
+        ]
+        assert len(pytest_suggestions) == 0
 
     def test_multiple_patterns_detected(self, tracker, detector):
         """Verify detection of multiple patterns simultaneously."""

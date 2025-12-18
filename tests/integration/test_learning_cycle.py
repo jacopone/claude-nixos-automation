@@ -185,18 +185,22 @@ class TestApprovalToPatternToSuggestion:
         """
         Test that patterns below threshold don't generate suggestions.
         """
-        # STEP 1: User approves command only once (below TIER_1_SAFE threshold of 2)
+        # STEP 1: User approves a TIER_2_MODERATE command only once
+        # TIER_2 requires min_occurrences=2, so 1 should not trigger detection
+        # Note: TIER_1_SAFE (git, eza, bat) only needs 1 occurrence now
         session_id = "test-session"
         project_path = "/home/user/project"
 
-        tracker.log_approval("Bash(git status:*)", session_id, project_path)
+        tracker.log_approval("Bash(pytest:*)", session_id, project_path)
 
         # STEP 2: Try to detect patterns
         suggestions = detector.detect_patterns(days=30)
 
-        # STEP 3: Verify no suggestions (below minimum occurrences)
-        # Note: TIER_1_SAFE requires 2 occurrences minimum
-        assert len(suggestions) == 0
+        # STEP 3: Verify no pytest suggestions (below TIER_2 minimum of 2)
+        pytest_suggestions = [
+            s for s in suggestions if s.pattern.pattern_type == "pytest_testing"
+        ]
+        assert len(pytest_suggestions) == 0
 
     def test_pattern_confidence_affects_suggestions(self, tracker):
         """
