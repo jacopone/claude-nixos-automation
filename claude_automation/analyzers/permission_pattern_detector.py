@@ -40,19 +40,29 @@ class PermissionPatternDetector(BaseAnalyzer):
     """
 
     # Pattern categories and their detection rules
+    # Updated 2025-12: Added 12 new categories based on approval data analysis
     PATTERN_CATEGORIES = {
+        # === Git Operations ===
         "git_read_only": {
             "patterns": [r"Bash\(git (status|log|diff|show|branch)"],
             "description": "Read-only git commands",
             "tier": "TIER_1_SAFE",
         },
-        "git_all_safe": {
+        "git_workflow": {
             "patterns": [
-                r"Bash\(git (status|log|diff|show|branch|add|commit|push|pull)"
+                r"Bash\(git (status|log|diff|show|branch|add|commit|push|pull|fetch|stash|checkout|merge|rebase|restore|reset(?! --hard))"
             ],
-            "description": "All safe git commands (no force operations)",
+            "description": "Standard git workflow commands (excludes force/hard operations)",
+            "tier": "TIER_2_MODERATE",  # Changed from TIER_3_RISKY - these are routine
+        },
+        "git_destructive": {
+            "patterns": [
+                r"Bash\(git.*(--force|--hard|push -f|push --force|reset --hard)",
+            ],
+            "description": "Destructive git operations (force push, hard reset)",
             "tier": "TIER_3_RISKY",
         },
+        # === Development Tools ===
         "pytest": {
             "patterns": [r"Bash\(pytest", r"Bash\(python -m pytest"],
             "description": "Pytest test execution",
@@ -65,11 +75,12 @@ class PermissionPatternDetector(BaseAnalyzer):
         },
         "modern_cli": {
             "patterns": [
-                r"Bash\((fd|eza|bat|rg|dust|procs|btm|cat|tree|ls)",
+                r"Bash\((fd|eza|bat|rg|dust|procs|btm|tree)",
             ],
-            "description": "Modern CLI tools (fd, eza, bat, cat, etc.)",
+            "description": "Modern CLI tools (fd, eza, bat, rg, etc.)",
             "tier": "TIER_1_SAFE",
         },
+        # === File Operations ===
         "file_operations": {
             "patterns": [
                 r"Read\([^)]+\)",
@@ -102,30 +113,102 @@ class PermissionPatternDetector(BaseAnalyzer):
             "description": "Full project directory access",
             "tier": "TIER_3_RISKY",
         },
+        # === NEW: GitHub CLI (gh) ===
+        "github_cli": {
+            "patterns": [r"Bash\(gh\s"],
+            "description": "GitHub CLI commands (gh pr, gh issue, gh api, etc.)",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: Cloud CLIs ===
+        "cloud_cli": {
+            "patterns": [r"Bash\((gcloud|aws|az)\s"],
+            "description": "Cloud provider CLIs (GCP, AWS, Azure)",
+            "tier": "TIER_3_RISKY",  # Can modify cloud resources
+        },
+        # === NEW: Package Managers ===
+        "package_managers": {
+            "patterns": [r"Bash\((npm|npx|yarn|pnpm|pip|uv|cargo|poetry)\s"],
+            "description": "Package manager commands",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: Nix Ecosystem ===
+        "nix_tools": {
+            "patterns": [r"Bash\((nix|devenv|nix-shell|nix-build|nix-env)\s"],
+            "description": "Nix/NixOS ecosystem tools",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: Database CLIs ===
+        "database_cli": {
+            "patterns": [r"Bash\((sqlite3|psql|mysql|mycli|pgcli|usql)\s"],
+            "description": "Database CLI tools",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: Network/HTTP Tools ===
+        "network_tools": {
+            "patterns": [r"Bash\((curl|wget|xh|httpie)\s"],
+            "description": "Network/HTTP client tools",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: Runtime Interpreters ===
+        "runtime_tools": {
+            "patterns": [r"Bash\((python3?|node|ruby|go run)\s"],
+            "description": "Language runtime interpreters",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: POSIX Filesystem ===
+        "posix_filesystem": {
+            "patterns": [r"Bash\((find|ls|mkdir|rmdir|touch|mv|cp|rm(?! -rf))\s"],
+            "description": "POSIX filesystem commands (find, ls, mkdir, etc.)",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: POSIX Search/Transform ===
+        "posix_search": {
+            "patterns": [r"Bash\((grep|awk|sed|cut|sort|uniq)\s"],
+            "description": "POSIX search/transform commands",
+            "tier": "TIER_2_MODERATE",
+        },
+        # === NEW: POSIX Read ===
+        "posix_read": {
+            "patterns": [r"Bash\((cat|head|tail|less|more|wc)\s"],
+            "description": "POSIX file reading/stats commands",
+            "tier": "TIER_1_SAFE",
+        },
+        # === NEW: Shell Utilities ===
+        "shell_utilities": {
+            "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)\s"],
+            "description": "Shell built-ins and utilities",
+            "tier": "TIER_1_SAFE",
+        },
+        # === NEW: Dangerous Operations ===
+        "dangerous_operations": {
+            "patterns": [r"Bash\((rm -rf|sudo|chmod 777)\s"],
+            "description": "Potentially dangerous operations",
+            "tier": "TIER_3_RISKY",
+        },
     }
 
     # Tiered detection configuration
-    # NOTE: Lowered thresholds for faster learning (2024-12 tuning)
-    # - TIER_1: Single approval is enough for safe read-only tools
-    # - TIER_2: 2 approvals for dev tools (was 3)
-    # - TIER_3: 3 approvals for risky operations (was 5)
+    # NOTE: Rebalanced thresholds (2025-12 tuning) for better security/usability balance
+    # - TIER_1: 2 approvals minimum (was 1 - too permissive for auto-approval)
+    # - TIER_2: 3 approvals for dev tools (standard validation)
+    # - TIER_3: 5 approvals for risky operations (conservative)
     TIER_CONFIG = {
         "TIER_1_SAFE": {
-            "min_occurrences": 1,  # Single approval = intentional
+            "min_occurrences": 2,  # Changed from 1 - require cross-validation
             "time_window_days": 7,
             "confidence_threshold": 0.4,  # Lower bar for safe tools
             "description": "Safe read-only tools",
         },
         "TIER_2_MODERATE": {
-            "min_occurrences": 2,  # Reduced from 3
+            "min_occurrences": 3,  # Standard dev tool validation
             "time_window_days": 14,
-            "confidence_threshold": 0.6,  # Reduced from 0.7
+            "confidence_threshold": 0.6,
             "description": "Development and testing tools",
         },
         "TIER_3_RISKY": {
-            "min_occurrences": 3,  # Reduced from 5
+            "min_occurrences": 5,  # Conservative for risky operations
             "time_window_days": 30,
-            "confidence_threshold": 0.7,  # Reduced from 0.8
+            "confidence_threshold": 0.7,
             "description": "Write operations and risky commands",
         },
     }

@@ -238,6 +238,106 @@ class HookDeployer:
 
         return status
 
+    def deploy_to_settings(self, dry_run: bool = False) -> dict[str, any]:
+        """
+        Deploy hooks directly to ~/.claude/settings.json.
+
+        This is the CORRECT location for Claude Code to discover hooks.
+        The old method deployed to ~/.claude-plugin/hooks/ which Claude Code
+        does not read.
+
+        Args:
+            dry_run: If True, only show what would be deployed
+
+        Returns:
+            Dictionary with deployment results
+        """
+        results = {
+            "success": True,
+            "hooks_added": [],
+            "hooks_skipped": [],
+            "errors": [],
+        }
+
+        settings_file = Path.home() / ".claude" / "settings.json"
+        hooks_config = self.source_hooks_dir / "hooks.json"
+
+        # Check source hooks.json exists
+        if not hooks_config.exists():
+            results["errors"].append(f"Source hooks.json not found: {hooks_config}")
+            results["success"] = False
+            return results
+
+        try:
+            # Load source hooks configuration
+            with open(hooks_config) as f:
+                source_hooks = json.load(f)
+
+            # Load or create settings.json
+            if settings_file.exists():
+                with open(settings_file) as f:
+                    settings = json.load(f)
+            else:
+                settings = {}
+
+            if "hooks" not in settings:
+                settings["hooks"] = {}
+
+            # Get path to automation directory for command expansion
+            automation_dir = Path(__file__).parent.parent
+
+            # Process each hook type from source
+            for hook_type, hook_groups in source_hooks.get("hooks", {}).items():
+                if hook_type not in settings["hooks"]:
+                    settings["hooks"][hook_type] = []
+
+                # Get existing commands to avoid duplicates
+                existing_commands = set()
+                for group in settings["hooks"][hook_type]:
+                    for hook in group.get("hooks", []):
+                        existing_commands.add(hook.get("command", ""))
+
+                # Add new hook groups
+                for group in hook_groups:
+                    # Expand ${CLAUDE_PLUGIN_ROOT} to actual path
+                    new_group = {"matcher": group.get("matcher", ".*"), "hooks": []}
+                    for hook in group.get("hooks", []):
+                        command = hook.get("command", "")
+                        # Replace ${CLAUDE_PLUGIN_ROOT} with actual path
+                        command = command.replace(
+                            "${CLAUDE_PLUGIN_ROOT}",
+                            str(automation_dir)
+                        )
+                        new_hook = {"type": hook.get("type", "command"), "command": command}
+
+                        if command not in existing_commands:
+                            new_group["hooks"].append(new_hook)
+                            existing_commands.add(command)
+                            results["hooks_added"].append(
+                                f"{hook_type}:{group.get('matcher', '*')}"
+                            )
+                        else:
+                            results["hooks_skipped"].append(
+                                f"{hook_type}:{group.get('matcher', '*')} (already exists)"
+                            )
+
+                    # Only add group if it has new hooks
+                    if new_group["hooks"]:
+                        settings["hooks"][hook_type].append(new_group)
+
+            # Write updated settings.json
+            if not dry_run and results["hooks_added"]:
+                with open(settings_file, "w") as f:
+                    json.dump(settings, f, indent=2)
+                logger.info(f"Updated {settings_file}")
+
+        except Exception as e:
+            results["errors"].append(f"Failed to deploy to settings.json: {e}")
+            results["success"] = False
+            logger.error(f"Failed to deploy to settings.json: {e}")
+
+        return results
+
     def undeploy(self, dry_run: bool = False) -> dict[str, any]:
         """
         Remove deployed hooks from Claude Code plugin directory.
@@ -304,6 +404,11 @@ def main():
         action="store_true",
         help="Enable verbose logging",
     )
+    parser.add_argument(
+        "--deploy-to-settings",
+        action="store_true",
+        help="Deploy hooks to ~/.claude/settings.json (recommended)",
+    )
 
     args = parser.parse_args()
 
@@ -341,7 +446,29 @@ def main():
                 print(f"  - {error}")
         return
 
-    # Deploy hooks
+    if args.deploy_to_settings:
+        mode = "[DRY RUN] " if args.dry_run else ""
+        print(f"\n🚀 {mode}Deploying hooks to ~/.claude/settings.json...")
+        results = deployer.deploy_to_settings(dry_run=args.dry_run)
+
+        if results["success"]:
+            if results["hooks_added"]:
+                print(f"✓ Added {len(results['hooks_added'])} new hooks:")
+                for hook in results["hooks_added"]:
+                    print(f"  + {hook}")
+            if results["hooks_skipped"]:
+                print(f"ℹ Skipped {len(results['hooks_skipped'])} existing hooks:")
+                for hook in results["hooks_skipped"]:
+                    print(f"  - {hook}")
+            if not results["hooks_added"] and not results["hooks_skipped"]:
+                print("✓ All hooks already deployed")
+        else:
+            print("✗ Deployment failed:")
+            for error in results["errors"]:
+                print(f"  - {error}")
+        return
+
+    # Deploy hooks (legacy - to ~/.claude-plugin/hooks/)
     mode = "[DRY RUN] " if args.dry_run else ""
     print(f"\n🚀 {mode}Deploying Claude Code hooks...")
 
