@@ -308,6 +308,17 @@ class HookDeployer:
                             "${CLAUDE_PLUGIN_ROOT}",
                             str(automation_dir)
                         )
+
+                        # Validate that hook script actually exists
+                        if "python3 " in command:
+                            script_path = command.split("python3 ", 1)[1].split()[0]
+                            if not Path(script_path).exists():
+                                results["errors"].append(
+                                    f"Hook script not found: {script_path}"
+                                )
+                                logger.warning(f"Skipping non-existent hook: {script_path}")
+                                continue
+
                         new_hook = {"type": hook.get("type", "command"), "command": command}
 
                         if command not in existing_commands:

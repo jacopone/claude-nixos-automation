@@ -6,31 +6,23 @@
         "hooks": [
           {
             "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/modern_cli_enforcer.py",
-            "description": "Enforce modern CLI tools over legacy POSIX commands"
-          }
-        ],
-        "matcher": "Bash"
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
-            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/nixos_safety_guard.py",
-            "description": "Prevent accidental NixOS system damage and enforce best practices"
-          }
-        ],
-        "matcher": "Bash|Edit|Write|MultiEdit"
-      },
-      {
-        "hooks": [
-          {
-            "type": "command",
             "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/permission_auto_learner.py",
             "description": "Learn from permission approvals and auto-generate permission rules"
           }
         ],
         "matcher": ".*"
+      }
+    ],
+    "PostToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "python3 ${CLAUDE_PLUGIN_ROOT}/hooks/claude_tool_tracker.py",
+            "description": "Track tool usage for analytics and optimization"
+          }
+        ],
+        "matcher": "Bash"
       }
     ]
   }
