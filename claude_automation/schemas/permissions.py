@@ -44,7 +44,7 @@ class PermissionPattern(BaseModel):
 
     pattern_type: str = Field(
         ...,
-        description="Type: git_read_only, git_all_safe, pytest, ruff, modern_cli, project_full_access",
+        description="Pattern category type (e.g., git_workflow, github_cli, nix_tools)",
     )
     occurrences: int = Field(..., ge=1, description="Number of times pattern observed")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0-1)")
@@ -56,17 +56,36 @@ class PermissionPattern(BaseModel):
 
     @validator("pattern_type")
     def validate_pattern_type(cls, v):
-        """Validate pattern type."""
+        """Validate pattern type against known categories."""
+        # All valid pattern categories from permission_pattern_detector.py
         valid_types = {
+            # Git operations
             "git_read_only",
-            "git_all_safe",
+            "git_workflow",  # renamed from git_all_safe
+            "git_destructive",
+            # Development tools
             "pytest",
             "ruff",
             "modern_cli",
-            "project_full_access",
+            # File operations
             "file_operations",
             "file_write_operations",
             "test_execution",
+            "project_full_access",
+            # CLI tools (added 2025-12)
+            "github_cli",
+            "cloud_cli",
+            "package_managers",
+            "nix_tools",
+            "database_cli",
+            "network_tools",
+            "runtime_tools",
+            # POSIX commands (added 2025-12)
+            "posix_filesystem",
+            "posix_search",
+            "posix_read",
+            "shell_utilities",
+            "dangerous_operations",
         }
         if v not in valid_types:
             raise ValueError(f"Invalid pattern type: {v}")
