@@ -236,7 +236,9 @@ def main():
 
     total_approvals = existing_count + len(new_approvals)
     print(f"\n✅ Total approvals now: {total_approvals}")
-    print(f"   Added {len(new_approvals)} new approvals from {len(new_session_files)} sessions")
+    print(
+        f"   Added {len(new_approvals)} new approvals from {len(new_session_files)} sessions"
+    )
 
     # Show top patterns from new approvals
     if new_approvals:

@@ -305,8 +305,7 @@ class HookDeployer:
                         command = hook.get("command", "")
                         # Replace ${CLAUDE_PLUGIN_ROOT} with actual path
                         command = command.replace(
-                            "${CLAUDE_PLUGIN_ROOT}",
-                            str(automation_dir)
+                            "${CLAUDE_PLUGIN_ROOT}", str(automation_dir)
                         )
 
                         # Validate that hook script actually exists
@@ -316,10 +315,15 @@ class HookDeployer:
                                 results["errors"].append(
                                     f"Hook script not found: {script_path}"
                                 )
-                                logger.warning(f"Skipping non-existent hook: {script_path}")
+                                logger.warning(
+                                    f"Skipping non-existent hook: {script_path}"
+                                )
                                 continue
 
-                        new_hook = {"type": hook.get("type", "command"), "command": command}
+                        new_hook = {
+                            "type": hook.get("type", "command"),
+                            "command": command,
+                        }
 
                         if command not in existing_commands:
                             new_group["hooks"].append(new_hook)
