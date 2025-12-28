@@ -580,7 +580,7 @@ class PermissionPatternDetector(BaseAnalyzer):
             "Modern_cli": "Bash(fd:*), Bash(eza:*), Bash(bat:*), Bash(rg:*), Bash(dust:*), Bash(procs:*)",
             "File_operations": "Read(/**), Glob(**)",
             "File_write_operations": "Write(/**), Edit(/**)",
-            "Test_execution": "Bash(*test:*)",
+            "Test_execution": "Bash(npm test:*), Bash(pytest:*), Bash(cargo test:*), Bash(go test:*)",
             "Project_full_access": "Read(/home/*/project/**), Write(/home/*/project/**)",
             "Github_cli": "Bash(gh:*)",
             "Cloud_cli": "Bash(gcloud:*), Bash(aws:*), Bash(az:*)",
