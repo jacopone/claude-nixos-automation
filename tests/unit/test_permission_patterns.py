@@ -194,7 +194,9 @@ class TestPatternDetection:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Should not detect pattern from old approvals
-        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type.lower()]
+        git_suggestions = [
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        ]
         assert len(git_suggestions) == 0
 
     def test_pattern_detection_with_project_filter(self, tracker, detector):
@@ -287,7 +289,9 @@ class TestConfidenceScoring:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
+        git_suggestion = next(
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        )
         # With 5 sessions: base=0.5 + session_spread=0.125 + consistency=0.05 + recency=0.05 = ~0.725
         assert git_suggestion.pattern.confidence >= 0.5  # TIER_1_SAFE threshold
 
@@ -324,7 +328,9 @@ class TestConfidenceScoring:
         suggestions = high_threshold_detector.detect_patterns(days=30)
 
         # Assert - Pattern should be excluded due to low confidence (< 0.9)
-        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type.lower()]
+        git_suggestions = [
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        ]
         assert len(git_suggestions) == 0  # Below high threshold
 
     def test_confidence_score_range(self, tracker, detector):
@@ -355,7 +361,9 @@ class TestConfidenceScoring:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Should have confidence >= 0.5 (base + session spread + recency)
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
+        git_suggestion = next(
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        )
         assert git_suggestion.pattern.confidence >= 0.5  # TIER_1_SAFE threshold
 
 
@@ -396,7 +404,9 @@ class TestPatternSuggestions:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
+        git_suggestion = next(
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        )
         assert len(git_suggestion.approved_examples) > 0
         assert len(git_suggestion.would_allow) > 0
 
@@ -412,7 +422,9 @@ class TestPatternSuggestions:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
+        git_suggestion = next(
+            s for s in suggestions if "git" in s.pattern.pattern_type.lower()
+        )
         assert "impact" in git_suggestion.impact_estimate.lower()
         assert "%" in git_suggestion.impact_estimate
 
