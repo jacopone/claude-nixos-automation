@@ -41,21 +41,23 @@ class PermissionPatternDetector(BaseAnalyzer):
 
     # Pattern categories and their detection rules
     # Updated 2025-12: Added 12 new categories based on approval data analysis
+    # NOTE: Pattern category keys MUST start with uppercase to pass Claude Code validation
+    # Claude Code error: "Tool names must start with uppercase"
     PATTERN_CATEGORIES = {
         # === Git Operations ===
-        "git_read_only": {
+        "Git_read_only": {
             "patterns": [r"Bash\(git (status|log|diff|show|branch)"],
             "description": "Read-only git commands",
             "tier": "TIER_1_SAFE",
         },
-        "git_workflow": {
+        "Git_workflow": {
             "patterns": [
                 r"Bash\(git (status|log|diff|show|branch|add|commit|push|pull|fetch|stash|checkout|merge|rebase|restore|reset(?! --hard))"
             ],
             "description": "Standard git workflow commands (excludes force/hard operations)",
             "tier": "TIER_2_MODERATE",  # Changed from TIER_3_RISKY - these are routine
         },
-        "git_destructive": {
+        "Git_destructive": {
             "patterns": [
                 r"Bash\(git.*(--force|--hard|push -f|push --force|reset --hard)",
             ],
@@ -63,17 +65,17 @@ class PermissionPatternDetector(BaseAnalyzer):
             "tier": "TIER_3_RISKY",
         },
         # === Development Tools ===
-        "pytest": {
+        "Pytest": {
             "patterns": [r"Bash\(pytest", r"Bash\(python -m pytest"],
             "description": "Pytest test execution",
             "tier": "TIER_1_SAFE",
         },
-        "ruff": {
+        "Ruff": {
             "patterns": [r"Bash\(ruff"],
             "description": "Ruff linter/formatter",
             "tier": "TIER_1_SAFE",
         },
-        "modern_cli": {
+        "Modern_cli": {
             "patterns": [
                 r"Bash\((fd|eza|bat|rg|dust|procs|btm|tree)",
             ],
@@ -81,7 +83,7 @@ class PermissionPatternDetector(BaseAnalyzer):
             "tier": "TIER_1_SAFE",
         },
         # === File Operations ===
-        "file_operations": {
+        "File_operations": {
             "patterns": [
                 r"Read\([^)]+\)",
                 r"Glob\([^)]+\)",
@@ -89,7 +91,7 @@ class PermissionPatternDetector(BaseAnalyzer):
             "description": "File read operations",
             "tier": "TIER_1_SAFE",
         },
-        "file_write_operations": {
+        "File_write_operations": {
             "patterns": [
                 r"Write\([^)]+\)",
                 r"Edit\([^)]+\)",
@@ -97,7 +99,7 @@ class PermissionPatternDetector(BaseAnalyzer):
             "description": "File write/edit operations",
             "tier": "TIER_2_MODERATE",
         },
-        "test_execution": {
+        "Test_execution": {
             "patterns": [
                 r"Bash\(.*test",
                 r"Bash\(npm test",
@@ -106,81 +108,81 @@ class PermissionPatternDetector(BaseAnalyzer):
             "description": "Test execution commands",
             "tier": "TIER_2_MODERATE",
         },
-        "project_full_access": {
+        "Project_full_access": {
             "patterns": [
                 r"Read\(/home/[^/]+/[^/]+/\*\*\)",
             ],
             "description": "Full project directory access",
             "tier": "TIER_3_RISKY",
         },
-        # === NEW: GitHub CLI (gh) ===
-        "github_cli": {
+        # === GitHub CLI (gh) ===
+        "Github_cli": {
             "patterns": [r"Bash\(gh\s"],
             "description": "GitHub CLI commands (gh pr, gh issue, gh api, etc.)",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: Cloud CLIs ===
-        "cloud_cli": {
+        # === Cloud CLIs ===
+        "Cloud_cli": {
             "patterns": [r"Bash\((gcloud|aws|az)\s"],
             "description": "Cloud provider CLIs (GCP, AWS, Azure)",
             "tier": "TIER_3_RISKY",  # Can modify cloud resources
         },
-        # === NEW: Package Managers ===
-        "package_managers": {
+        # === Package Managers ===
+        "Package_managers": {
             "patterns": [r"Bash\((npm|npx|yarn|pnpm|pip|uv|cargo|poetry)\s"],
             "description": "Package manager commands",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: Nix Ecosystem ===
-        "nix_tools": {
+        # === Nix Ecosystem ===
+        "Nix_tools": {
             "patterns": [r"Bash\((nix|devenv|nix-shell|nix-build|nix-env)\s"],
             "description": "Nix/NixOS ecosystem tools",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: Database CLIs ===
-        "database_cli": {
+        # === Database CLIs ===
+        "Database_cli": {
             "patterns": [r"Bash\((sqlite3|psql|mysql|mycli|pgcli|usql)\s"],
             "description": "Database CLI tools",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: Network/HTTP Tools ===
-        "network_tools": {
+        # === Network/HTTP Tools ===
+        "Network_tools": {
             "patterns": [r"Bash\((curl|wget|xh|httpie)\s"],
             "description": "Network/HTTP client tools",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: Runtime Interpreters ===
-        "runtime_tools": {
+        # === Runtime Interpreters ===
+        "Runtime_tools": {
             "patterns": [r"Bash\((python3?|node|ruby|go run)\s"],
             "description": "Language runtime interpreters",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: POSIX Filesystem ===
-        "posix_filesystem": {
+        # === POSIX Filesystem ===
+        "Posix_filesystem": {
             "patterns": [r"Bash\((find|ls|mkdir|rmdir|touch|mv|cp|rm(?! -rf))\s"],
             "description": "POSIX filesystem commands (find, ls, mkdir, etc.)",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: POSIX Search/Transform ===
-        "posix_search": {
+        # === POSIX Search/Transform ===
+        "Posix_search": {
             "patterns": [r"Bash\((grep|awk|sed|cut|sort|uniq)\s"],
             "description": "POSIX search/transform commands",
             "tier": "TIER_2_MODERATE",
         },
-        # === NEW: POSIX Read ===
-        "posix_read": {
+        # === POSIX Read ===
+        "Posix_read": {
             "patterns": [r"Bash\((cat|head|tail|less|more|wc)\s"],
             "description": "POSIX file reading/stats commands",
             "tier": "TIER_1_SAFE",
         },
-        # === NEW: Shell Utilities ===
-        "shell_utilities": {
+        # === Shell Utilities ===
+        "Shell_utilities": {
             "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)\s"],
             "description": "Shell built-ins and utilities",
             "tier": "TIER_1_SAFE",
         },
-        # === NEW: Dangerous Operations ===
-        "dangerous_operations": {
+        # === Dangerous Operations ===
+        "Dangerous_operations": {
             "patterns": [r"Bash\((rm -rf|sudo|chmod 777)\s"],
             "description": "Potentially dangerous operations",
             "tier": "TIER_3_RISKY",
@@ -568,15 +570,30 @@ class PermissionPatternDetector(BaseAnalyzer):
             Wildcard permission rule string
         """
         # Map pattern types to permission rules
+        # NOTE: Pattern names must start with uppercase for Claude Code validation
         rule_templates = {
-            "git_read_only": "Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(git show:*), Bash(git branch:*)",
-            "git_all_safe": "Bash(git *:*)",  # Excludes --force operations
-            "pytest": "Bash(pytest:*), Bash(python -m pytest:*)",
-            "ruff": "Bash(ruff:*)",
-            "modern_cli": "Bash(fd:*), Bash(eza:*), Bash(bat:*), Bash(rg:*), Bash(dust:*), Bash(procs:*)",
-            "file_operations": "Read(/**), Write(/**), Edit(/**), Glob(**)",
-            "test_execution": "Bash(*test:*)",
-            "project_full_access": "Read(/home/*/project/**), Write(/home/*/project/**)",
+            "Git_read_only": "Bash(git status:*), Bash(git log:*), Bash(git diff:*), Bash(git show:*), Bash(git branch:*)",
+            "Git_workflow": "Bash(git:*)",  # Standard git workflow
+            "Git_destructive": "Bash(git --force:*), Bash(git reset --hard:*)",
+            "Pytest": "Bash(pytest:*), Bash(python -m pytest:*)",
+            "Ruff": "Bash(ruff:*)",
+            "Modern_cli": "Bash(fd:*), Bash(eza:*), Bash(bat:*), Bash(rg:*), Bash(dust:*), Bash(procs:*)",
+            "File_operations": "Read(/**), Glob(**)",
+            "File_write_operations": "Write(/**), Edit(/**)",
+            "Test_execution": "Bash(*test:*)",
+            "Project_full_access": "Read(/home/*/project/**), Write(/home/*/project/**)",
+            "Github_cli": "Bash(gh:*)",
+            "Cloud_cli": "Bash(gcloud:*), Bash(aws:*), Bash(az:*)",
+            "Package_managers": "Bash(npm:*), Bash(pnpm:*), Bash(pip:*), Bash(uv:*)",
+            "Nix_tools": "Bash(nix:*), Bash(devenv:*)",
+            "Database_cli": "Bash(sqlite3:*), Bash(psql:*), Bash(mycli:*)",
+            "Network_tools": "Bash(curl:*), Bash(xh:*)",
+            "Runtime_tools": "Bash(python:*), Bash(node:*)",
+            "Posix_filesystem": "Bash(find:*), Bash(ls:*), Bash(mkdir:*)",
+            "Posix_search": "Bash(grep:*), Bash(awk:*), Bash(sed:*)",
+            "Posix_read": "Bash(cat:*), Bash(head:*), Bash(tail:*)",
+            "Shell_utilities": "Bash(echo:*), Bash(which:*)",
+            "Dangerous_operations": "Bash(rm -rf:*), Bash(sudo:*)",
         }
 
         return rule_templates.get(pattern.pattern_type, pattern.pattern_type)
@@ -592,9 +609,9 @@ class PermissionPatternDetector(BaseAnalyzer):
             List of edge case examples
         """
         edge_cases = {
-            "git_all_safe": ["Bash(git push --force)", "Bash(git reset --hard)"],
-            "file_operations": ["Write(/etc/passwd)", "Read(/home/other_user/.ssh)"],
-            "project_full_access": ["Write(/home/user/.ssh/)", "Read(/etc/shadow)"],
+            "Git_workflow": ["Bash(git push --force)", "Bash(git reset --hard)"],
+            "File_operations": ["Write(/etc/passwd)", "Read(/home/other_user/.ssh)"],
+            "Project_full_access": ["Write(/home/user/.ssh/)", "Read(/etc/shadow)"],
         }
 
         return edge_cases.get(pattern.pattern_type, [])

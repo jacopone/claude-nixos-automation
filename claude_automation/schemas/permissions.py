@@ -44,7 +44,7 @@ class PermissionPattern(BaseModel):
 
     pattern_type: str = Field(
         ...,
-        description="Pattern category type (e.g., git_workflow, github_cli, nix_tools)",
+        description="Pattern category type (e.g., Git_workflow, Github_cli, Nix_tools)",
     )
     occurrences: int = Field(..., ge=1, description="Number of times pattern observed")
     confidence: float = Field(..., ge=0.0, le=1.0, description="Confidence score (0-1)")
@@ -58,34 +58,36 @@ class PermissionPattern(BaseModel):
     def validate_pattern_type(cls, v):
         """Validate pattern type against known categories."""
         # All valid pattern categories from permission_pattern_detector.py
+        # NOTE: Keys must start with uppercase to pass Claude Code validation
+        # Claude Code error: "Tool names must start with uppercase"
         valid_types = {
             # Git operations
-            "git_read_only",
-            "git_workflow",  # renamed from git_all_safe
-            "git_destructive",
+            "Git_read_only",
+            "Git_workflow",  # renamed from git_all_safe
+            "Git_destructive",
             # Development tools
-            "pytest",
-            "ruff",
-            "modern_cli",
+            "Pytest",
+            "Ruff",
+            "Modern_cli",
             # File operations
-            "file_operations",
-            "file_write_operations",
-            "test_execution",
-            "project_full_access",
+            "File_operations",
+            "File_write_operations",
+            "Test_execution",
+            "Project_full_access",
             # CLI tools (added 2025-12)
-            "github_cli",
-            "cloud_cli",
-            "package_managers",
-            "nix_tools",
-            "database_cli",
-            "network_tools",
-            "runtime_tools",
+            "Github_cli",
+            "Cloud_cli",
+            "Package_managers",
+            "Nix_tools",
+            "Database_cli",
+            "Network_tools",
+            "Runtime_tools",
             # POSIX commands (added 2025-12)
-            "posix_filesystem",
-            "posix_search",
-            "posix_read",
-            "shell_utilities",
-            "dangerous_operations",
+            "Posix_filesystem",
+            "Posix_search",
+            "Posix_read",
+            "Shell_utilities",
+            "Dangerous_operations",
         }
         if v not in valid_types:
             raise ValueError(f"Invalid pattern type: {v}")

@@ -76,7 +76,7 @@ class TestPatternDetection:
         # Assert
         assert len(suggestions) > 0
         git_suggestions = [
-            s for s in suggestions if s.pattern.pattern_type == "git_read_only"
+            s for s in suggestions if s.pattern.pattern_type == "Git_read_only"
         ]
         assert len(git_suggestions) == 1
 
@@ -104,7 +104,7 @@ class TestPatternDetection:
 
         # Assert
         pytest_suggestions = [
-            s for s in suggestions if s.pattern.pattern_type == "pytest"
+            s for s in suggestions if s.pattern.pattern_type == "Pytest"
         ]
         assert len(pytest_suggestions) == 1
         assert pytest_suggestions[0].pattern.occurrences == 3
@@ -129,7 +129,7 @@ class TestPatternDetection:
 
         # Assert
         cli_suggestions = [
-            s for s in suggestions if s.pattern.pattern_type == "modern_cli"
+            s for s in suggestions if s.pattern.pattern_type == "Modern_cli"
         ]
         assert len(cli_suggestions) == 1
         assert cli_suggestions[0].pattern.occurrences == 4
@@ -172,7 +172,7 @@ class TestPatternDetection:
         assert len(suggestions) >= 1
         pattern_types = {s.pattern.pattern_type for s in suggestions}
         # Git should definitely be detected
-        assert "git_read_only" in pattern_types or "git_all_safe" in pattern_types
+        assert "Git_read_only" in pattern_types or "Git_workflow" in pattern_types
 
     def test_pattern_detection_filters_by_date(self, tracker, detector):
         """Verify pattern detection respects date window."""
@@ -194,7 +194,7 @@ class TestPatternDetection:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Should not detect pattern from old approvals
-        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type]
+        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type.lower()]
         assert len(git_suggestions) == 0
 
     def test_pattern_detection_with_project_filter(self, tracker, detector):
@@ -221,7 +221,7 @@ class TestPatternDetection:
         # Project1 should have git patterns if detected
         if suggestions_project1:
             git_in_project1 = any(
-                "git" in s.pattern.pattern_type for s in suggestions_project1
+                "git" in s.pattern.pattern_type.lower() for s in suggestions_project1
             )
             assert git_in_project1
 
@@ -261,13 +261,13 @@ class TestConfidenceScoring:
         )
 
         git_suggestion = next(
-            (s for s in suggestions if "git" in s.pattern.pattern_type), None
+            (s for s in suggestions if "git" in s.pattern.pattern_type.lower()), None
         )
         assert git_suggestion is not None, "Git pattern not detected"
 
         # If pytest also detected, verify git has higher confidence (more sessions)
         pytest_suggestion = next(
-            (s for s in suggestions if s.pattern.pattern_type == "pytest"), None
+            (s for s in suggestions if s.pattern.pattern_type == "Pytest"), None
         )
         if pytest_suggestion is not None:
             assert (
@@ -287,7 +287,7 @@ class TestConfidenceScoring:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type)
+        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
         # With 5 sessions: base=0.5 + session_spread=0.125 + consistency=0.05 + recency=0.05 = ~0.725
         assert git_suggestion.pattern.confidence >= 0.5  # TIER_1_SAFE threshold
 
@@ -324,7 +324,7 @@ class TestConfidenceScoring:
         suggestions = high_threshold_detector.detect_patterns(days=30)
 
         # Assert - Pattern should be excluded due to low confidence (< 0.9)
-        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type]
+        git_suggestions = [s for s in suggestions if "git" in s.pattern.pattern_type.lower()]
         assert len(git_suggestions) == 0  # Below high threshold
 
     def test_confidence_score_range(self, tracker, detector):
@@ -355,7 +355,7 @@ class TestConfidenceScoring:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert - Should have confidence >= 0.5 (base + session spread + recency)
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type)
+        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
         assert git_suggestion.pattern.confidence >= 0.5  # TIER_1_SAFE threshold
 
 
@@ -396,7 +396,7 @@ class TestPatternSuggestions:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type)
+        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
         assert len(git_suggestion.approved_examples) > 0
         assert len(git_suggestion.would_allow) > 0
 
@@ -412,7 +412,7 @@ class TestPatternSuggestions:
         suggestions = detector.detect_patterns(days=30)
 
         # Assert
-        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type)
+        git_suggestion = next(s for s in suggestions if "git" in s.pattern.pattern_type.lower())
         assert "impact" in git_suggestion.impact_estimate.lower()
         assert "%" in git_suggestion.impact_estimate
 
@@ -463,8 +463,8 @@ class TestPatternStats:
         assert stats["patterns_detected"] >= 1
         assert "category_counts" in stats
         assert (
-            stats["category_counts"]["git_read_only"] == 5
-            or stats["category_counts"]["git_all_safe"] == 5
+            stats["category_counts"]["Git_read_only"] == 5
+            or stats["category_counts"]["Git_workflow"] == 5
         )
 
 
