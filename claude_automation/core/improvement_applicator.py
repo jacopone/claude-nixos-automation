@@ -9,6 +9,7 @@ import re
 from pathlib import Path
 
 from claude_automation.schemas import LearningReport
+from claude_automation.validators import is_valid_permission
 
 logger = logging.getLogger(__name__)
 
@@ -351,6 +352,10 @@ class ImprovementApplicator:
             for rule in rules:
                 # Avoid duplicates
                 if rule not in settings["permissions"]["allow"]:
+                    # Validate rule before adding
+                    if not is_valid_permission(rule):
+                        logger.warning(f"Skipping invalid permission rule: {rule}")
+                        continue
                     settings["permissions"]["allow"].append(rule)
                     added_count += 1
                     logger.info(f"Added permission rule: {rule}")

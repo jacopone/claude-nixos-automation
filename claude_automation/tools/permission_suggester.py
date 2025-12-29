@@ -142,11 +142,20 @@ def apply_suggestions(suggestions, project_path):
     # Get existing permissions
     existing = set(settings["permissions"]["allow"])
 
-    # Add new rules
+    # Add new rules (with validation)
+    setup_path()  # Ensure imports are available
+    from claude_automation.validators import is_valid_permission
+
     added = []
+    skipped = []
     for suggestion in suggestions:
         for rule in suggestion.proposed_rule.split(", "):
             if rule not in existing:
+                # Validate rule before adding
+                if not is_valid_permission(rule):
+                    skipped.append(rule)
+                    print(f"  ⚠️  Skipping invalid rule: {rule}")
+                    continue
                 settings["permissions"]["allow"].append(rule)
                 added.append(rule)
 
