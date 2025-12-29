@@ -8,6 +8,60 @@ from typing import Literal
 
 from ..schemas import ValidationResult
 
+# Singleton validator instance for convenience functions
+_validator_instance = None
+
+
+def get_validator() -> "PermissionValidator":
+    """Get or create singleton validator instance."""
+    global _validator_instance
+    if _validator_instance is None:
+        _validator_instance = PermissionValidator()
+    return _validator_instance
+
+
+def is_valid_permission(permission: str) -> bool:
+    """
+    Quick check if a permission string is valid.
+
+    This is a convenience function for use in hooks and generators.
+
+    Args:
+        permission: Permission string to validate
+
+    Returns:
+        True if valid, False otherwise
+
+    Example:
+        >>> is_valid_permission("Write(/**)")
+        True
+        >>> is_valid_permission("file_write_operations")
+        False
+    """
+    return get_validator().validate(permission).valid
+
+
+def validate_permission(permission: str) -> tuple[bool, str]:
+    """
+    Validate a permission and return result with error message.
+
+    This is a convenience function for use in hooks and generators.
+
+    Args:
+        permission: Permission string to validate
+
+    Returns:
+        Tuple of (is_valid, error_message_or_empty_string)
+
+    Example:
+        >>> validate_permission("file_write_operations")
+        (False, "'file_write_operations' is a bare pattern type...")
+    """
+    result = get_validator().validate(permission)
+    if result.valid:
+        return True, ""
+    return False, "; ".join(result.errors)
+
 
 class PermissionValidator:
     """
@@ -18,6 +72,8 @@ class PermissionValidator:
     - No heredoc markers (injection risk)
     - Length limit of 200 characters
     - Valid command format
+    - Rejects bare pattern types (file_write_operations, etc.)
+    - Tool names must start with uppercase (Claude Code requirement)
     """
 
     MAX_LENGTH = 200
@@ -26,6 +82,33 @@ class PermissionValidator:
         r"EOF",  # Common heredoc delimiter
         r"<<-",  # Indented heredoc
     ]
+
+    # Bare pattern types that should NEVER be used as permissions directly
+    # These are internal pattern category names, not valid Claude Code permissions
+    BARE_PATTERN_TYPES = {
+        "file_write_operations",
+        "file_operations",
+        "git_workflow",
+        "git_read_only",
+        "git_destructive",
+        "test_execution",
+        "modern_cli",
+        "project_full_access",
+        "github_cli",
+        "cloud_cli",
+        "package_managers",
+        "nix_tools",
+        "database_cli",
+        "network_tools",
+        "runtime_tools",
+        "posix_filesystem",
+        "posix_search",
+        "posix_read",
+        "shell_utilities",
+        "dangerous_operations",
+        "pytest",
+        "ruff",
+    }
 
     def validate(self, permission: str) -> ValidationResult:
         """
@@ -58,30 +141,51 @@ class PermissionValidator:
                 info=info,
             )
 
-        # Check 2: Length limit
+        # Check 2: Bare pattern type (critical - not a valid permission format)
+        if self._is_bare_pattern_type(permission):
+            errors.append(
+                f"'{permission}' is a bare pattern type, not a valid permission. "
+                "Use expanded rules like Write(/**), Edit(/**), Bash(git:*)"
+            )
+            return ValidationResult(
+                valid=False,
+                severity="fail",
+                errors=errors,
+                warnings=warnings,
+                info=info,
+            )
+
+        # Check 3: Tool name casing (Claude Code requires uppercase start)
+        if not self._has_valid_tool_casing(permission):
+            errors.append(
+                f"Tool names must start with uppercase: '{permission}'. "
+                "Claude Code requires format like Bash(...), Read(...), Write(...)"
+            )
+
+        # Check 4: Length limit
         if len(permission) > self.MAX_LENGTH:
             errors.append(
                 f"Permission too long ({len(permission)} chars, max {self.MAX_LENGTH})"
             )
 
-        # Check 3: Newlines (critical - breaks JSON)
+        # Check 5: Newlines (critical - breaks JSON)
         if "\n" in permission or "\r" in permission:
             errors.append("Permission cannot contain newlines (breaks JSON formatting)")
 
-        # Check 4: Heredoc markers (critical - injection risk)
+        # Check 6: Heredoc markers (critical - injection risk)
         for pattern in self.HEREDOC_PATTERNS:
             if re.search(pattern, permission, re.IGNORECASE):
                 errors.append(
                     f"Permission cannot contain heredoc marker '{pattern}' (injection risk)"
                 )
 
-        # Check 5: Basic format validation
+        # Check 7: Basic format validation
         if not self._has_valid_format(permission):
             warnings.append(
                 "Permission format unusual (expected: Tool(pattern:*) or Read(path))"
             )
 
-        # Check 6: Dangerous patterns (warning only)
+        # Check 8: Dangerous patterns (warning only)
         dangerous = self._check_dangerous_patterns(permission)
         if dangerous:
             warnings.extend(dangerous)
@@ -210,6 +314,61 @@ class PermissionValidator:
             warnings.append("Accesses system directories (/etc or /sys)")
 
         return warnings
+
+    def _is_bare_pattern_type(self, permission: str) -> bool:
+        """
+        Check if permission is a bare pattern type name.
+
+        Pattern types are internal category names (e.g., file_write_operations,
+        git_workflow) that should never be used as permissions directly.
+        They must be expanded to actual tool permissions like Write(/**).
+
+        Args:
+            permission: Permission string to check
+
+        Returns:
+            True if this is a bare pattern type (invalid permission)
+        """
+        # Normalize to lowercase for comparison
+        permission_lower = permission.lower().strip()
+
+        # Check against known bare pattern types
+        return permission_lower in self.BARE_PATTERN_TYPES
+
+    def _has_valid_tool_casing(self, permission: str) -> bool:
+        """
+        Check if permission has valid tool name casing.
+
+        Claude Code requires tool names to start with uppercase:
+        - Valid: Bash(...), Read(...), Write(...), Edit(...)
+        - Invalid: bash(...), read(...), file_write_operations
+
+        MCP tools (mcp__*) are handled specially.
+
+        Args:
+            permission: Permission string to check
+
+        Returns:
+            True if casing is valid
+        """
+        # MCP tools have different format (mcp__server__tool)
+        if permission.startswith("mcp__"):
+            return True
+
+        # WebFetch, WebSearch have special format
+        if permission.startswith("WebFetch(") or permission.startswith("WebSearch"):
+            return True
+
+        # Extract tool name before opening paren
+        tool_match = re.match(r"^([a-zA-Z_]+)\(", permission)
+        if tool_match:
+            tool_name = tool_match.group(1)
+            # Tool name must start with uppercase
+            return tool_name[0].isupper()
+
+        # If no tool format, check if it's an unrecognized format
+        # (might be a bare pattern type, but that's caught separately)
+        return False
 
     def generate_report(self, results: list[ValidationResult]) -> str:
         """

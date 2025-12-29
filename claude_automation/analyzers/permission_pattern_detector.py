@@ -596,7 +596,16 @@ class PermissionPatternDetector(BaseAnalyzer):
             "Dangerous_operations": "Bash(rm -rf:*), Bash(sudo:*)",
         }
 
-        return rule_templates.get(pattern.pattern_type, pattern.pattern_type)
+        rule = rule_templates.get(pattern.pattern_type)
+        if not rule:
+            # CRITICAL: Never return raw pattern_type as a permission rule
+            # This was the root cause of the recurring "file_write_operations" bug
+            logger.error(
+                f"No rule template found for pattern type: {pattern.pattern_type}. "
+                "Returning empty string to prevent invalid permission."
+            )
+            return ""
+        return rule
 
     def _get_edge_cases(self, pattern: PermissionPattern) -> list[str]:
         """

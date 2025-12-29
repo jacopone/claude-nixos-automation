@@ -8,6 +8,7 @@ import logging
 from pathlib import Path
 
 from claude_automation.analyzers import ApprovalTracker, PermissionPatternDetector
+from claude_automation.validators import is_valid_permission
 
 from ..schemas import GenerationResult, PatternSuggestion
 from .permissions_generator import PermissionsGenerator
@@ -330,16 +331,25 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                 settings["_learned_patterns"] = []
 
             # Apply each pattern
+            skipped_rules = []
             for pattern in patterns:
                 # Add proposed rules to allow list
                 proposed_rules = self._parse_proposed_rule(pattern.proposed_rule)
                 for rule in proposed_rules:
+                    # Validate rule before adding (prevents bare pattern types like "file_write_operations")
+                    if not is_valid_permission(rule):
+                        logger.warning(f"Skipping invalid permission rule: {rule}")
+                        skipped_rules.append(rule)
+                        continue
                     if rule not in settings["permissions"]["allow"]:
                         settings["permissions"]["allow"].append(rule)
 
                 # Track pattern type as learned
                 if pattern.pattern.pattern_type not in settings["_learned_patterns"]:
                     settings["_learned_patterns"].append(pattern.pattern.pattern_type)
+
+            if skipped_rules:
+                logger.info(f"Skipped {len(skipped_rules)} invalid rules: {skipped_rules}")
 
             # Sort allow list for consistency
             settings["permissions"]["allow"].sort()

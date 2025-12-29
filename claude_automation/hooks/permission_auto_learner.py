@@ -21,6 +21,7 @@ Learning Loop:
 
 import json
 import os
+import re
 import sys
 from datetime import datetime
 from pathlib import Path
@@ -130,6 +131,62 @@ def analyze_and_suggest_permissions(project_path):
         return []
 
 
+def is_valid_permission_rule(rule):
+    """
+    Validate a permission rule follows Claude Code conventions.
+
+    Checks:
+    1. Not empty
+    2. Not a bare pattern type (e.g., "file_write_operations")
+    3. Tool names start with uppercase (e.g., "Bash", "Write", not "bash")
+
+    Args:
+        rule: Permission rule string to validate
+
+    Returns:
+        bool: True if valid
+    """
+    if not rule or not rule.strip():
+        return False
+
+    rule = rule.strip()
+
+    # Reject bare pattern types (internal category names)
+    bare_pattern_types = {
+        "file_write_operations", "file_operations", "git_workflow",
+        "git_read_only", "git_destructive", "test_execution",
+        "modern_cli", "project_full_access", "github_cli",
+        "cloud_cli", "package_managers", "nix_tools", "database_cli",
+        "network_tools", "runtime_tools", "posix_filesystem",
+        "posix_search", "posix_read", "shell_utilities",
+        "dangerous_operations", "pytest", "ruff",
+    }
+    if rule.lower() in bare_pattern_types:
+        debug_log(f"Rejecting bare pattern type: {rule}")
+        return False
+
+    # MCP tools are valid (mcp__server__tool format)
+    if rule.startswith("mcp__"):
+        return True
+
+    # WebFetch/WebSearch have special format
+    if rule.startswith("WebFetch(") or rule.startswith("WebSearch"):
+        return True
+
+    # Standard tools must follow Tool(args) format with uppercase start
+    tool_match = re.match(r"^([A-Za-z_]+)\(", rule)
+    if tool_match:
+        tool_name = tool_match.group(1)
+        if not tool_name[0].isupper():
+            debug_log(f"Rejecting lowercase tool name: {rule}")
+            return False
+        return True
+
+    # Unrecognized format - likely invalid
+    debug_log(f"Rejecting unrecognized format: {rule}")
+    return False
+
+
 def generate_permission_rules(suggestions):
     """
     Convert pattern suggestions into permission rule strings.
@@ -138,7 +195,7 @@ def generate_permission_rules(suggestions):
         suggestions: List of PatternSuggestion objects
 
     Returns:
-        list: Permission rule strings ready to add to settings.local.json
+        list: Valid permission rule strings ready to add to settings.local.json
     """
     rules = []
 
@@ -146,9 +203,17 @@ def generate_permission_rules(suggestions):
         rule = suggestion.proposed_rule
         # Split comma-separated rules
         if ", " in rule:
-            rules.extend(rule.split(", "))
+            individual_rules = rule.split(", ")
         else:
-            rules.append(rule)
+            individual_rules = [rule]
+
+        # Validate each rule before adding
+        for r in individual_rules:
+            r = r.strip()
+            if is_valid_permission_rule(r):
+                rules.append(r)
+            else:
+                debug_log(f"Skipping invalid rule: {r}")
 
     return list(set(rules))  # Deduplicate
 
