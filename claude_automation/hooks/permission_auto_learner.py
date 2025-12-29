@@ -153,13 +153,28 @@ def is_valid_permission_rule(rule):
 
     # Reject bare pattern types (internal category names)
     bare_pattern_types = {
-        "file_write_operations", "file_operations", "git_workflow",
-        "git_read_only", "git_destructive", "test_execution",
-        "modern_cli", "project_full_access", "github_cli",
-        "cloud_cli", "package_managers", "nix_tools", "database_cli",
-        "network_tools", "runtime_tools", "posix_filesystem",
-        "posix_search", "posix_read", "shell_utilities",
-        "dangerous_operations", "pytest", "ruff",
+        "file_write_operations",
+        "file_operations",
+        "git_workflow",
+        "git_read_only",
+        "git_destructive",
+        "test_execution",
+        "modern_cli",
+        "project_full_access",
+        "github_cli",
+        "cloud_cli",
+        "package_managers",
+        "nix_tools",
+        "database_cli",
+        "network_tools",
+        "runtime_tools",
+        "posix_filesystem",
+        "posix_search",
+        "posix_read",
+        "shell_utilities",
+        "dangerous_operations",
+        "pytest",
+        "ruff",
     }
     if rule.lower() in bare_pattern_types:
         debug_log(f"Rejecting bare pattern type: {rule}")

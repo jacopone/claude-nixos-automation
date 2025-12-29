@@ -349,7 +349,9 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                     settings["_learned_patterns"].append(pattern.pattern.pattern_type)
 
             if skipped_rules:
-                logger.info(f"Skipped {len(skipped_rules)} invalid rules: {skipped_rules}")
+                logger.info(
+                    f"Skipped {len(skipped_rules)} invalid rules: {skipped_rules}"
+                )
 
             # Sort allow list for consistency
             settings["permissions"]["allow"].sort()
