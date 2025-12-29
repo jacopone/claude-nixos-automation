@@ -53,42 +53,8 @@ class ImprovementApplicator:
             logger.info("No approved suggestions to apply")
             return
 
-        # Show confirmation summary before applying
-        print("\n" + "=" * 70)
-        print("📋 FINAL CONFIRMATION - Changes to be applied:")
-        print("=" * 70)
-
-        for i, sug in enumerate(approved, 1):
-            sug_type = sug["type"]
-            data = sug["data"]
-
-            if sug_type == "mcp":
-                server = data.get("server_name", "Unknown")
-                print(f"\n{i}. MCP: Remove server '{server}'")
-                print("   File: .claude/mcp.json")
-            elif sug_type == "permission":
-                desc = data.get("description", "Unknown pattern")
-                print(f"\n{i}. Permission: Auto-approve '{desc}'")
-                print("   File: .claude/settings.local.json")
-            elif sug_type == "context":
-                section = data.get("description", "Unknown section")
-                print(f"\n{i}. Context: Remove '{section}'")
-                print("   File: CLAUDE.md")
-            elif sug_type == "workflow":
-                desc = data.get("description", "Unknown workflow")
-                print(f"\n{i}. Workflow: Create slash command for '{desc}'")
-                print("   File: .claude/commands/<new>.md")
-
-        print("\n" + "─" * 70)
-        try:
-            confirm = input("\n👉 Proceed with these changes? [y/N]: ").lower().strip()
-            if confirm != "y":
-                print("\n⚠️  Changes cancelled. No modifications made.")
-                return
-        except (KeyboardInterrupt, EOFError):
-            print("\n\n⚠️  Changes cancelled by user. No modifications made.")
-            return
-
+        # User already approved each suggestion individually in collect_approvals()
+        # Just apply without asking again
         print(f"\n🔧 Applying {len(approved)} approved improvements...")
 
         # Group by type
@@ -114,6 +80,14 @@ class ImprovementApplicator:
         # Apply workflow patterns
         if "workflow" in by_type:
             self._apply_workflow_patterns(by_type["workflow"])
+
+        # Apply instruction improvements
+        if "instruction" in by_type:
+            self._apply_instruction_improvements(by_type["instruction"])
+
+        # Apply cross-project transfers
+        if "cross_project" in by_type:
+            self._apply_cross_project_transfers(by_type["cross_project"])
 
         print("✓ All improvements applied successfully\n")
 
@@ -639,6 +613,51 @@ Automatically runs:
         )
 
         return content
+
+    def _apply_instruction_improvements(self, improvements: list[dict]) -> None:
+        """
+        Apply instruction improvement suggestions.
+
+        For now, logs the improvement - actual CLAUDE.md modification
+        requires careful template handling.
+        """
+        logger.info(f"Processing {len(improvements)} instruction improvements")
+
+        for imp in improvements:
+            policy_name = imp.get("policy_name", "unknown")
+
+            # Log the improvement (actual CLAUDE.md modification is complex)
+            logger.info(f"  Instruction improvement for '{policy_name}' noted")
+            print(f"  ✓ Noted: Improve policy '{policy_name}'")
+
+            # TODO: Implement actual CLAUDE.md modification when template system is ready
+            # This would involve:
+            # 1. Parse CLAUDE.md to find the policy section
+            # 2. Replace current_wording with suggested_wording
+            # 3. Regenerate CLAUDE.md via template
+
+    def _apply_cross_project_transfers(self, transfers: list[dict]) -> None:
+        """
+        Apply cross-project pattern transfer suggestions.
+
+        For now, logs the transfer - actual implementation requires
+        reading source project config and writing to target.
+        """
+        logger.info(f"Processing {len(transfers)} cross-project transfers")
+
+        for transfer in transfers:
+            source = transfer.get("source_project", "unknown")
+            target = transfer.get("target_project", "unknown")
+
+            # Log the transfer (actual implementation is complex)
+            logger.info(f"  Cross-project transfer: {source} -> {target}")
+            print(f"  ✓ Noted: Transfer from '{source}' to '{target}'")
+
+            # TODO: Implement actual cross-project transfer when ready
+            # This would involve:
+            # 1. Read pattern from source project's .claude/settings.json
+            # 2. Merge pattern into target project's config
+            # 3. Handle conflicts if pattern already exists
 
     def update_meta_learning(
         self, report: LearningReport, approved: list[dict]

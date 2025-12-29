@@ -216,9 +216,9 @@ class AdaptiveSystemEngine:
         )
 
         # Phase 3: Interactive approval (if enabled)
+        # Note: We skip present_report() - the CLI handles summary output
         approved = []
         if self.config.interactive and report.has_suggestions:
-            self.ui.present_report(report)
             approved = self.ui.collect_approvals(report)
             self.applicator.apply_improvements(approved)
 

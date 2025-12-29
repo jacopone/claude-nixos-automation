@@ -118,9 +118,8 @@ Examples:
         parser.error("--days must be >= 1")
 
     # Create configuration
-    # Always run non-interactive to avoid duplicate output - we show our own summary
     config = AdaptiveSystemConfig(
-        interactive=False,  # We handle all output ourselves
+        interactive=args.interactive and not args.dry_run,
         min_occurrences=args.min_occurrences,
         confidence_threshold=args.confidence,
         analysis_period_days=args.days,
@@ -144,29 +143,11 @@ Examples:
     try:
         report = engine.run_full_learning_cycle()
 
-        # Ultra-concise glanceable output (one line!)
+        # Only show "no suggestions" message - if there WERE suggestions,
+        # the interactive approval UI already displayed them
         if report.total_suggestions == 0:
-            print("  ✅ Adaptive learning: optimized")
-        else:
-            # Build brief summary of what was found
-            parts = []
-            if report.mcp_optimizations:
-                parts.append(f"{len(report.mcp_optimizations)} MCP")
-            if report.permission_patterns:
-                parts.append(f"{len(report.permission_patterns)} permissions")
-            if report.context_suggestions:
-                parts.append(f"{len(report.context_suggestions)} context")
-            if report.instruction_improvements:
-                parts.append(f"{len(report.instruction_improvements)} policy")
-            if report.workflow_patterns:
-                parts.append(f"{len(report.workflow_patterns)} workflow")
-
-            summary = ", ".join(parts) if parts else "low-confidence"
-            print(f"  🧠 Adaptive learning: {report.total_suggestions} ({summary})")
-
-            # Only show verbose details with --verbose flag
-            if args.verbose:
-                print("     Run with --interactive to review and approve")
+            print("  ✓ No new suggestions")
+        # else: interactive UI already showed the approval prompts
 
         return 0
 

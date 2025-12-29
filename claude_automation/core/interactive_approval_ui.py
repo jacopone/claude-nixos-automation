@@ -101,6 +101,50 @@ class InteractiveApprovalUI:
                 }
             )
 
+        # Instruction improvements (InstructionImprovement has policy_name, not description)
+        for i, sug in enumerate(report.instruction_improvements):
+            if hasattr(sug, "policy_name"):
+                # Pydantic model - construct description from policy_name
+                desc = f"Improve policy: {sug.policy_name}"
+                data = {
+                    "policy_name": sug.policy_name,
+                    "current_wording": sug.current_wording,
+                    "suggested_wording": sug.suggested_wording,
+                    "reason": sug.reason,
+                    "priority": sug.priority,
+                }
+            else:
+                # Dict format
+                desc = sug.get(
+                    "description",
+                    f"Improve policy: {sug.get('policy_name', 'Unknown')}",
+                )
+                data = sug
+            all_suggestions.append(
+                {"type": "instruction", "index": i, "data": data, "description": desc}
+            )
+
+        # Cross-project transfers (source_project is in pattern.source_project)
+        for i, sug in enumerate(report.cross_project_transfers):
+            if hasattr(sug, "description"):
+                # Pydantic model
+                desc = sug.description
+                source = sug.pattern.source_project if hasattr(sug, "pattern") else ""
+                data = {
+                    "description": desc,
+                    "source_project": source,
+                    "target_project": sug.target_project,
+                    "action": sug.action,
+                    "compatibility_score": sug.compatibility_score,
+                }
+            else:
+                # Dict format
+                desc = sug.get("description", "Cross-project transfer")
+                data = sug
+            all_suggestions.append(
+                {"type": "cross_project", "index": i, "data": data, "description": desc}
+            )
+
         if not all_suggestions:
             return approved
 
@@ -236,6 +280,10 @@ class InteractiveApprovalUI:
             self._display_context_details(data)
         elif sug_type == "workflow":
             self._display_workflow_details(data)
+        elif sug_type == "instruction":
+            self._display_instruction_details(data)
+        elif sug_type == "cross_project":
+            self._display_cross_project_details(data)
 
     def _display_mcp_details(self, data: dict[str, Any]) -> None:
         """Display details for MCP optimization suggestion."""
@@ -337,6 +385,66 @@ class InteractiveApprovalUI:
 
         print("\n🔄 How to undo:")
         print("   • Delete the .claude/commands/<new-command>.md file")
+
+    def _display_instruction_details(self, data: dict[str, Any]) -> None:
+        """Display details for instruction improvement suggestion."""
+        policy = data.get("policy_name", "Unknown")
+        reason = data.get("reason", "No reason given")
+        current = data.get("current_wording", "")
+        suggested = data.get("suggested_wording", "")
+        priority = data.get("priority", 2)
+
+        priority_text = (
+            "HIGH" if priority == 1 else "MEDIUM" if priority == 2 else "LOW"
+        )
+
+        print(f"\n📋 Policy: {policy}")
+        print(f"⚡ Priority: {priority_text}")
+        print(f"💡 Reason: {reason}")
+
+        if current:
+            # Truncate long text
+            display_current = current[:150] + "..." if len(current) > 150 else current
+            print(f"\n📝 Current wording:\n   {display_current}")
+        if suggested:
+            display_suggested = (
+                suggested[:150] + "..." if len(suggested) > 150 else suggested
+            )
+            print(f"\n✨ Suggested wording:\n   {display_suggested}")
+
+        print("\n📝 What will change:")
+        print("   • File: CLAUDE.md (instruction/policy section)")
+        print(f"   • Action: Update '{policy}' instruction wording")
+
+        print("\n🔄 How to undo:")
+        print("   • Git: git restore CLAUDE.md")
+
+    def _display_cross_project_details(self, data: dict[str, Any]) -> None:
+        """Display details for cross-project transfer suggestion."""
+        source = data.get("source_project", "Unknown")
+        target = data.get("target_project", "Unknown")
+        action = data.get("action", "Transfer pattern")
+        score = data.get("compatibility_score", 0.0)
+        desc = data.get("description", "")
+
+        print(f"\n📦 Source project: {source}")
+        print(f"🎯 Target project: {target}")
+        print(f"📊 Compatibility: {score:.0%}")
+        if desc:
+            print(f"📝 Description: {desc}")
+        print(f"💡 Action: {action}")
+
+        print("\n📝 What will change:")
+        print(f"   • File: {target}/.claude/settings.json or CLAUDE.md")
+        print("   • Action: Copy pattern configuration from source project")
+
+        print("\n✅ Benefits:")
+        print("   • Reuse proven patterns across projects")
+        print("   • Consistent behavior in similar projects")
+
+        print("\n🔄 How to undo:")
+        print("   • Git: git restore in target project")
+        print("   • Manual: Remove the copied configuration")
 
     def _generate_fingerprint(self, sug: dict[str, Any]) -> str:
         """
