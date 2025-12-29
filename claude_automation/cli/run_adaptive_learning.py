@@ -118,8 +118,9 @@ Examples:
         parser.error("--days must be >= 1")
 
     # Create configuration
+    # Always run non-interactive to avoid duplicate output - we show our own summary
     config = AdaptiveSystemConfig(
-        interactive=args.interactive and not args.dry_run,
+        interactive=False,  # We handle all output ourselves
         min_occurrences=args.min_occurrences,
         confidence_threshold=args.confidence,
         analysis_period_days=args.days,
@@ -141,122 +142,31 @@ Examples:
 
     # Run learning cycle
     try:
-        print("  🧠 Analyzing patterns...", end=" ", flush=True)
         report = engine.run_full_learning_cycle()
-        print("done", flush=True)
 
-        if args.dry_run:
-            print("\n[DRY RUN] No changes applied")
-
-        # Print concise, actionable summary
-        print("")
-        print("  " + "=" * 68)
-        print("  🧠 ADAPTIVE LEARNING - SYSTEM OPTIMIZATION")
-        print("  " + "=" * 68)
-
+        # Ultra-concise glanceable output (one line!)
         if report.total_suggestions == 0:
-            print("\n  ✅ System is already optimized - no changes needed!")
-            print("")
-            return 0
+            print("  ✅ Adaptive learning: optimized")
+        else:
+            # Build brief summary of what was found
+            parts = []
+            if report.mcp_optimizations:
+                parts.append(f"{len(report.mcp_optimizations)} MCP")
+            if report.permission_patterns:
+                parts.append(f"{len(report.permission_patterns)} permissions")
+            if report.context_suggestions:
+                parts.append(f"{len(report.context_suggestions)} context")
+            if report.instruction_improvements:
+                parts.append(f"{len(report.instruction_improvements)} policy")
+            if report.workflow_patterns:
+                parts.append(f"{len(report.workflow_patterns)} workflow")
 
-        # Show specific, actionable recommendations
-        has_content = False
+            summary = ", ".join(parts) if parts else "low-confidence"
+            print(f"  🧠 Adaptive learning: {report.total_suggestions} ({summary})")
 
-        # MCP Server Optimizations (most impactful)
-        if report.mcp_optimizations and len(report.mcp_optimizations) > 0:
-            has_content = True
-            print("\n  🌐 MCP Server Optimizations:")
-            for opt in report.mcp_optimizations[:5]:
-                server = opt.get("server_name", "Unknown")
-                reason = opt.get("description", opt.get("impact", "No details"))
-                priority = opt.get("priority", "MEDIUM")
-
-                # Make it actionable
-                if "never used" in reason.lower():
-                    action = (
-                        f"Disable '{server}' (unused, wastes tokens on every session)"
-                    )
-                elif "low utilization" in reason.lower() or "poor" in reason.lower():
-                    action = (
-                        f"Move '{server}' to project-level (only 6-10% utilization)"
-                    )
-                else:
-                    action = f"{server}: {reason}"
-
-                priority_marker = "❗" if priority == "HIGH" else "•"
-                print(f"     {priority_marker} {action}")
-
-            # Calculate tangible impact
-            total_servers = len(report.mcp_optimizations)
-            print(
-                f"\n     💡 Impact: ~{total_servers * 2000} tokens saved per session (faster responses)"
-            )
-
-        # Permission Patterns
-        if report.permission_patterns and len(report.permission_patterns) > 0:
-            has_content = True
-            print("\n  🔐 Permission Auto-Approvals:")
-            for pattern in report.permission_patterns[:3]:
-                if hasattr(pattern, "description"):
-                    desc = pattern.description
-                    impact = (
-                        pattern.impact_estimate
-                        if hasattr(pattern, "impact_estimate")
-                        else "reduces prompts"
-                    )
-                elif isinstance(pattern, dict):
-                    desc = pattern.get("description", "Unknown pattern")
-                    impact = pattern.get("impact", "reduces prompts")
-                else:
-                    continue
-
-                print(f"     • {desc} ({impact})")
-
-        # Context Optimizations
-        if report.context_suggestions and len(report.context_suggestions) > 0:
-            has_content = True
-            tokens_saved = sum(
-                s.get("tokens", 0) if isinstance(s, dict) else 0
-                for s in report.context_suggestions
-            )
-            print(
-                f"\n  📝 Context Optimizations: {len(report.context_suggestions)} sections"
-            )
-            print(
-                f"     💡 Impact: ~{tokens_saved}K tokens saved (unused CLAUDE.md sections)"
-            )
-
-        # Workflow Shortcuts
-        if report.workflow_patterns and len(report.workflow_patterns) > 0:
-            has_content = True
-            print(
-                f"\n  🔄 Workflow Shortcuts: {len(report.workflow_patterns)} repeated command sequences"
-            )
-            print("     💡 Impact: Faster workflows (combine frequently-used commands)")
-
-        if not has_content:
-            print("\n  ℹ️  Analyzed but found no high-confidence optimizations")
-
-        print("\n  " + "=" * 68)
-        print(f"  📊 Total: {report.total_suggestions} optimizations")
-
-        # Show component health breakdown (only if we have meaningful data)
-        meta = report.meta_insights
-        component_health = {
-            k: v
-            for k, v in meta.items()
-            if isinstance(v, dict) and "acceptance_rate" in v
-        }
-
-        if component_health:
-            print("\n  📈 Learning Health:")
-            for comp, metrics in sorted(component_health.items()):
-                rate = metrics.get("acceptance_rate", 0)
-                status = metrics.get("status", "unknown")
-                print(f"     • {comp}: {rate:.0%} ({status})")
-
-        print("  " + "=" * 68)
-        print("")
+            # Only show verbose details with --verbose flag
+            if args.verbose:
+                print("     Run with --interactive to review and approve")
 
         return 0
 
