@@ -215,3 +215,23 @@ Based on your command usage:
 
 *This section auto-updates to help Claude Code understand your actual tool usage patterns.*
 <!-- USAGE_ANALYTICS_END -->
+
+## 📦 System Tool Usage
+
+**Installed**: 0 tools | **Used**: 11 (0%) | **Analysis period**: 30 days
+
+**Top 5 tools**:
+- **bat**: 11 uses (H:11 C:0)
+- **bmad-method**: 6 uses (H:6 C:0)
+- **eza**: 4 uses (H:0 C:4)
+- **glow**: 3 uses (H:3 C:0)
+- **gemini-cli**: 3 uses (H:3 C:0)
+
+
+**Human vs Claude**:
+- 9 tools used by humans
+- 2 tools used by Claude
+- ⚠️ Claude using significantly fewer tools than humans
+
+---
+*Tool analytics auto-generated. Full report: `.claude/tool-analytics.md`*

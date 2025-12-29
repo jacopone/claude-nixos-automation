@@ -13,10 +13,8 @@ import sys
 from claude_automation.core.adaptive_system_engine import AdaptiveSystemEngine
 from claude_automation.schemas import AdaptiveSystemConfig
 
-# Configure logging
-logging.basicConfig(
-    level=logging.INFO, format="%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+# Configure logging - WARNING by default (quiet), INFO with --verbose
+logging.basicConfig(level=logging.WARNING, format="%(levelname)s: %(message)s")
 logger = logging.getLogger(__name__)
 
 
@@ -105,9 +103,9 @@ Examples:
 
     args = parser.parse_args()
 
-    # Configure logging level
+    # Configure logging level (--verbose shows detailed analyzer output)
     if args.verbose:
-        logging.getLogger().setLevel(logging.DEBUG)
+        logging.getLogger().setLevel(logging.INFO)
 
     # Validate arguments
     if args.confidence < 0.0 or args.confidence > 1.0:
@@ -129,19 +127,10 @@ Examples:
         enable_meta_learning=not args.disable_meta_learning,
     )
 
-    # Log configuration
-    logger.info("Starting adaptive learning with configuration:")
-    logger.info(f"  Interactive: {config.interactive}")
-    logger.info(f"  Min occurrences: {config.min_occurrences}")
-    logger.info(f"  Confidence threshold: {config.confidence_threshold}")
-    logger.info(f"  Analysis period: {config.analysis_period_days} days")
+    # Log configuration (only visible with --verbose)
     logger.info(
-        f"  Max suggestions per component: {config.max_suggestions_per_component}"
+        f"Config: interactive={config.interactive}, threshold={config.confidence_threshold}, days={config.analysis_period_days}"
     )
-    logger.info(f"  Meta-learning: {config.enable_meta_learning}")
-
-    if args.dry_run:
-        logger.info("  DRY RUN MODE: No changes will be applied")
 
     # Initialize engine
     try:
@@ -152,18 +141,9 @@ Examples:
 
     # Run learning cycle
     try:
-        print("")
-        print("  🔍 Analyzing permission patterns...", flush=True)
-        print("  🌐 Checking MCP server usage...", flush=True)
-        print("  📝 Reviewing context effectiveness...", flush=True)
-        print("  🔄 Detecting workflow patterns...", flush=True)
-        print("  📋 Evaluating instruction effectiveness...", flush=True)
-        print("  🔬 Looking for cross-project patterns...", flush=True)
-        if config.enable_meta_learning:
-            print("  🧠 Running meta-learning calibration...", flush=True)
-        print("", flush=True)
-
+        print("  🧠 Analyzing patterns...", end=" ", flush=True)
         report = engine.run_full_learning_cycle()
+        print("done", flush=True)
 
         if args.dry_run:
             print("\n[DRY RUN] No changes applied")
@@ -258,9 +238,23 @@ Examples:
             print("\n  ℹ️  Analyzed but found no high-confidence optimizations")
 
         print("\n  " + "=" * 68)
-        print(
-            f"  📊 Total: {report.total_suggestions} optimizations | System health: {report.meta_insights.get('system_health', 0):.0%}"
-        )
+        print(f"  📊 Total: {report.total_suggestions} optimizations")
+
+        # Show component health breakdown (only if we have meaningful data)
+        meta = report.meta_insights
+        component_health = {
+            k: v
+            for k, v in meta.items()
+            if isinstance(v, dict) and "acceptance_rate" in v
+        }
+
+        if component_health:
+            print("\n  📈 Learning Health:")
+            for comp, metrics in sorted(component_health.items()):
+                rate = metrics.get("acceptance_rate", 0)
+                status = metrics.get("status", "unknown")
+                print(f"     • {comp}: {rate:.0%} ({status})")
+
         print("  " + "=" * 68)
         print("")
 

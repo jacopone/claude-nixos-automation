@@ -235,6 +235,14 @@ class MetaLearner(BaseAnalyzer):
                 "suggestions_per_day": suggestions_per_day,
             }
 
+        # Calculate aggregate system health from component acceptance rates
+        if health_metrics:
+            rates = [m["acceptance_rate"] for m in health_metrics.values()]
+            health_metrics["system_health"] = sum(rates) / len(rates) if rates else 1.0
+        else:
+            # No data = system is healthy (nothing to complain about)
+            health_metrics["system_health"] = 1.0
+
         return health_metrics
 
     def _load_recent_metrics(self, days: int = 30) -> list[dict]:
@@ -485,18 +493,25 @@ class MetaLearner(BaseAnalyzer):
         """
         recommendations = []
 
-        # Check acceptance rate
-        if health_metrics["overall_acceptance_rate"] < 0.5:
+        # Check overall acceptance rate (use system_health as proxy)
+        overall_rate = health_metrics.get("system_health", 0.5)
+        if overall_rate < 0.5:
             recommendations.append(
                 "Acceptance rate is low - thresholds have been automatically increased"
             )
-        elif health_metrics["overall_acceptance_rate"] > 0.9:
+        elif overall_rate > 0.9:
             recommendations.append(
                 "Acceptance rate is very high - consider being more selective"
             )
 
-        # Check false positive rate
-        if health_metrics["false_positive_rate"] > 0.2:
+        # Check false positive rate (calculate from component data if available)
+        fp_rates = [
+            m.get("false_positive_rate", 0)
+            for m in health_metrics.values()
+            if isinstance(m, dict) and "false_positive_rate" in m
+        ]
+        avg_fp_rate = sum(fp_rates) / len(fp_rates) if fp_rates else 0.0
+        if avg_fp_rate > 0.2:
             recommendations.append(
                 "High false positive rate - suggest manual review of patterns"
             )
