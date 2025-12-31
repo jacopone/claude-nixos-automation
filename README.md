@@ -1,95 +1,109 @@
 ---
 status: active
 created: 2024-01-01
-updated: 2025-12-18
+updated: 2025-12-31
 type: reference
 lifecycle: persistent
 ---
 
 # Claude NixOS Automation
 
-> Your Claude Code learns from you
+> The permission learning engine for Claude Code on NixOS
 
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![NixOS](https://img.shields.io/badge/nixos-unstable-blue.svg)](https://nixos.org/)
 [![Tests](https://img.shields.io/badge/tests-59%20passing-brightgreen.svg)](TESTING.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
-[![Sessions](https://img.shields.io/badge/sessions%20analyzed-469+-purple.svg)](#analytics)
 
-## The Problem
+## What This Does
 
-Every Claude Code session:
-- "Allow this command?" → Click yes → Repeat 50 times
-- No visibility into which tools you actually use
-- No memory of your permission patterns
-- MCP servers running but never called
+This is **the brain** behind [nixos-config](https://github.com/jacopone/nixos-config). It:
 
-**Permission fatigue is real. Your AI should learn your preferences.**
+1. **Learns your permission patterns** from actual approval behavior
+2. **Auto-generates allow rules** for high-confidence commands
+3. **Tracks tool usage** (human vs Claude, dormant detection)
+4. **Keeps documentation in sync** with your NixOS configuration
 
-## The Solution
+**Result:** Permission prompts decrease over time as the system learns your workflow.
 
-This tool analyzes your Claude Code usage and generates intelligent configurations:
+## How Permission Learning Works
 
 ```
-469+ sessions analyzed
- │
- ├─→ Permission patterns detected → auto-approve frequent commands
- ├─→ Tool usage tracked → identify dormant packages (120 unused)
- ├─→ MCP utilization monitored → suggest project vs system level
- └─→ CLAUDE.md generated → full system context for AI
+┌─────────────────────────────────────────────────────────────────┐
+│  DATA COLLECTION (continuous)                                   │
+│                                                                 │
+│  Claude Code session logs → ~/.claude/projects/*/*.jsonl        │
+│  Every tool approval is recorded with:                          │
+│    - Tool type (Bash, Read, Write, Edit)                        │
+│    - Command pattern                                            │
+│    - Timestamp                                                  │
+│    - Project context                                            │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  PATTERN DETECTION (on rebuild)                                 │
+│                                                                 │
+│  PermissionPatternDetector analyzes:                            │
+│    - Frequency: "git *" approved 89 times                       │
+│    - Consistency: 98% approval rate (vs 2% deny)                │
+│    - Recency: Used in last 7 days                               │
+│                                                                 │
+│  Confidence = frequency × consistency × recency                 │
+│  Threshold: 0.6+ → suggest auto-approval                        │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  INTERACTIVE APPROVAL (user in control)                         │
+│                                                                 │
+│  ./rebuild-nixos → Adaptive learning phase                      │
+│                                                                 │
+│  "Pattern detected: Bash(git:*) - 94% confidence"               │
+│  "Apply this auto-approval? [y/n/review]"                       │
+│                                                                 │
+│  User approves → Added to .claude/settings.local.json           │
+│  User rejects → Pattern suppressed for 30 days                  │
+└─────────────────────────────────────────────────────────────────┘
+                              │
+                              ▼
+┌─────────────────────────────────────────────────────────────────┐
+│  NEXT SESSION                                                   │
+│                                                                 │
+│  "git status" → Auto-approved. No prompt.                       │
+│  "git push --force" → Still prompts (not in learned pattern)    │
+└─────────────────────────────────────────────────────────────────┘
 ```
-
-**Result**: Claude Code that knows your workflow from day one.
 
 ## Key Features
 
 | Feature | What It Does |
 |---------|--------------|
-| **Permission Learning** | Analyzes your approval patterns, suggests auto-approvals for frequent commands |
-| **Tool Usage Analytics** | Tracks human vs AI tool usage over 30 days, identifies dormant packages |
-| **MCP Optimization** | Monitors server utilization, recommends project-level vs system-level placement |
-| **Smart Permissions** | Generates auto-approval patterns based on your project type (Python/Node/Rust/Nix) |
-| **Zero-Drift Docs** | Keeps CLAUDE.md in sync with your actual NixOS configuration |
-
-## Analytics Output
-
-After running, you get visibility into your Claude Code usage:
-
-```
-📦 System Tool Usage
-Installed: 145 tools | Used: 25 (17%) | Period: 30 days
-
-Top 5 tools:
-- git: 278 uses (H:27 C:251)
-- devenv: 163 uses (H:15 C:148)
-- gh: 121 uses (H:0 C:121)
-
-⚠️ 120 dormant tools (unused in last 30 days)
-
-Human vs Claude:
-- 12 tools used by humans
-- 18 tools used by Claude
-```
+| **Permission Pattern Detection** | Learns from your approvals, generates allow rules with confidence scoring |
+| **Tool Usage Analytics** | Tracks 30-day usage, human vs Claude breakdown, dormant tool detection |
+| **MCP Server Optimization** | Monitors utilization, suggests project vs system level placement |
+| **Zero-Drift Documentation** | Auto-generates CLAUDE.md from your Nix config - always current |
+| **Session Lifecycle Tracking** | RAW → ANALYZED → IMPLEMENTED - value-aware cleanup |
 
 ## Integration with nixos-config
 
-This is "the brain" behind [nixos-config](https://github.com/jacopone/nixos-config). On every rebuild:
+On every `./rebuild-nixos`:
 
-```bash
-./rebuild-nixos
-    │
-    ├─→ Parses Nix config → extracts 145 tools with descriptions
-    ├─→ Runs permission analyzer → detects your patterns
-    ├─→ Updates analytics → tool usage over 30 days
-    ├─→ Generates suggestions → permission auto-approvals
-    └─→ Creates CLAUDE.md → full context for Claude Code
+```
+Phase 5: Update Claude configs
+  ├─→ Parse packages.nix → extract 130+ tools with descriptions
+  ├─→ Generate CLAUDE.md → full system context
+  └─→ Update permissions → project-specific allow rules
+
+Phase 6: Adaptive learning
+  ├─→ Parse session logs → extract approval patterns
+  ├─→ Detect high-confidence patterns → suggest auto-approvals
+  └─→ Interactive review → user approves/rejects
 ```
 
 ## Quick Start
 
-### Installation
-
-Add to your flake inputs:
+### As a Flake Input
 
 ```nix
 {
@@ -102,75 +116,113 @@ Add to your flake inputs:
 ```bash
 # Generate all Claude Code configuration files
 nix run github:jacopone/claude-nixos-automation#update-all
+
+# Run permission learning cycle
+nix run github:jacopone/claude-nixos-automation#run-adaptive-learning
 ```
 
-This creates:
+### Output Files
 
 | File | Location | Purpose |
 |------|----------|---------|
-| System docs | `~/.claude/CLAUDE.md` | Tools, commands, policies |
-| Permissions | `.claude/settings.local.json` | Auto-approval patterns |
-| Analytics | `.claude/tool-analytics.md` | Usage tracking |
-| MCP stats | `.claude/mcp-analytics.md` | Server utilization |
+| System CLAUDE.md | `~/.claude/CLAUDE.md` | Global tool inventory, policies |
+| Project CLAUDE.md | `./CLAUDE.md` | Project-specific context |
+| Permissions | `.claude/settings.local.json` | Auto-generated allow rules |
+| Tool Analytics | `.claude/tool-analytics.md` | 30-day usage report |
+| MCP Analytics | `.claude/mcp-analytics.md` | Server utilization stats |
 
 ## Available Commands
 
 ```bash
-# Main entry point - generates all config
-nix run .#update-all
+# Main entry points
+nix run .#update-all              # Generate all config files
+nix run .#run-adaptive-learning   # Run permission learning cycle
 
 # Individual generators
-nix run .#update-system            # ~/.claude/CLAUDE.md
-nix run .#update-project           # ./CLAUDE.md
-nix run .#update-permissions       # .claude/settings.local.json
-nix run .#update-local-context     # .claude/CLAUDE.local.md
+nix run .#update-system           # ~/.claude/CLAUDE.md
+nix run .#update-project          # ./CLAUDE.md
+nix run .#update-permissions      # .claude/settings.local.json
+nix run .#update-local-context    # .claude/CLAUDE.local.md
 
-# Analytics & learning
-nix run .#analyze-permissions      # Suggest auto-approvals
-nix run .#analyze-tool-usage       # Generate usage report
-nix run .#check-data-health        # Monitor learning data
+# Analytics
+nix run .#update-tool-analytics   # Generate usage report
+nix run .#update-mcp-usage-analytics  # MCP server stats
+nix run .#check-data-health       # Monitor learning data size
 ```
 
-## Project Detection
+## Analytics Output
 
-Automatically generates appropriate permissions for your project type:
+### Tool Usage Report
 
-| Manifest | Project Type | Generated Permissions |
-|----------|--------------|----------------------|
-| `pyproject.toml` | Python | pytest, ruff, uv, black |
-| `package.json` | Node.js | npm, eslint, prettier |
-| `Cargo.toml` | Rust | cargo, clippy, rustfmt |
-| `flake.nix` | NixOS | nix build, nix flake check |
+```
+📦 System Tool Usage
+Installed: 131 tools | Used: 34 (26%) | Period: 30 days
+
+Top 5 tools:
+- git: 1017 uses (H:28 C:989)
+- devenv: 380 uses (H:7 C:373)
+- gh: 207 uses (H:6 C:201)
+- fd: 152 uses (H:0 C:152)
+- rg: 100 uses (H:0 C:100)
+
+⚠️ 97 dormant tools (unused in last 30 days)
+```
+
+### Permission Learning
+
+```
+Permission patterns detected:
+- Bash(git:*) → 94% confidence (89 approvals)
+- Bash(fd:*) → 87% confidence (152 approvals)
+- Read(/home/user/**) → 91% confidence (340 approvals)
+```
 
 ## Architecture
 
 ```
 claude_automation/
-├── cli/              # Command-line entry points
-├── generators/       # Content generators (system, project, permissions)
-├── analyzers/        # Learning & pattern detection
-│   ├── permission_patterns.py   # Learns from your approvals
-│   ├── tool_usage.py            # Tracks human vs AI usage
-│   └── mcp_utilization.py       # MCP server analytics
-├── templates/        # Jinja2 templates (27 templates)
-├── schemas/          # Pydantic data models (10+ schemas)
-└── validators/       # Content validation
+├── cli/                    # Command-line entry points
+│   └── run_adaptive_learning.py  # Main learning cycle
+├── core/
+│   ├── adaptive_system_engine.py # Orchestrates 7 analyzers
+│   ├── interactive_approval_ui.py # User review interface
+│   └── improvement_applicator.py  # Applies approved changes
+├── analyzers/
+│   ├── permission_pattern_detector.py  # Pattern learning
+│   ├── tool_usage_analyzer.py         # H vs C tracking
+│   ├── mcp_utilization_analyzer.py    # Server stats
+│   └── session_lifecycle_tracker.py   # Value-aware cleanup
+├── generators/
+│   ├── system_generator.py     # ~/.claude/CLAUDE.md
+│   ├── project_generator.py    # ./CLAUDE.md
+│   └── permissions_generator.py # settings.local.json
+├── templates/              # 27 Jinja2 templates
+└── schemas/               # 10+ Pydantic models
 ```
 
-### Documentation
+## The Learning System
 
-| Document | Description |
-|----------|-------------|
-| [Project Constitution](docs/architecture/CONSTITUTION.md) | Design principles and decisions |
-| [Implementation Summary](docs/architecture/IMPLEMENTATION_COMPLETE.md) | What was built and why |
+### 7 Parallel Analyzers
 
-### Specifications
+The adaptive learning system runs 7 analyzers in parallel:
 
-| Spec | Description |
-|------|-------------|
-| [001: Source/Artifact Architecture](specs/001-source-artifact-architecture/spec.md) | Template and output structure |
-| [002: Code Quality Refactoring](specs/002-code-quality-refactoring/spec.md) | Quality gates and standards |
-| [003: Documentation Governance](specs/003-doc-governance-cleanup/spec.md) | Doc lifecycle management |
+1. **Permission Patterns** - Learn from approval behavior
+2. **MCP Utilization** - Suggest project vs system level
+3. **Context Optimization** - Remove unused CLAUDE.md sections
+4. **Workflow Patterns** - Bundle repeated command sequences
+5. **Instruction Effectiveness** - Improve low-compliance policies
+6. **Cross-Project Transfer** - Apply patterns from similar projects
+7. **Meta-Learning** - Calibrate detection thresholds
+
+### Session Lifecycle
+
+Sessions progress through lifecycle stages:
+
+```
+RAW → ANALYZED → INSIGHTS_GENERATED → IMPLEMENTED
+```
+
+Only IMPLEMENTED sessions are safe to delete (value has been extracted).
 
 ## Development
 
@@ -181,21 +233,23 @@ nix develop
 # Run test suite (59 tests)
 pytest -v
 
-# Test categories
-pytest tests/test_schemas.py -v      # Schema validation (28 tests)
-pytest tests/test_templates.py -v    # Template rendering (24 tests)
-pytest tests/test_integration.py -v  # End-to-end workflows (7 tests)
+# Format code
+ruff format .
+ruff check --fix .
 ```
 
 See [TESTING.md](TESTING.md) for detailed test documentation.
 
+## Documentation
+
+| Document | Description |
+|----------|-------------|
+| [CONSTITUTION.md](docs/architecture/CONSTITUTION.md) | Design principles |
+| [IMPLEMENTATION_COMPLETE.md](docs/architecture/IMPLEMENTATION_COMPLETE.md) | What was built |
+
 ## Related
 
-- [nixos-config](https://github.com/jacopone/nixos-config) - NixOS configuration that uses this automation
-
-## Contributing
-
-See [CONTRIBUTING.md](CONTRIBUTING.md) for development setup and guidelines.
+- **[nixos-config](https://github.com/jacopone/nixos-config)** - The system configuration that uses this automation
 
 ## License
 
