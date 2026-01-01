@@ -139,6 +139,9 @@ def is_valid_permission_rule(rule):
     1. Not empty
     2. Not a bare pattern type (e.g., "file_write_operations")
     3. Tool names start with uppercase (e.g., "Bash", "Write", not "bash")
+    4. No newlines (multi-line commands are invalid)
+    5. No heredoc markers (EOF)
+    6. :* wildcard must be at the very end
 
     Args:
         rule: Permission rule string to validate
@@ -150,6 +153,25 @@ def is_valid_permission_rule(rule):
         return False
 
     rule = rule.strip()
+
+    # CRITICAL: Reject multi-line permissions (heredocs, complex commands)
+    if '\n' in rule:
+        debug_log(f"Rejecting multi-line permission: {rule[:50]}...")
+        return False
+
+    # CRITICAL: Reject heredoc markers
+    if 'EOF' in rule:
+        debug_log(f"Rejecting heredoc permission: {rule[:50]}...")
+        return False
+
+    # CRITICAL: :* must be at the very end for prefix matching
+    if ':*' in rule and not rule.endswith(':*)'):
+        # For Bash(cmd:*) the rule ends with :*)
+        if rule.startswith('Bash(') and ':*' in rule:
+            inner = rule[5:-1] if rule.endswith(')') else rule[5:]
+            if not inner.endswith(':*'):
+                debug_log(f"Rejecting :* not at end: {rule[:50]}...")
+                return False
 
     # Reject bare pattern types (internal category names)
     bare_pattern_types = {
@@ -274,10 +296,14 @@ def update_settings_file(project_path, new_rules):
         # Get existing permissions
         existing = set(settings["permissions"]["allow"])
 
-        # Add new rules
+        # Add new rules (with final validation check)
         added = []
         for rule in new_rules:
             if rule not in existing:
+                # Final safety check - reject any rule with newlines/heredocs
+                if '\n' in rule or 'EOF' in rule:
+                    debug_log(f"Final check rejected: {rule[:50]}...")
+                    continue
                 settings["permissions"]["allow"].append(rule)
                 added.append(rule)
 
