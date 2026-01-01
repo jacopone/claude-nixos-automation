@@ -117,73 +117,73 @@ class PermissionPatternDetector(BaseAnalyzer):
         },
         # === GitHub CLI (gh) ===
         "Github_cli": {
-            "patterns": [r"Bash\(gh\s"],
+            "patterns": [r"Bash\(gh[\s:]"],
             "description": "GitHub CLI commands (gh pr, gh issue, gh api, etc.)",
             "tier": "TIER_2_MODERATE",
         },
         # === Cloud CLIs ===
         "Cloud_cli": {
-            "patterns": [r"Bash\((gcloud|aws|az)\s"],
+            "patterns": [r"Bash\((gcloud|aws|az)[\s:]"],
             "description": "Cloud provider CLIs (GCP, AWS, Azure)",
             "tier": "TIER_3_RISKY",  # Can modify cloud resources
         },
         # === Package Managers ===
         "Package_managers": {
-            "patterns": [r"Bash\((npm|npx|yarn|pnpm|pip|uv|cargo|poetry)\s"],
+            "patterns": [r"Bash\((npm|npx|yarn|pnpm|pip|uv|cargo|poetry)[\s:]"],
             "description": "Package manager commands",
             "tier": "TIER_2_MODERATE",
         },
         # === Nix Ecosystem ===
         "Nix_tools": {
-            "patterns": [r"Bash\((nix|devenv|nix-shell|nix-build|nix-env)\s"],
+            "patterns": [r"Bash\((nix|devenv|nix-shell|nix-build|nix-env)[\s:]"],
             "description": "Nix/NixOS ecosystem tools",
             "tier": "TIER_2_MODERATE",
         },
         # === Database CLIs ===
         "Database_cli": {
-            "patterns": [r"Bash\((sqlite3|psql|mysql|mycli|pgcli|usql)\s"],
+            "patterns": [r"Bash\((sqlite3|psql|mysql|mycli|pgcli|usql)[\s:]"],
             "description": "Database CLI tools",
             "tier": "TIER_2_MODERATE",
         },
         # === Network/HTTP Tools ===
         "Network_tools": {
-            "patterns": [r"Bash\((curl|wget|xh|httpie)\s"],
+            "patterns": [r"Bash\((curl|wget|xh|httpie)[\s:]"],
             "description": "Network/HTTP client tools",
             "tier": "TIER_2_MODERATE",
         },
         # === Runtime Interpreters ===
         "Runtime_tools": {
-            "patterns": [r"Bash\((python3?|node|ruby|go run)\s"],
+            "patterns": [r"Bash\((python3?|node|ruby|go run)[\s:]"],
             "description": "Language runtime interpreters",
             "tier": "TIER_2_MODERATE",
         },
         # === POSIX Filesystem ===
         "Posix_filesystem": {
-            "patterns": [r"Bash\((find|ls|mkdir|rmdir|touch|mv|cp|rm(?! -rf))\s"],
+            "patterns": [r"Bash\((find|ls|mkdir|rmdir|touch|mv|cp|rm(?! -rf))[\s:]"],
             "description": "POSIX filesystem commands (find, ls, mkdir, etc.)",
             "tier": "TIER_2_MODERATE",
         },
         # === POSIX Search/Transform ===
         "Posix_search": {
-            "patterns": [r"Bash\((grep|awk|sed|cut|sort|uniq)\s"],
+            "patterns": [r"Bash\((grep|awk|sed|cut|sort|uniq)[\s:]"],
             "description": "POSIX search/transform commands",
             "tier": "TIER_2_MODERATE",
         },
         # === POSIX Read ===
         "Posix_read": {
-            "patterns": [r"Bash\((cat|head|tail|less|more|wc)\s"],
+            "patterns": [r"Bash\((cat|head|tail|less|more|wc)[\s:]"],
             "description": "POSIX file reading/stats commands",
             "tier": "TIER_1_SAFE",
         },
         # === Shell Utilities ===
         "Shell_utilities": {
-            "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)\s"],
+            "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)[\s:]"],
             "description": "Shell built-ins and utilities",
             "tier": "TIER_1_SAFE",
         },
         # === Dangerous Operations ===
         "Dangerous_operations": {
-            "patterns": [r"Bash\((rm -rf|sudo|chmod 777)\s"],
+            "patterns": [r"Bash\((rm -rf|sudo|chmod 777)[\s:]"],
             "description": "Potentially dangerous operations",
             "tier": "TIER_3_RISKY",
         },

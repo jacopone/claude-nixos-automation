@@ -40,8 +40,10 @@ class MetaLearner(BaseAnalyzer):
     DEFAULT_ANALYSIS_PERIOD_DAYS = 30
 
     # Adjustment boundaries
+    # NOTE: Upper bound reduced from 0.9 to 0.75 (2026-01) to prevent threshold creep
+    # that blocked all pattern detection for 4+ days
     MIN_OCCURRENCES_RANGE = (2, 5)
-    CONFIDENCE_RANGE = (0.5, 0.9)
+    CONFIDENCE_RANGE = (0.5, 0.75)
 
     def __init__(
         self, metrics_file: Path | None = None, thresholds_file: Path | None = None
