@@ -155,7 +155,7 @@ def is_valid_permission_rule(rule):
     rule = rule.strip()
 
     # CRITICAL: Reject multi-line permissions (heredocs, complex commands)
-    if '\n' in rule:
+    if '\n' in rule or '__NEW_LINE__' in rule:
         debug_log(f"Rejecting multi-line permission: {rule[:50]}...")
         return False
 
@@ -301,7 +301,7 @@ def update_settings_file(project_path, new_rules):
         for rule in new_rules:
             if rule not in existing:
                 # Final safety check - reject any rule with newlines/heredocs
-                if '\n' in rule or 'EOF' in rule:
+                if '\n' in rule or 'EOF' in rule or '__NEW_LINE__' in rule:
                     debug_log(f"Final check rejected: {rule[:50]}...")
                     continue
                 settings["permissions"]["allow"].append(rule)
