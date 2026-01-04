@@ -173,6 +173,19 @@ def is_valid_permission_rule(rule):
                 debug_log(f"Rejecting :* not at end: {rule[:50]}...")
                 return False
 
+    # CRITICAL: Reject shell fragments and constructs
+    if rule.startswith('Bash('):
+        inner = rule[5:-1] if rule.endswith(')') else rule[5:]
+        # Shell fragments (standalone shell keywords)
+        shell_fragments = ['done', 'fi', 'then', 'else', 'do', 'esac', 'in']
+        if inner.strip() in shell_fragments:
+            debug_log(f"Rejecting shell fragment: {rule}")
+            return False
+        # Shell constructs at start
+        if re.match(r'^(do |for |while |if |export |then )', inner):
+            debug_log(f"Rejecting shell construct: {rule[:50]}...")
+            return False
+
     # Reject bare pattern types (internal category names)
     bare_pattern_types = {
         "file_write_operations",
