@@ -1,13 +1,12 @@
 """
 Tool Usage Analytics Generator - Generates tool usage reports.
 
-Generates two outputs:
-1. Minimal status section for CLAUDE.md (Claude's operational context)
-2. Detailed analytics report in .claude/tool-analytics.md (human decision support)
+Generates detailed analytics report in .claude/tool-analytics.md.
+No longer embeds into CLAUDE.md - full report is linked from Dynamic Context section.
 
 Philosophy:
-- CLAUDE.md: What Claude needs to know (adoption rate, top tools, basic stats)
-- tool-analytics.md: What humans need to see (detailed usage, categories, recommendations)
+- CLAUDE.md: Links to analytics (slim, policies-only)
+- tool-analytics.md: Full detailed usage stats (human decision support)
 """
 
 import logging
@@ -23,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class ToolUsageAnalyticsGenerator:
-    """Generate tool usage analytics with separate outputs for AI and human."""
+    """Generate tool usage analytics to separate report file."""
 
     def __init__(self):
         """Initialize generator with templates."""
@@ -45,11 +44,10 @@ class ToolUsageAnalyticsGenerator:
 
     def generate(self, config: ToolUsageAnalyticsConfig) -> GenerationResult:
         """
-        Generate tool usage analytics with dual outputs.
+        Generate tool usage analytics to separate report file.
 
-        Writes:
-        1. Minimal status to CLAUDE.md (for Claude's context)
-        2. Full analytics to .claude/tool-analytics.md (for human review)
+        Writes full analytics to .claude/tool-analytics.md only.
+        CLAUDE.md is no longer modified (it links to the report).
 
         Args:
             config: Tool usage analytics configuration
@@ -62,27 +60,7 @@ class ToolUsageAnalyticsGenerator:
         timestamp = config.timestamp.strftime("%Y-%m-%d %H:%M:%S")
 
         try:
-            # === 1. Generate minimal status for CLAUDE.md ===
-            minimal_template = self.env.get_template("tool_usage_status_minimal.j2")
-            minimal_content = minimal_template.render(
-                config=config,
-                timestamp=timestamp,
-            )
-
-            # Update CLAUDE.md with minimal section
-            claude_md_path = config.claude_file
-            if claude_md_path.exists():
-                self._update_claude_md_section(
-                    claude_md_path, minimal_content, "## 📦 System Tool Usage"
-                )
-                logger.info(f"Updated minimal tool usage status in {claude_md_path}")
-            else:
-                warnings.append(
-                    f"CLAUDE.md does not exist at {claude_md_path}, skipping minimal status"
-                )
-                logger.warning(warnings[-1])
-
-            # === 2. Generate full analytics for separate file ===
+            # Generate full analytics for separate file
             analytics_template = self.env.get_template("tool_usage_analytics.j2")
             analytics_content = analytics_template.render(
                 config=config,
@@ -90,6 +68,7 @@ class ToolUsageAnalyticsGenerator:
             )
 
             # Write full analytics to .claude/tool-analytics.md
+            claude_md_path = config.claude_file
             analytics_path = claude_md_path.parent / ".claude" / "tool-analytics.md"
             analytics_path.parent.mkdir(parents=True, exist_ok=True)
 
@@ -107,13 +86,12 @@ class ToolUsageAnalyticsGenerator:
                 "human_tools": config.human_tool_count,
                 "claude_tools": config.claude_tool_count,
                 "recommendations": len(config.recommendations),
-                "minimal_section_lines": minimal_content.count("\n"),
                 "detailed_report_lines": analytics_content.count("\n"),
             }
 
             return GenerationResult(
                 success=True,
-                output_path=str(claude_md_path),
+                output_path=str(analytics_path),
                 errors=errors,
                 warnings=warnings,
                 stats=stats,
@@ -131,46 +109,6 @@ class ToolUsageAnalyticsGenerator:
                 warnings=warnings,
                 stats={},
             )
-
-    def _update_claude_md_section(
-        self, claude_md_path: Path, new_content: str, section_marker: str
-    ) -> None:
-        """
-        Update a specific section in CLAUDE.md, replacing old content.
-
-        Args:
-            claude_md_path: Path to CLAUDE.md
-            new_content: New section content to insert
-            section_marker: Section heading to replace (e.g., "## 📦 System Tool Usage")
-        """
-        with open(claude_md_path) as f:
-            existing_content = f.read()
-
-        # List of possible markers (for backwards compatibility)
-        markers = [section_marker, "## 📦 System Tools", "## 📦 Tool Usage"]
-
-        # Remove all matching sections
-        for marker in markers:
-            if marker in existing_content:
-                # Remove old section
-                parts = existing_content.split(marker)
-                # Keep everything before the marker
-                existing_content = parts[0].rstrip()
-
-                # Find next ## heading if exists
-                if len(parts) > 1:
-                    remaining = parts[1]
-                    next_section_idx = remaining.find("\n## ")
-                    if next_section_idx != -1:
-                        # Append everything after the old section
-                        existing_content += "\n\n" + remaining[next_section_idx + 1 :]
-
-        # Append new section
-        final_content = existing_content.rstrip() + "\n\n" + new_content + "\n"
-
-        # Write back
-        with open(claude_md_path, "w") as f:
-            f.write(final_content)
 
     @staticmethod
     def _priority_label_filter(priority: int) -> str:

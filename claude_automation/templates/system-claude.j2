@@ -1,6 +1,6 @@
 # System-Level CLAUDE.md
 
-This file provides Claude Code with comprehensive information about all available tools and utilities on this NixOS system.
+Global Claude Code policies and conventions for this NixOS system.
 
 *Last updated: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}*
 
@@ -22,38 +22,15 @@ This file provides Claude Code with comprehensive information about all availabl
 **SYSTEM OPTIMIZATION LEVEL: EXPERT**
 {% include 'shared/policies.j2' %}
 
-## System Information
+## Dynamic Context
 
-- **OS**: NixOS (nixos-unstable)
-- **Desktop**: GNOME (Wayland)
-- **Shell**: Fish (with smart command substitutions)
-- **Terminal**: Kitty
-- **Package Management**: Nix Flakes + Home Manager
+For package/option information, use **MCP-NixOS** which is configured in `.mcp.json`:
+- Query 130K+ packages in real-time
+- Access 22K+ NixOS options with descriptions
+- Browse 4K+ Home Manager options
 
-## Available Tools ({{ total_tools }} documented)
-
-{% for category, tools in tool_categories.items() %}
-{% if category.value == 'AI & MCP Tools' %}
-### 🤖 {{ category.value }}
-{% for tool in tools %}
-- **`{{ tool.name }}`** - {{ tool.description }}
-{% endfor %}
-
-{% elif category.value == 'Modern CLI Tools' %}
-### ⚡ {{ category.value }}
-{% for tool in tools %}
-- `{{ tool.name }}` - {{ tool.description }}
-{% endfor %}
-
-{% else %}
-### {{ category.value }}
-{% for tool in tools %}
-- `{{ tool.name }}` - {{ tool.description }}
-{% endfor %}
-
-{% endif %}
-{% endfor %}
+This replaces static tool lists - query what you need, when you need it.
 
 ## Maintenance
 
-Auto-maintained by NixOS rebuild. Regenerated when packages.nix or home-manager config changes.
+Auto-maintained by NixOS rebuild. Policies loaded from CLAUDE-USER-POLICIES.md.

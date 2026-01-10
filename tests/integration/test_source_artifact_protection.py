@@ -2,7 +2,14 @@
 Integration test for source/artifact protection.
 
 Tests end-to-end protection of source files from being overwritten.
+
+Note: After refactoring (2025-12), SystemGenerator no longer reads packages.nix.
+It only uses CLAUDE-USER-POLICIES.md as a source. Tool extraction was removed
+in favor of MCP-NixOS for dynamic package queries.
 """
+
+from pathlib import Path
+from unittest.mock import patch
 
 import pytest
 
@@ -25,25 +32,15 @@ class TestSourceArtifactProtection:
         home_modules = project / "modules" / "home-manager"
         home_modules.mkdir(parents=True)
 
-        # Create source files
-        packages_file = modules / "packages.nix"
-        packages_file.write_text("""
-        {pkgs, ...}: {
-          environment.systemPackages = with pkgs; [
-            fd
-            eza
-            bat
-          ];
-        }
-        """)
+        # Create .claude directory with user policies
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir(parents=True)
 
-        base_file = home_modules / "base.nix"
-        base_file.write_text("""
-        {pkgs, ...}: {
-          home.packages = with pkgs; [
-            ripgrep
-          ];
-        }
+        policies_file = claude_dir / "CLAUDE-USER-POLICIES.md"
+        policies_file.write_text("""
+# User Policies
+
+Never use git commit --no-verify.
         """)
 
         # Create .git directory to mark as repo
@@ -52,22 +49,30 @@ class TestSourceArtifactProtection:
 
         return project
 
-    def test_generator_cannot_overwrite_source_files(self, temp_project):
-        """Test that generator cannot overwrite declared source files."""
+    def test_generator_cannot_overwrite_source_files(self, tmp_path):
+        """Test that generator cannot overwrite declared source files.
+
+        Note: SystemGenerator now only has CLAUDE-USER-POLICIES.md as a source.
+        We mock Path.home() to use our temp directory for this test.
+        """
         generator = SystemGenerator()
 
-        # Try to write to a source file (packages.nix)
-        source_file = temp_project / "modules" / "core" / "packages.nix"
-        assert source_file.exists()
+        # Create policies file in temp home
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir(parents=True)
+        source_file = claude_dir / "CLAUDE-USER-POLICIES.md"
+        source_file.write_text("# User Policies\n\nOriginal content")
 
         original_content = source_file.read_text()
 
-        # Attempting to write to source should raise ValueError
-        with pytest.raises(ValueError) as exc_info:
-            generator.write_artifact(source_file, "MALICIOUS OVERWRITE")
+        # Mock Path.home() to return our temp directory
+        with patch.object(Path, 'home', return_value=tmp_path):
+            # Attempting to write to source should raise ValueError
+            with pytest.raises(ValueError) as exc_info:
+                generator.write_artifact(source_file, "MALICIOUS OVERWRITE")
 
-        assert "PROTECTION VIOLATION" in str(exc_info.value)
-        assert "source file" in str(exc_info.value).lower()
+            assert "PROTECTION VIOLATION" in str(exc_info.value)
+            assert "source file" in str(exc_info.value).lower()
 
         # Source file should be unchanged
         assert source_file.read_text() == original_content
@@ -78,11 +83,11 @@ class TestSourceArtifactProtection:
 
         artifact_path = temp_project / "CLAUDE.md"
 
-        # Should be able to write artifact
+        # Should be able to write artifact (source_files now just user policies)
         result = generator.write_artifact(
             artifact_path,
             "# System CLAUDE.md\n\nGenerated content",
-            source_files=["packages.nix", "base.nix"],
+            source_files=["CLAUDE-USER-POLICIES.md"],
         )
 
         assert result.success
@@ -93,15 +98,32 @@ class TestSourceArtifactProtection:
         assert "AUTO-GENERATED" in content
         assert "Generated content" in content
 
-    def test_full_generation_cycle(self, temp_project):
-        """Test full generation cycle with proper source reading and artifact writing."""
+    def test_full_generation_cycle(self, tmp_path):
+        """Test full generation cycle with proper source reading and artifact writing.
+
+        Note: Uses tmp_path to mock user policies location.
+        """
         generator = SystemGenerator()
 
-        # Output artifact
-        output_path = temp_project / "CLAUDE.md"
+        # Create project dir
+        project = tmp_path / "nixos-config"
+        project.mkdir()
 
-        # Generate (this reads sources and writes artifact)
-        result = generator.generate(output_path, config_dir=temp_project)
+        # Create .git to mark as repo
+        (project / ".git").mkdir()
+
+        # Create user policies in mock home
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir(parents=True)
+        policies_file = claude_dir / "CLAUDE-USER-POLICIES.md"
+        policies_file.write_text("# User Policies\n\nNever skip hooks.")
+
+        # Output artifact
+        output_path = project / "CLAUDE.md"
+
+        # Generate (mock home to find policies)
+        with patch.object(Path, 'home', return_value=tmp_path):
+            result = generator.generate(output_path, config_dir=project)
 
         # Should succeed
         assert result.success
@@ -115,36 +137,43 @@ class TestSourceArtifactProtection:
         assert "AUTO-GENERATED" in content
         assert "SystemGenerator" in content
 
-        # Should have actual content (tool substitutions, etc.)
-        assert "fd" in content or "eza" in content or "bat" in content
+        # Should have policy content (tool lists removed in favor of MCP-NixOS)
+        assert "USER-DEFINED POLICIES" in content or "TOOL SELECTION POLICY" in content
 
-    def test_artifact_update_preserves_sources(self, temp_project):
+    def test_artifact_update_preserves_sources(self, tmp_path):
         """Test that updating artifact doesn't affect source files."""
         generator = SystemGenerator()
 
-        # Record original source content
-        packages_file = temp_project / "modules" / "core" / "packages.nix"
-        original_packages = packages_file.read_text()
+        # Create user policies in mock home
+        claude_dir = tmp_path / ".claude"
+        claude_dir.mkdir(parents=True)
+        policies_file = claude_dir / "CLAUDE-USER-POLICIES.md"
+        policies_file.write_text("# User Policies\n\nOriginal policies.")
+        original_policies = policies_file.read_text()
 
-        # Generate artifact
-        output_path = temp_project / "CLAUDE.md"
-        result1 = generator.generate(output_path, config_dir=temp_project)
-        assert result1.success
+        # Create project dir
+        project = tmp_path / "nixos-config"
+        project.mkdir()
+        (project / ".git").mkdir()
 
-        # Generate again (update)
-        result2 = generator.generate(output_path, config_dir=temp_project)
-        assert result2.success
+        # Generate artifact with mocked home
+        output_path = project / "CLAUDE.md"
+        with patch.object(Path, 'home', return_value=tmp_path):
+            result1 = generator.generate(output_path, config_dir=project)
+            assert result1.success
+
+            # Generate again (update)
+            result2 = generator.generate(output_path, config_dir=project)
+            assert result2.success
 
         # Source files should be unchanged
-        assert packages_file.read_text() == original_packages
+        assert policies_file.read_text() == original_policies
 
-        # Artifact should have been updated (different timestamp)
-        content1 = output_path.read_text()
-        content2 = output_path.read_text()
+        # Artifact should have been updated
+        content = output_path.read_text()
 
-        # Both should have headers
-        assert "AUTO-GENERATED" in content1
-        assert "AUTO-GENERATED" in content2
+        # Should have headers
+        assert "AUTO-GENERATED" in content
 
     def test_declaration_validation_at_init(self):
         """Test that invalid declarations are caught at initialization."""

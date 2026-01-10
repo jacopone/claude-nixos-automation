@@ -24,21 +24,10 @@
 - `ai filename.py` - Quick AI pair programming session
 - `aicode src/*.py` - Pre-configured Claude Sonnet session
 
-### Modern CLI Tools (ALWAYS USE THESE)
-- `fd` instead of `find` - Fast file searching
-- `eza` instead of `ls` - Enhanced directory listing
-- `bat` instead of `cat` - Syntax-highlighted file viewing
-- `rg` instead of `grep` - Ultra-fast text search
-- `dua` instead of `du` - Interactive disk usage
-- `procs` instead of `ps` - Modern process viewer
-- `jless` instead of `less` for JSON files
-- `yq` for YAML processing
-- `glow` for markdown rendering
-
 ## Project Structure
 - `flake.nix` - Main configuration entry point
-- `modules/core/packages.nix` - System-wide packages ({{ package_count }} tools)
-- `modules/home-manager/base.nix` - User configs and Fish shell setup
+- `modules/core/packages.nix` - System-wide packages
+- `modules/home-manager/` - User configs and shell setup
 - `hosts/nixos/` - Hardware-specific configuration
 - `basb-system/` - Building a Second Brain knowledge management
 - `ai-orchestration/` - Multi-agent AI coordination system
@@ -63,42 +52,10 @@
 - Group related packages logically
 - Include URLs for package references when helpful
 
-## Working Features ✅
-{% for feature in working_features %}
-- {{ feature }}
-{% endfor %}
-
 ## Do Not Touch
 - `/etc/nixos/` (use this repo instead)
 - `result` symlinks (Nix build artifacts)
 - Files in `hosts/nixos/hardware-configuration.nix` (auto-generated)
-
-## Special Notes
-- System uses automated Claude Code optimization (updates tool knowledge automatically)
-- Fish shell context-aware commands (different behavior for interactive vs automated)
-- Chrome extensions managed declaratively via NixOS
-- BASB system integrated with Google Workspace + Sunsama + Readwise
-
-## Architecture Philosophy
-- **System-level tools**: Universal access for AI agents ({{ package_count }} tools in `packages.nix`)
-- **Project-level tools**: Context-specific via devenv/package.json
-- **Modular design**: Inspired by ZaneyOS architecture
-- **AI-first optimization**: Tools selected for Claude Code compatibility
-
-## Performance Optimization
-- Build limited to 4 CPU cores, 2 parallel jobs
-- Zram swap (25% RAM) with zstd compression
-- Weekly garbage collection + monthly updates automated
-- Interactive cache cleanup (UV, Chrome, Yarn, Playwright)
-
-## System Status
-- **Git Status**: {{ git_status.status_string }}
-- **Last Updated**: {{ timestamp.strftime('%Y-%m-%d %H:%M:%S') }}
-- **Fish Abbreviations**: {{ fish_abbreviation_count }}
-- **Total System Tools**: {{ package_count }}
-
----
-*Auto-updated by ./rebuild-nixos script*
 
 ## 📝 User Memory & Notes
 <!-- USER_MEMORY_START -->
@@ -106,3 +63,10 @@
 <!-- Add your content below this line -->
 
 <!-- USER_MEMORY_END -->
+
+---
+
+## Dynamic Context
+
+**MCP-NixOS** is configured in `.mcp.json` for real-time package/option queries.
+Full analytics available in `.claude/tool-analytics.md` and `.claude/mcp-analytics.md`.

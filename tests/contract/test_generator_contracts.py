@@ -94,12 +94,15 @@ class TestSystemGeneratorContract:
     """Contract tests for SystemGenerator."""
 
     def test_system_generator_sources(self):
-        """Test T108: SystemGenerator declares correct sources."""
+        """Test T108: SystemGenerator declares correct sources.
+
+        Note: Tool extraction from packages.nix was removed in favor of MCP-NixOS
+        for dynamic package queries. Now only user policies are used as sources.
+        """
         sources = SystemGenerator.MANUAL_SOURCES
 
-        # Should include core config files
-        assert any("packages.nix" in str(s) for s in sources)
-        assert any("base.nix" in str(s) for s in sources)
+        # Should include user policies (tool lists removed - use MCP-NixOS)
+        assert any("CLAUDE-USER-POLICIES.md" in str(s) for s in sources)
 
     def test_system_generator_artifacts(self):
         """Test T108: SystemGenerator declares correct artifacts."""
