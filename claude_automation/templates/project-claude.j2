@@ -24,6 +24,19 @@
 - `ai filename.py` - Quick AI pair programming session
 - `aicode src/*.py` - Pre-configured Claude Sonnet session
 
+### Claude Code Sandboxing (Bubblewrap)
+- `claude` - Normal interactive use (full access)
+- `claude-sandboxed [project-dir]` - Kernel-level isolation with network (for autonomous tasks)
+- `claude-airgapped [project-dir]` - Full isolation, no network (for code review)
+
+Use `claude-sandboxed` when running with `--dangerously-skip-permissions` for long-running autonomous tasks. It provides:
+- Process/IPC/UTS namespace isolation
+- Filesystem restricted to project + ~/.claude only
+- All Linux capabilities dropped
+- Network access preserved for API calls
+
+Use `claude-airgapped` for pure offline code review with zero network access.
+
 ## Project Structure
 - `flake.nix` - Main configuration entry point
 - `modules/core/packages.nix` - System-wide packages
@@ -51,6 +64,22 @@
 - Use descriptive comments for complex configurations
 - Group related packages logically
 - Include URLs for package references when helpful
+
+## Git Workflow
+
+This repo uses a two-branch model with automatic syncing:
+
+- **`personal`** - Primary working branch. All development happens here.
+- **`master`** - Public-facing branch. Auto-synced by CI, sanitized of personal paths.
+
+### Rules
+- Always work on `personal` branch
+- Commit and push to `personal` normally
+- **NEVER manually merge personal → master** (CI handles this automatically)
+- The CI workflow `.github/workflows/sync-to-master.yml` syncs changes with sanitization
+
+### Why no manual merge?
+CI creates new commits on master (squashed, sanitized) with different hashes. Manual merges cause conflicts because the same content exists with different commit history.
 
 ## Do Not Touch
 - `/etc/nixos/` (use this repo instead)
