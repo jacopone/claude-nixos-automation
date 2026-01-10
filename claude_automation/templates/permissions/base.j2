@@ -1,50 +1,48 @@
 {# Base permissions template for generic projects #}
+{# Boris Cherny style: broad patterns, not specific commands #}
 {
   "permissions": {
     "allow": [
-      {# Git operations - safe and frequently needed #}
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git reset:*)",
-      "Bash(git restore:*)",
-      "Bash(git config:*)",
+      {# === VERSION CONTROL === #}
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(lazygit:*)",
 
-      {# Modern CLI tools (always safe) #}
+      {# === MODERN CLI TOOLS === #}
       {% for tool in modern_cli_tools %}
       "Bash({{ tool }}:*)",
       {% endfor %}
 
-      {# File reading permissions #}
+      {# === STANDARD UNIX === #}
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(chmod:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(file:*)",
+      "Bash(test:*)",
+      "Bash(tee:*)",
+
+      {# === FILE OPERATIONS === #}
       "Read({{ project_path }}/**)",
       "Read(/home/{{ username }}/.claude/**)",
       "Read(/tmp/**)",
+      "Write({{ project_path }}/**)",
+      "Edit({{ project_path }}/**)",
 
-      {# File writing permissions (project-specific) #}
-      "Write({{ project_path }}/src/**)",
-      "Write({{ project_path }}/docs/**)",
-      "Write({{ project_path }}/*.md)",
-
-      {# File editing permissions (project-specific) #}
-      "Edit({{ project_path }}/src/**)",
-      "Edit({{ project_path }}/docs/**)",
-      "Edit({{ project_path }}/*.md)",
-
-      {# Web access for documentation #}
-      "WebFetch(domain:docs.claude.com)",
-      "WebFetch(domain:github.com)",
-      "WebSearch",
-
-      {# Shell utilities #}
-      "Bash(cat:*)",
-      "Bash(echo:*)",
-      "Bash(test:*)",
-      "Bash(mkdir:*)",
-      "Bash(mv:*)",
-      "Bash(chmod:*)",
-      "Bash(tee:*)"
+      {# === WEB ACCESS === #}
+      "WebFetch",
+      "WebSearch"
     ],
 
     "deny": [

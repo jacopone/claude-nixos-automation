@@ -1,99 +1,77 @@
 {# NixOS configuration project permissions #}
+{# Boris Cherny style: broad patterns, not specific commands #}
 {
   "permissions": {
     "allow": [
-      {# Git operations #}
-      "Bash(git status:*)",
-      "Bash(git diff:*)",
-      "Bash(git log:*)",
-      "Bash(git add:*)",
-      "Bash(git commit:*)",
-      "Bash(git reset:*)",
-      "Bash(git restore:*)",
-      "Bash(git config:*)",
+      {# === VERSION CONTROL === #}
+      "Bash(git:*)",
+      "Bash(gh:*)",
+      "Bash(lazygit:*)",
 
-      {# Nix commands (safe read-only operations) #}
-      "Bash(nix flake check:*)",
-      "Bash(nix flake show:*)",
-      "Bash(nix flake metadata:*)",
-      "Bash(nix search:*)",
-      "Bash(nix eval:*)",
-      "Bash(nix-instantiate:*)",
-      "Bash(nix show-derivation:*)",
-      "Bash(nix path-info:*)",
+      {# === NIX ECOSYSTEM === #}
+      "Bash(nix:*)",
+      "Bash(nix-build:*)",
+      "Bash(nix-shell:*)",
       "Bash(nix-store:*)",
-      "Bash(nix run:*)",
-      "Bash(nix develop:*)",
-      "Bash(nix shell:*)",
-
-      {# DevEnv commands #}
-      {% if 'devenv' in quality_tools %}
-      "Bash(devenv shell:*)",
-      "Bash(devenv up:*)",
-      "Bash(devenv test:*)",
-      {% endif %}
-
-      {# Quality tools for Nix files #}
-      {% if 'nixpkgs-fmt' in quality_tools %}
+      "Bash(nix-env:*)",
+      "Bash(nix-instantiate:*)",
+      "Bash(nix-locate:*)",
       "Bash(nixpkgs-fmt:*)",
-      {% endif %}
-      {% if 'alejandra' in quality_tools %}
+      "Bash(nixos-option:*)",
       "Bash(alejandra:*)",
-      {% endif %}
-      {% if 'statix' in quality_tools %}
       "Bash(statix:*)",
-      {% endif %}
+      "Bash(nom:*)",
+      "Bash(nvd:*)",
+      "Bash(devenv:*)",
+      "Bash(direnv:*)",
 
-      {# Modern CLI tools #}
+      {# === MODERN CLI TOOLS === #}
       {% for tool in modern_cli_tools %}
       "Bash({{ tool }}:*)",
       {% endfor %}
 
-      {# File reading permissions #}
+      {# === STANDARD UNIX === #}
+      "Bash(cat:*)",
+      "Bash(head:*)",
+      "Bash(tail:*)",
+      "Bash(grep:*)",
+      "Bash(find:*)",
+      "Bash(ls:*)",
+      "Bash(tree:*)",
+      "Bash(mkdir:*)",
+      "Bash(mv:*)",
+      "Bash(cp:*)",
+      "Bash(chmod:*)",
+      "Bash(echo:*)",
+      "Bash(printf:*)",
+      "Bash(wc:*)",
+      "Bash(which:*)",
+      "Bash(file:*)",
+      "Bash(test:*)",
+      "Bash(tee:*)",
+
+      {# === FILE OPERATIONS === #}
       "Read({{ project_path }}/**)",
       "Read(/home/{{ username }}/.claude/**)",
       "Read(/home/{{ username }}/nixos-config/**)",
       "Read(/home/{{ username }}/claude-nixos-automation/**)",
       "Read(/etc/nixos/**)",
       "Read(/tmp/**)",
+      "Write({{ project_path }}/**)",
+      "Edit({{ project_path }}/**)",
 
-      {# File writing permissions #}
-      "Write({{ project_path }}/modules/**)",
-      "Write({{ project_path }}/hosts/**)",
-      "Write({{ project_path }}/profiles/**)",
-      "Write({{ project_path }}/users/**)",
-      "Write({{ project_path }}/docs/**)",
-      "Write({{ project_path }}/*.md)",
-      "Write({{ project_path }}/*.nix)",
-      "Write({{ project_path }}/flake.nix)",
-      "Write({{ project_path }}/flake.lock)",
-
-      {# File editing permissions #}
-      "Edit({{ project_path }}/modules/**)",
-      "Edit({{ project_path }}/hosts/**)",
-      "Edit({{ project_path }}/profiles/**)",
-      "Edit({{ project_path }}/users/**)",
-      "Edit({{ project_path }}/docs/**)",
-      "Edit({{ project_path }}/*.md)",
-      "Edit({{ project_path }}/*.nix)",
-      "Edit({{ project_path }}/flake.nix)",
-
-      {# Web access #}
-      "WebFetch(domain:docs.claude.com)",
-      "WebFetch(domain:github.com)",
+      {# === WEB ACCESS === #}
+      "WebFetch",
       "WebFetch(domain:nixos.org)",
       "WebFetch(domain:nixos.wiki)",
       "WebFetch(domain:nix.dev)",
+      "WebFetch(domain:github.com)",
       "WebSearch",
 
-      {# Shell utilities #}
-      "Bash(cat:*)",
-      "Bash(echo:*)",
-      "Bash(test:*)",
-      "Bash(mkdir:*)",
-      "Bash(mv:*)",
-      "Bash(chmod:*)",
-      "Bash(tee:*)"
+      {# === MCP TOOLS === #}
+      "mcp__nixos__*",
+      "mcp__memory__*",
+      "mcp__playwright__*"
     ],
 
     "deny": [

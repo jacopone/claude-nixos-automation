@@ -237,6 +237,56 @@ def is_valid_permission_rule(rule):
     return False
 
 
+def is_covered_by_existing_pattern(new_rule: str, existing_rules: list) -> bool:
+    """
+    Check if new_rule is already covered by a broader pattern in existing_rules.
+
+    Boris Cherny style: Don't add specific patterns if a broad wildcard exists.
+
+    Examples:
+        - "Bash(git status:*)" is covered by "Bash(git:*)"
+        - "Bash(nix flake check:*)" is covered by "Bash(nix:*)"
+        - "Bash(git -C /path diff:*)" is covered by "Bash(git:*)"
+
+    Args:
+        new_rule: The rule being considered for addition
+        existing_rules: List of existing permission rules
+
+    Returns:
+        bool: True if new_rule is redundant (already covered by existing pattern)
+    """
+    if not new_rule or not existing_rules:
+        return False
+
+    # Only applies to Bash commands
+    if not new_rule.startswith('Bash('):
+        return False
+
+    # Extract the command from the new rule
+    # Bash(git status:*) -> "git status"
+    # Bash(git -C /path diff:*) -> "git -C /path diff"
+    match = re.match(r'Bash\(([^:]+):?\*?\)', new_rule)
+    if not match:
+        return False
+
+    new_cmd = match.group(1).strip()
+
+    # Get the base command (first word)
+    # "git status" -> "git"
+    # "git -C /path diff" -> "git"
+    # "nix flake check" -> "nix"
+    base_cmd = new_cmd.split()[0]
+
+    # Check if a broader pattern exists
+    broad_pattern = f"Bash({base_cmd}:*)"
+
+    if broad_pattern in existing_rules and broad_pattern != new_rule:
+        debug_log(f"Rule '{new_rule}' is covered by broader '{broad_pattern}'")
+        return True
+
+    return False
+
+
 def generate_permission_rules(suggestions):
     """
     Convert pattern suggestions into permission rule strings.
@@ -308,6 +358,7 @@ def update_settings_file(project_path, new_rules):
 
         # Get existing permissions
         existing = set(settings["permissions"]["allow"])
+        existing_list = list(existing)
 
         # Add new rules (with final validation check)
         added = []
@@ -317,6 +368,12 @@ def update_settings_file(project_path, new_rules):
                 if '\n' in rule or 'EOF' in rule or '__NEW_LINE__' in rule:
                     debug_log(f"Final check rejected: {rule[:50]}...")
                     continue
+
+                # Boris Cherny style: skip if covered by broader pattern
+                if is_covered_by_existing_pattern(rule, existing_list):
+                    debug_log(f"Skipping redundant rule (covered by broader pattern): {rule}")
+                    continue
+
                 settings["permissions"]["allow"].append(rule)
                 added.append(rule)
 
