@@ -190,29 +190,39 @@ class PermissionPatternDetector(BaseAnalyzer):
     }
 
     # Tiered detection configuration
-    # NOTE: Rebalanced thresholds (2025-12 tuning) for better security/usability balance
-    # - TIER_1: 2 approvals minimum (was 1 - too permissive for auto-approval)
-    # - TIER_2: 3 approvals for dev tools (standard validation)
-    # - TIER_3: 5 approvals for risky operations (conservative)
+    # NOTE: Boris-style permissive thresholds (2026-01 tuning)
+    # Philosophy: If you approve a tool multiple times across different contexts,
+    # it means you trust that tool - generalize to tool:* pattern
+    # - TIER_1: 1 approval (safe read-only tools - just prove it's used)
+    # - TIER_2: 2 approvals (dev tools - light validation)
+    # - TIER_3: 3 approvals (risky operations - still reasonable)
     TIER_CONFIG = {
         "TIER_1_SAFE": {
-            "min_occurrences": 2,  # Changed from 1 - require cross-validation
-            "time_window_days": 7,
-            "confidence_threshold": 0.4,  # Lower bar for safe tools
+            "min_occurrences": 1,  # Single use proves utility
+            "time_window_days": 14,  # Extended window
+            "confidence_threshold": 0.3,  # Low bar for safe tools
             "description": "Safe read-only tools",
         },
         "TIER_2_MODERATE": {
-            "min_occurrences": 3,  # Standard dev tool validation
-            "time_window_days": 14,
-            "confidence_threshold": 0.6,
+            "min_occurrences": 2,  # Just 2 approvals needed
+            "time_window_days": 21,  # 3 weeks
+            "confidence_threshold": 0.4,  # Lowered from 0.6
             "description": "Development and testing tools",
         },
         "TIER_3_RISKY": {
-            "min_occurrences": 5,  # Conservative for risky operations
+            "min_occurrences": 3,  # 3 approvals (was 5)
             "time_window_days": 30,
-            "confidence_threshold": 0.7,
+            "confidence_threshold": 0.5,  # Lowered from 0.7
             "description": "Write operations and risky commands",
         },
+    }
+
+    # Cross-folder generalization config
+    # If a tool is approved in N different folders, generalize to tool:*
+    CROSS_FOLDER_CONFIG = {
+        "min_unique_folders": 2,  # 2+ folders triggers generalization
+        "min_total_approvals": 3,  # At least 3 total approvals
+        "confidence_boost": 0.3,  # Extra confidence for cross-folder patterns
     }
 
     def __init__(
@@ -369,23 +379,142 @@ class PermissionPatternDetector(BaseAnalyzer):
                     f"Filtered {filtered_count} patterns (already in settings.local.json)"
                 )
 
-        if not detected_patterns:
-            logger.info(
-                "All permission patterns were previously rejected or already approved"
-            )
-            return []
-
-        # Create suggestions from patterns
+        # Create suggestions from category patterns
         suggestions = []
         for pattern in detected_patterns:
             if pattern.confidence >= self.confidence_threshold:
                 suggestion = self._create_suggestion(pattern, approvals)
                 suggestions.append(suggestion)
 
+        # BORIS-STYLE: Also detect cross-folder tool patterns
+        # This catches tools that don't fit predefined categories but are
+        # clearly trusted (used across multiple projects/folders)
+        cross_folder_suggestions = self.detect_cross_folder_tools(days=days)
+        suggestions.extend(cross_folder_suggestions)
+
+        if not suggestions:
+            logger.info(
+                "All permission patterns were previously rejected or already approved"
+            )
+            return []
+
         # Sort by confidence (highest first)
         suggestions.sort(key=lambda s: s.pattern.confidence, reverse=True)
 
         return suggestions
+
+    def detect_cross_folder_tools(
+        self, days: int = 30
+    ) -> list[PatternSuggestion]:
+        """
+        Detect tools used across multiple folders and generate tool:* wildcards.
+
+        Boris-style philosophy: If you approve `curl` in folder A, folder B, and
+        folder C, you clearly trust curl - generalize to `Bash(curl:*)`.
+
+        This is SEPARATE from category-based detection and catches tools that
+        don't fit neatly into predefined categories.
+
+        Args:
+            days: Days of history to analyze
+
+        Returns:
+            List of tool-level wildcard suggestions
+        """
+        logger.info("Detecting cross-folder tool patterns")
+        approvals = self.tracker.get_recent_approvals(days=days)
+
+        if not approvals:
+            return []
+
+        # Extract tool names from Bash permissions
+        # Pattern: Bash(toolname ...) or Bash(toolname:*)
+        tool_usage: dict[str, list[PermissionApprovalEntry]] = defaultdict(list)
+
+        for approval in approvals:
+            perm = approval.permission
+            # Match Bash(toolname ...) - extract first word after Bash(
+            match = re.match(r"Bash\(([a-zA-Z0-9_-]+)", perm)
+            if match:
+                tool_name = match.group(1)
+                # Skip very short tool names (likely false positives)
+                if len(tool_name) >= 2:
+                    tool_usage[tool_name].append(approval)
+
+        # Find tools used across multiple folders
+        cross_folder_tools = []
+        config = self.CROSS_FOLDER_CONFIG
+
+        for tool_name, tool_approvals in tool_usage.items():
+            unique_folders = len({a.project_path for a in tool_approvals})
+            total_approvals = len(tool_approvals)
+
+            if (
+                unique_folders >= config["min_unique_folders"]
+                and total_approvals >= config["min_total_approvals"]
+            ):
+                # Calculate confidence with cross-folder boost
+                base_confidence = self._calculate_pattern_confidence(
+                    tool_approvals, approvals
+                )
+                boosted_confidence = min(
+                    1.0, base_confidence + config["confidence_boost"]
+                )
+
+                logger.info(
+                    f"✓ Cross-folder tool: {tool_name} "
+                    f"({total_approvals} uses in {unique_folders} folders, "
+                    f"{boosted_confidence:.0%} confidence)"
+                )
+
+                pattern = PermissionPattern(
+                    pattern_type=f"CrossFolder_{tool_name}",
+                    occurrences=total_approvals,
+                    confidence=boosted_confidence,
+                    examples=[a.permission for a in tool_approvals[:5]],
+                    detected_at=datetime.now(),
+                    time_window_days=days,
+                )
+                cross_folder_tools.append(pattern)
+
+        # Filter already-approved patterns
+        existing_patterns = self._get_existing_patterns()
+        cross_folder_tools = [
+            p for p in cross_folder_tools
+            if not self._is_tool_already_approved(
+                p.pattern_type.replace("CrossFolder_", ""),
+                existing_patterns
+            )
+        ]
+
+        # Create suggestions
+        suggestions = []
+        for pattern in cross_folder_tools:
+            tool_name = pattern.pattern_type.replace("CrossFolder_", "")
+            suggestion = PatternSuggestion(
+                description=f"Allow {tool_name} (cross-folder usage detected)",
+                pattern=pattern,
+                proposed_rule=f"Bash({tool_name}:*)",
+                would_allow=[f"Bash({tool_name} any arguments)"],
+                would_still_ask=[],
+                approved_examples=pattern.examples,
+                impact_estimate=f"Cross-folder: {pattern.occurrences} approvals across multiple projects",
+            )
+            suggestions.append(suggestion)
+
+        return suggestions
+
+    def _is_tool_already_approved(
+        self, tool_name: str, existing_patterns: set[str]
+    ) -> bool:
+        """Check if a tool is already covered by existing wildcard patterns."""
+        # Check for exact Bash(tool:*) pattern
+        if f"Bash({tool_name}:*)" in existing_patterns:
+            return True
+        # Check for Bash(tool *) pattern (older format)
+        if f"Bash({tool_name} *)" in existing_patterns:
+            return True
+        return False
 
     def _detect_category_pattern(
         self,
@@ -454,21 +583,20 @@ class PermissionPatternDetector(BaseAnalyzer):
         all_approvals: list[PermissionApprovalEntry],
     ) -> float:
         """
-        Calculate confidence based on pattern RELIABILITY, not category share.
+        Calculate confidence based on pattern RELIABILITY with Boris-style weighting.
 
-        The key insight: once minimum_occurrences threshold is met, confidence
-        should measure "how reliable is this pattern as a predictor of user
-        approval", not "what percentage of all activity is this category".
+        Philosophy: Cross-folder/cross-project usage is the strongest signal.
+        If you approve curl in 3 different folders, you trust curl - period.
 
-        Factors:
-        - Base: 0.5 (pattern exists with enough occurrences - already gated)
-        - Session spread: +0.25 (appears across multiple sessions = not a fluke)
-        - Project spread: +0.15 (appears across projects = generalizable)
-        - Consistency: +0.05 (same permission strings = predictable)
-        - Recency: +0.05 (used recently = still relevant)
+        Factors (rebalanced for permissive learning):
+        - Base: 0.4 (lower base, let bonuses drive confidence)
+        - Session spread: +0.15 (appears across sessions)
+        - Folder/Project spread: +0.35 (KEY SIGNAL - cross-folder = trust)
+        - Consistency: +0.05 (same strings = predictable)
+        - Recency: +0.05 (used recently = relevant)
 
         Max possible: 1.0
-        Typical well-established pattern: 0.7-0.95
+        Cross-folder patterns easily hit 0.7+ confidence
 
         Args:
             matching_approvals: Approvals matching this pattern
@@ -482,32 +610,32 @@ class PermissionPatternDetector(BaseAnalyzer):
 
         n = len(matching_approvals)
 
-        # Base confidence: pattern exists with enough occurrences
-        # The min_occurrences threshold already ensures we have enough data
-        base = 0.5
+        # Base confidence: pattern exists (lowered to let cross-folder drive)
+        base = 0.4
 
-        # Session spread bonus (up to +0.25)
-        # More sessions = more confident this is a real pattern, not a fluke
+        # Session spread bonus (up to +0.15)
         unique_sessions = len({a.session_id for a in matching_approvals})
-        # Cap at 10 sessions for max bonus
-        session_bonus = min(0.25, (unique_sessions / 10) * 0.25)
+        session_bonus = min(0.15, (unique_sessions / 5) * 0.15)
 
-        # Project spread bonus (up to +0.15)
-        # Cross-project patterns are more generalizable and reliable
+        # CROSS-FOLDER/PROJECT SPREAD BONUS (up to +0.35) - THE KEY SIGNAL
+        # Boris philosophy: if you approve a tool across different contexts,
+        # you trust that tool. 2 folders = 0.175, 3+ folders = max bonus
         unique_projects = len({a.project_path for a in matching_approvals})
-        # Cap at 5 projects for max bonus
-        project_bonus = min(0.15, (unique_projects / 5) * 0.15)
+        # Aggressive scaling: 2 folders gets half bonus, 3+ gets full
+        if unique_projects >= 3:
+            project_bonus = 0.35
+        elif unique_projects == 2:
+            project_bonus = 0.25
+        else:
+            project_bonus = 0.10  # Single project still gets small bonus
 
         # Consistency bonus (up to +0.05)
-        # Same exact permission string appearing multiple times = predictable
         permission_counts = Counter(a.permission for a in matching_approvals)
         most_common_count = max(permission_counts.values())
-        # Higher ratio of most common permission = more consistent
         consistency_ratio = most_common_count / n
         consistency_bonus = consistency_ratio * 0.05
 
         # Recency bonus (+0.05 if pattern was used recently)
-        # Check if any matching permission appears in the 20 most recent approvals
         recent_permissions = {a.permission for a in all_approvals[:20]}
         matching_permissions = {a.permission for a in matching_approvals}
         recency_bonus = 0.05 if recent_permissions & matching_permissions else 0.0
