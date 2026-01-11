@@ -316,6 +316,10 @@ class PermissionPatternDetector(BaseAnalyzer):
         logger.info("Starting tiered pattern detection")
         detected_patterns = []
 
+        # BORIS-STYLE: Load existing patterns ONCE and skip covered categories
+        existing_patterns = self._get_existing_patterns()
+        skipped_categories = set()
+
         # Process each tier separately
         for tier_name, tier_config in self.TIER_CONFIG.items():
             tier_days = tier_config["time_window_days"]
@@ -340,6 +344,13 @@ class PermissionPatternDetector(BaseAnalyzer):
                 if rules.get("tier") != tier_name:
                     continue  # Skip categories not in this tier
 
+                # BORIS-STYLE: Skip categories already covered by wildcards
+                if self._is_category_covered_by_wildcards(category, existing_patterns):
+                    if category not in skipped_categories:
+                        logger.debug(f"⏭ Skipping {category} (already covered by wildcards)")
+                        skipped_categories.add(category)
+                    continue
+
                 pattern = self._detect_category_pattern(
                     category, rules, approvals, tier_days, tier_min_occurrences
                 )
@@ -349,6 +360,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                         f"✓ Detected {category} pattern "
                         f"({pattern.occurrences} times, {pattern.confidence:.0%} confidence)"
                     )
+
+        if skipped_categories:
+            logger.info(f"Skipped {len(skipped_categories)} categories (already covered by wildcards)")
 
         # Filter out previously rejected permission patterns
         from .rejection_tracker import RejectionTracker
@@ -515,6 +529,61 @@ class PermissionPatternDetector(BaseAnalyzer):
         if f"Bash({tool_name} *)" in existing_patterns:
             return True
         return False
+
+    # Mapping from category to primary tool names (for wildcard coverage check)
+    # Boris-style: If git:* exists, skip Git_workflow detection entirely
+    CATEGORY_TO_TOOLS = {
+        "Git_read_only": ["git"],
+        "Git_workflow": ["git"],
+        "Git_destructive": ["git"],
+        "Pytest": ["pytest", "python"],
+        "Ruff": ["ruff"],
+        "Modern_cli": ["fd", "eza", "bat", "rg", "dust", "procs", "btm", "tree"],
+        "File_operations": [],  # These use Read/Glob, not Bash
+        "File_write_operations": [],  # These use Write/Edit, not Bash
+        "Test_execution": ["npm", "pytest", "cargo", "go"],
+        "Project_full_access": [],
+        "Github_cli": ["gh"],
+        "Cloud_cli": ["gcloud", "aws", "az"],
+        "Package_managers": ["npm", "pnpm", "pip", "uv", "cargo", "yarn"],
+        "Nix_tools": ["nix", "devenv", "nix-shell", "nix-build"],
+        "Database_cli": ["sqlite3", "psql", "mysql", "mycli", "pgcli"],
+        "Network_tools": ["curl", "wget", "xh", "httpie"],
+        "Runtime_tools": ["python", "python3", "node", "ruby", "go"],
+        "Posix_filesystem": ["find", "ls", "mkdir", "rmdir", "touch", "mv", "cp"],
+        "Posix_search": ["grep", "awk", "sed", "cut", "sort", "uniq"],
+        "Posix_read": ["cat", "head", "tail", "less", "more", "wc"],
+        "Shell_utilities": ["echo", "printf", "sleep", "which", "type", "cd", "pwd"],
+        "Dangerous_operations": [],  # Never auto-skip dangerous ops
+    }
+
+    def _is_category_covered_by_wildcards(
+        self, category: str, existing_patterns: set[str]
+    ) -> bool:
+        """
+        Check if a category is already fully covered by existing wildcard patterns.
+
+        Boris-style optimization: If settings.local.json already has Bash(git:*),
+        don't waste time detecting Git_workflow patterns.
+
+        Args:
+            category: Pattern category name
+            existing_patterns: Set of patterns from settings.local.json
+
+        Returns:
+            True if ALL tools in the category are already covered
+        """
+        tools = self.CATEGORY_TO_TOOLS.get(category, [])
+
+        if not tools:
+            return False  # Categories without tool mappings need detection
+
+        # Check if ALL tools in the category are covered
+        for tool in tools:
+            if not self._is_tool_already_approved(tool, existing_patterns):
+                return False  # At least one tool not covered
+
+        return True  # All tools covered - skip this category
 
     def _detect_category_pattern(
         self,

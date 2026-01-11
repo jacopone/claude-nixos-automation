@@ -34,16 +34,17 @@ class MetaLearner(BaseAnalyzer):
     - Suggestion frequency
     """
 
-    # Default thresholds
-    DEFAULT_MIN_OCCURRENCES = 3
-    DEFAULT_CONFIDENCE_THRESHOLD = 0.7
+    # Default thresholds - Boris-style permissive defaults
+    # Philosophy: Start permissive, let meta-learning adjust if needed
+    DEFAULT_MIN_OCCURRENCES = 2  # Lowered from 3 - faster learning
+    DEFAULT_CONFIDENCE_THRESHOLD = 0.5  # Lowered from 0.7 - more suggestions
     DEFAULT_ANALYSIS_PERIOD_DAYS = 30
 
-    # Adjustment boundaries
-    # NOTE: Upper bound reduced from 0.9 to 0.75 (2026-01) to prevent threshold creep
-    # that blocked all pattern detection for 4+ days
-    MIN_OCCURRENCES_RANGE = (2, 5)
-    CONFIDENCE_RANGE = (0.5, 0.75)
+    # Adjustment boundaries - Boris-style permissive ranges
+    # NOTE: Lower bounds reduced (2026-01) to allow faster permission learning
+    # Upper bounds kept conservative to prevent runaway permissiveness
+    MIN_OCCURRENCES_RANGE = (1, 5)  # Allow 1 minimum (was 2)
+    CONFIDENCE_RANGE = (0.3, 0.75)  # Allow 0.3 minimum (was 0.5)
 
     def __init__(
         self, metrics_file: Path | None = None, thresholds_file: Path | None = None

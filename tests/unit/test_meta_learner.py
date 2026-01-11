@@ -127,7 +127,9 @@ def test_threshold_adjustment_low_acceptance(meta_learner):
     # Should recommend increasing threshold for workflow_detection
     workflow_adj = [adj for adj in adjustments if adj.component == "workflow_detection"]
     assert len(workflow_adj) > 0
-    assert workflow_adj[0].recommended_threshold > 0.7
+    # Recommended threshold should be HIGHER than current (increase on low acceptance)
+    # With Boris-style defaults (0.5), recommendation is 0.5 + 0.1 = 0.6
+    assert workflow_adj[0].recommended_threshold > workflow_adj[0].old_value
 
 
 def test_threshold_adjustment_high_acceptance(meta_learner):

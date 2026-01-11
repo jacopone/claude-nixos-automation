@@ -89,6 +89,9 @@ class PermissionPattern(BaseModel):
             "Shell_utilities",
             "Dangerous_operations",
         }
+        # Allow CrossFolder_* patterns for dynamic tool detection (Boris-style)
+        if v.startswith("CrossFolder_"):
+            return v
         if v not in valid_types:
             raise ValueError(f"Invalid pattern type: {v}")
         return v
