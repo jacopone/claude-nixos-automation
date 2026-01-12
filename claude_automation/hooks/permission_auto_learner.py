@@ -82,19 +82,22 @@ def should_analyze(session_id, check_interval=20):
 
 def analyze_and_suggest_permissions(project_path):
     """
-    Analyze approval patterns and suggest permission rules.
+    Analyze approval patterns and suggest permission rules with tier classification.
 
     This is the core learning function that:
     1. Reads approval history from ~/.claude/learning/permission_approvals.jsonl
     2. Detects patterns using PermissionPatternDetector
-    3. Generates suggested rules
-    4. Returns high-confidence suggestions
+    3. Categorizes by tier (TIER_1_SAFE, TIER_2_MODERATE, TIER_3_RISKY, CROSS_FOLDER)
+    4. Returns categorized high-confidence suggestions
 
     Args:
         project_path: Current project directory
 
     Returns:
-        list: List of suggested permission rules
+        dict: Categorized suggestions {
+            "global": [...],    # TIER_1_SAFE + CROSS_FOLDER → ~/.claude/settings.json
+            "project": [...],   # TIER_2_MODERATE + TIER_3_RISKY → per-project
+        }
     """
     try:
         # Import the learning infrastructure
@@ -117,18 +120,30 @@ def analyze_and_suggest_permissions(project_path):
 
         debug_log(f"Found {len(suggestions)} pattern suggestions")
 
-        # Filter suggestions with decent confidence (>= 0.6, lowered from 0.8)
-        # This allows faster auto-approval of patterns you've approved multiple times
+        # Filter suggestions with decent confidence (>= 0.6)
         high_confidence = [s for s in suggestions if s.pattern.confidence >= 0.6]
 
-        return high_confidence
+        # Categorize by tier
+        categorized = detector.categorize_by_tier(high_confidence)
+
+        # Route to global or project based on tier
+        global_suggestions = categorized.get("TIER_1_SAFE", []) + categorized.get("CROSS_FOLDER", [])
+        project_suggestions = categorized.get("TIER_2_MODERATE", []) + categorized.get("TIER_3_RISKY", [])
+
+        debug_log(f"Global (TIER_1_SAFE + CROSS_FOLDER): {len(global_suggestions)}")
+        debug_log(f"Project (TIER_2/3): {len(project_suggestions)}")
+
+        return {
+            "global": global_suggestions,
+            "project": project_suggestions,
+        }
 
     except Exception as e:
         debug_log(f"Analysis failed: {e}")
         import traceback
 
         debug_log(traceback.format_exc())
-        return []
+        return {"global": [], "project": []}
 
 
 def is_valid_permission_rule(rule):
@@ -318,6 +333,41 @@ def generate_permission_rules(suggestions):
     return list(set(rules))  # Deduplicate
 
 
+def update_global_settings(new_rules):
+    """
+    Update ~/.claude/settings.json with TIER_1_SAFE permission rules.
+
+    Global settings apply to ALL projects. Only safe, read-only tools should
+    be added here (TIER_1_SAFE and CROSS_FOLDER patterns).
+
+    Args:
+        new_rules: List of permission rule strings to add
+
+    Returns:
+        tuple: (success: bool, added_count: int)
+    """
+    try:
+        # Import GlobalPermissionsManager
+        sys.path.insert(0, str(Path.home() / "claude-nixos-automation"))
+        from claude_automation.generators import GlobalPermissionsManager
+
+        manager = GlobalPermissionsManager()
+        added, skipped = manager.add_permissions(
+            new_rules,
+            source="permission_auto_learner",
+            tier="TIER_1_SAFE",
+        )
+
+        debug_log(f"Global settings: added {len(added)}, skipped {len(skipped)}")
+        return True, len(added)
+
+    except Exception as e:
+        debug_log(f"Failed to update global settings: {e}")
+        import traceback
+        debug_log(traceback.format_exc())
+        return False, 0
+
+
 def update_settings_file(project_path, new_rules):
     """
     Update .claude/settings.local.json with new permission rules.
@@ -489,41 +539,60 @@ def main():
         if not should_analyze(session_id, check_interval=50):
             sys.exit(0)  # Not time to analyze yet
 
-        debug_log("Running pattern analysis...")
+        debug_log("Running pattern analysis with tier-based routing...")
 
-        # Analyze approval patterns
-        suggestions = analyze_and_suggest_permissions(project_path)
+        # Analyze approval patterns (returns categorized by tier)
+        categorized = analyze_and_suggest_permissions(project_path)
 
-        if not suggestions:
+        global_suggestions = categorized.get("global", [])
+        project_suggestions = categorized.get("project", [])
+
+        if not global_suggestions and not project_suggestions:
             debug_log("No high-confidence suggestions found")
             sys.exit(0)
 
-        debug_log(f"Found {len(suggestions)} high-confidence suggestions")
+        debug_log(f"Found {len(global_suggestions)} global + {len(project_suggestions)} project suggestions")
 
-        # Generate permission rules
-        new_rules = generate_permission_rules(suggestions)
+        total_added = 0
+        all_suggestions = []
 
-        if not new_rules:
-            debug_log("No new rules to add")
-            sys.exit(0)
+        # Process GLOBAL suggestions (TIER_1_SAFE + CROSS_FOLDER)
+        if global_suggestions:
+            global_rules = generate_permission_rules(global_suggestions)
+            if global_rules:
+                debug_log(f"Applying {len(global_rules)} rules to global settings")
+                success, added_count = update_global_settings(global_rules)
+                if success and added_count > 0:
+                    total_added += added_count
+                    all_suggestions.extend(global_suggestions)
+                    debug_log(f"Added {added_count} rules to ~/.claude/settings.json")
 
-        debug_log(f"Generated {len(new_rules)} permission rules")
+        # Process PROJECT suggestions (TIER_2_MODERATE + TIER_3_RISKY)
+        if project_suggestions:
+            project_rules = generate_permission_rules(project_suggestions)
+            if project_rules:
+                debug_log(f"Applying {len(project_rules)} rules to project settings")
+                success, added_count = update_settings_file(project_path, project_rules)
+                if success and added_count > 0:
+                    total_added += added_count
+                    all_suggestions.extend(project_suggestions)
+                    debug_log(f"Added {added_count} rules to .claude/settings.local.json")
 
-        # Update settings.local.json
-        success, added_count = update_settings_file(project_path, new_rules)
-
-        if success and added_count > 0:
-            debug_log(f"Successfully added {added_count} permission rules")
+        if total_added > 0:
+            debug_log(f"Successfully added {total_added} permission rules total")
 
             # Create notification for user
-            create_notification(project_path, added_count, suggestions)
+            create_notification(project_path, total_added, all_suggestions)
 
             # Output notification to stderr (visible to Claude)
             notification = f"""
-🤖 Permission Auto-Learner
+🤖 Permission Auto-Learner (Tier-Based Routing)
 
-Analyzed recent approval patterns and added {added_count} high-confidence
-permission rules to reduce future prompts.
+Analyzed recent approval patterns:
+- Global (all projects): {len(global_suggestions)} patterns → ~/.claude/settings.json
+- Project-specific: {len(project_suggestions)} patterns → .claude/settings.local.json
+
+Total rules added: {total_added}
 
 See .claude/permissions_auto_generated.md for details.
 """

@@ -2,6 +2,7 @@
 
 from .base_generator import BaseGenerator
 from .directory_context_generator import DirectoryContextGenerator
+from .global_permissions_manager import GlobalPermissionsManager
 from .intelligent_permissions_generator import IntelligentPermissionsGenerator
 from .local_context_generator import LocalContextGenerator
 from .permissions_generator import PermissionsGenerator
@@ -14,6 +15,7 @@ from .user_policies_generator import UserPoliciesGenerator
 __all__ = [
     "BaseGenerator",
     "DirectoryContextGenerator",
+    "GlobalPermissionsManager",
     "IntelligentPermissionsGenerator",
     "LocalContextGenerator",
     "PermissionsGenerator",

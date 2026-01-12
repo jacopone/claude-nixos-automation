@@ -513,6 +513,7 @@ class PermissionPatternDetector(BaseAnalyzer):
                 would_still_ask=[],
                 approved_examples=pattern.examples,
                 impact_estimate=f"Cross-folder: {pattern.occurrences} approvals across multiple projects",
+                tier="CROSS_FOLDER",  # Cross-folder patterns are promoted to global
             )
             suggestions.append(suggestion)
 
@@ -725,11 +726,18 @@ class PermissionPatternDetector(BaseAnalyzer):
             all_approvals: All approvals for context
 
         Returns:
-            PatternSuggestion with details
+            PatternSuggestion with details including tier classification
         """
         # Get category rules
         rules = self.PATTERN_CATEGORIES.get(pattern.pattern_type, {})
         description = rules.get("description", pattern.pattern_type)
+
+        # Get tier from category rules (default to TIER_2_MODERATE)
+        tier = rules.get("tier", "TIER_2_MODERATE")
+
+        # CrossFolder patterns get special tier
+        if pattern.pattern_type.startswith("CrossFolder_"):
+            tier = "CROSS_FOLDER"
 
         # Create proposed rule (wildcard pattern)
         proposed_rule = self._generate_proposed_rule(pattern)
@@ -754,6 +762,7 @@ class PermissionPatternDetector(BaseAnalyzer):
             would_still_ask=would_still_ask,
             approved_examples=approved_examples,
             impact_estimate=impact,
+            tier=tier,
         )
 
     def _generate_proposed_rule(self, pattern: PermissionPattern) -> str:
@@ -886,3 +895,90 @@ class PermissionPatternDetector(BaseAnalyzer):
                 if s.pattern.confidence >= 0.8
             ],
         }
+
+    def categorize_by_tier(
+        self, suggestions: list[PatternSuggestion]
+    ) -> dict[str, list[PatternSuggestion]]:
+        """
+        Categorize pattern suggestions by their tier.
+
+        This enables tier-based routing:
+        - TIER_1_SAFE + CROSS_FOLDER → global (~/.claude/settings.json)
+        - TIER_2_MODERATE + TIER_3_RISKY → per-project (.claude/settings.local.json)
+
+        Args:
+            suggestions: List of pattern suggestions from detect_patterns()
+
+        Returns:
+            Dictionary with lists of suggestions per tier:
+            {
+                "TIER_1_SAFE": [...],      # → global
+                "TIER_2_MODERATE": [...],  # → per-project
+                "TIER_3_RISKY": [...],     # → per-project
+                "CROSS_FOLDER": [...]      # → global
+            }
+        """
+        categorized: dict[str, list[PatternSuggestion]] = {
+            "TIER_1_SAFE": [],
+            "TIER_2_MODERATE": [],
+            "TIER_3_RISKY": [],
+            "CROSS_FOLDER": [],
+        }
+
+        for suggestion in suggestions:
+            tier = suggestion.tier
+            if tier in categorized:
+                categorized[tier].append(suggestion)
+            else:
+                # Fallback to TIER_2 if unknown tier
+                logger.warning(f"Unknown tier '{tier}' for {suggestion.pattern.pattern_type}, defaulting to TIER_2_MODERATE")
+                categorized["TIER_2_MODERATE"].append(suggestion)
+
+        # Log summary
+        for tier, items in categorized.items():
+            if items:
+                logger.info(f"  {tier}: {len(items)} suggestions")
+
+        return categorized
+
+    def get_global_suggestions(
+        self, suggestions: list[PatternSuggestion] | None = None, days: int = 30
+    ) -> list[PatternSuggestion]:
+        """
+        Get suggestions that should be applied globally.
+
+        Convenience method that returns TIER_1_SAFE + CROSS_FOLDER suggestions.
+
+        Args:
+            suggestions: Pre-computed suggestions (detects if None)
+            days: Days of history if detecting new
+
+        Returns:
+            List of suggestions for global settings
+        """
+        if suggestions is None:
+            suggestions = self.detect_patterns(days=days)
+
+        categorized = self.categorize_by_tier(suggestions)
+        return categorized["TIER_1_SAFE"] + categorized["CROSS_FOLDER"]
+
+    def get_project_suggestions(
+        self, suggestions: list[PatternSuggestion] | None = None, days: int = 30
+    ) -> list[PatternSuggestion]:
+        """
+        Get suggestions that should be applied per-project.
+
+        Convenience method that returns TIER_2_MODERATE + TIER_3_RISKY suggestions.
+
+        Args:
+            suggestions: Pre-computed suggestions (detects if None)
+            days: Days of history if detecting new
+
+        Returns:
+            List of suggestions for per-project settings
+        """
+        if suggestions is None:
+            suggestions = self.detect_patterns(days=days)
+
+        categorized = self.categorize_by_tier(suggestions)
+        return categorized["TIER_2_MODERATE"] + categorized["TIER_3_RISKY"]

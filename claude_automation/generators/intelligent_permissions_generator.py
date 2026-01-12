@@ -1,6 +1,12 @@
 """
-Intelligent permissions generator with pattern learning.
-Extends PermissionsGenerator to detect and suggest permission patterns.
+Intelligent permissions generator with pattern learning and tier-based routing.
+
+Extends PermissionsGenerator to detect and suggest permission patterns,
+routing them to global or per-project settings based on tier classification.
+
+Tier-based routing:
+- TIER_1_SAFE + CROSS_FOLDER → ~/.claude/settings.json (global)
+- TIER_2_MODERATE + TIER_3_RISKY → .claude/settings.local.json (per-project)
 """
 
 import json
@@ -11,6 +17,7 @@ from claude_automation.analyzers import ApprovalTracker, PermissionPatternDetect
 from claude_automation.validators import is_valid_permission
 
 from ..schemas import GenerationResult, PatternSuggestion
+from .global_permissions_manager import GlobalPermissionsManager
 from .permissions_generator import PermissionsGenerator
 
 logger = logging.getLogger(__name__)
@@ -35,6 +42,7 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
         template_dir: Path | None = None,
         approval_tracker: ApprovalTracker | None = None,
         pattern_detector: PermissionPatternDetector | None = None,
+        global_manager: GlobalPermissionsManager | None = None,
     ):
         """
         Initialize intelligent permissions generator.
@@ -43,12 +51,14 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
             template_dir: Template directory (inherited from base)
             approval_tracker: Approval history tracker (default: creates new)
             pattern_detector: Pattern detector (default: creates new)
+            global_manager: Manager for global settings (default: creates new)
         """
         super().__init__(template_dir)
         self.approval_tracker = approval_tracker or ApprovalTracker()
         self.pattern_detector = pattern_detector or PermissionPatternDetector(
             self.approval_tracker
         )
+        self.global_manager = global_manager or GlobalPermissionsManager()
 
     def generate_with_learning(
         self,
@@ -382,3 +392,174 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                 warnings=[],
                 stats={},
             )
+
+    def generate_with_tier_routing(
+        self,
+        project_settings_file: Path | None = None,
+        interactive: bool = True,
+        days: int = 30,
+    ) -> GenerationResult:
+        """
+        Generate permissions with tier-based routing.
+
+        Routes patterns to global or per-project settings based on tier:
+        - TIER_1_SAFE + CROSS_FOLDER → ~/.claude/settings.json (global)
+        - TIER_2_MODERATE + TIER_3_RISKY → .claude/settings.local.json (per-project)
+
+        Args:
+            project_settings_file: Per-project settings file (default: .claude/settings.local.json)
+            interactive: If True, prompt user for approval
+            days: Analysis window in days
+
+        Returns:
+            GenerationResult with combined stats from both operations
+        """
+        if project_settings_file is None:
+            project_settings_file = Path.cwd() / ".claude" / "settings.local.json"
+
+        logger.info("Generating permissions with tier-based routing")
+
+        try:
+            # Step 1: Detect all patterns
+            patterns = self.pattern_detector.detect_patterns(days=days)
+
+            if not patterns:
+                logger.info("No new patterns detected")
+                return GenerationResult(
+                    success=True,
+                    output_path=str(project_settings_file),
+                    warnings=["No patterns detected - continue using Claude Code to build history"],
+                    stats={"patterns_detected": 0, "mode": "tier_routing"},
+                )
+
+            logger.info(f"Detected {len(patterns)} patterns")
+
+            # Step 2: Categorize by tier
+            categorized = self.pattern_detector.categorize_by_tier(patterns)
+
+            global_patterns = categorized["TIER_1_SAFE"] + categorized["CROSS_FOLDER"]
+            project_patterns = categorized["TIER_2_MODERATE"] + categorized["TIER_3_RISKY"]
+
+            logger.info(f"  Global (TIER_1_SAFE + CROSS_FOLDER): {len(global_patterns)}")
+            logger.info(f"  Project (TIER_2/3): {len(project_patterns)}")
+
+            # Step 3: Interactive approval (grouped by destination)
+            accepted_global = []
+            accepted_project = []
+
+            if interactive:
+                if global_patterns:
+                    print("\n" + "=" * 70)
+                    print("🌍 GLOBAL PERMISSIONS (apply to ALL projects)")
+                    print("=" * 70)
+                    print(f"\nThese {len(global_patterns)} pattern(s) will be added to ~/.claude/settings.json")
+                    print("Safe read-only tools that should work everywhere.\n")
+                    accepted_global = self._prompt_for_patterns(global_patterns)
+
+                if project_patterns:
+                    print("\n" + "=" * 70)
+                    print("📁 PROJECT PERMISSIONS (this project only)")
+                    print("=" * 70)
+                    print(f"\nThese {len(project_patterns)} pattern(s) will be added to .claude/settings.local.json")
+                    print("Write operations and tools specific to this project.\n")
+                    accepted_project = self._prompt_for_patterns(project_patterns)
+            else:
+                accepted_global = global_patterns
+                accepted_project = project_patterns
+
+            # Step 4: Apply to respective locations
+            results = []
+            global_stats = {}
+            project_stats = {}
+
+            if accepted_global:
+                # Extract rules and apply to global settings
+                global_rules = []
+                for pattern in accepted_global:
+                    rules = self._parse_proposed_rule(pattern.proposed_rule)
+                    global_rules.extend([r for r in rules if is_valid_permission(r)])
+
+                added, skipped = self.global_manager.add_permissions(
+                    global_rules,
+                    source="tier_routing",
+                    tier="TIER_1_SAFE",
+                )
+                global_stats = {
+                    "global_patterns_accepted": len(accepted_global),
+                    "global_rules_added": len(added),
+                    "global_rules_skipped": len(skipped),
+                }
+                logger.info(f"Applied {len(added)} rules to global settings")
+
+            if accepted_project:
+                result = self._apply_patterns(project_settings_file, accepted_project, global_mode=False)
+                results.append(result)
+                project_stats = {
+                    "project_patterns_accepted": len(accepted_project),
+                    "project_rules_added": result.stats.get("total_permissions", 0),
+                }
+                logger.info(f"Applied {len(accepted_project)} patterns to project settings")
+
+            # Combine stats
+            combined_stats = {
+                "patterns_detected": len(patterns),
+                "global_patterns_available": len(global_patterns),
+                "project_patterns_available": len(project_patterns),
+                "mode": "tier_routing",
+                **global_stats,
+                **project_stats,
+            }
+
+            return GenerationResult(
+                success=True,
+                output_path=str(project_settings_file),
+                stats=combined_stats,
+            )
+
+        except Exception as e:
+            error_msg = f"Tier-based permission generation failed: {e}"
+            logger.error(error_msg, exc_info=True)
+            return GenerationResult(
+                success=False,
+                output_path=str(project_settings_file),
+                errors=[error_msg],
+                warnings=[],
+                stats={},
+            )
+
+    def apply_global_patterns(
+        self,
+        patterns: list[PatternSuggestion] | None = None,
+        days: int = 30,
+    ) -> tuple[list[str], list[str]]:
+        """
+        Apply TIER_1_SAFE patterns to global settings.
+
+        Convenience method for direct global application without interactive prompts.
+
+        Args:
+            patterns: Pre-computed patterns (detects TIER_1_SAFE if None)
+            days: Days of history if detecting new
+
+        Returns:
+            Tuple of (added_rules, skipped_rules)
+        """
+        if patterns is None:
+            all_patterns = self.pattern_detector.detect_patterns(days=days)
+            patterns = self.pattern_detector.get_global_suggestions(all_patterns)
+
+        if not patterns:
+            logger.info("No global patterns to apply")
+            return [], []
+
+        # Extract and validate rules
+        rules = []
+        for pattern in patterns:
+            proposed = self._parse_proposed_rule(pattern.proposed_rule)
+            rules.extend([r for r in proposed if is_valid_permission(r)])
+
+        return self.global_manager.add_permissions(
+            rules,
+            source="apply_global_patterns",
+            tier="TIER_1_SAFE",
+        )

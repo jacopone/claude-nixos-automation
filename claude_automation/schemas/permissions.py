@@ -115,6 +115,23 @@ class PatternSuggestion(BaseModel):
     impact_estimate: str = Field(
         "", description="Estimated impact (e.g., '50% fewer prompts')"
     )
+    tier: str = Field(
+        "TIER_2_MODERATE",
+        description="Tier classification: TIER_1_SAFE (global), TIER_2_MODERATE (project), TIER_3_RISKY (project)",
+    )
+
+    @validator("tier")
+    def validate_tier(cls, v):
+        """Validate tier classification."""
+        valid_tiers = {"TIER_1_SAFE", "TIER_2_MODERATE", "TIER_3_RISKY", "CROSS_FOLDER"}
+        if v not in valid_tiers:
+            raise ValueError(f"Invalid tier: {v}. Must be one of {valid_tiers}")
+        return v
+
+    @property
+    def is_global(self) -> bool:
+        """Check if this suggestion should be applied globally."""
+        return self.tier in {"TIER_1_SAFE", "CROSS_FOLDER"}
 
     @property
     def confidence_percentage(self) -> int:
