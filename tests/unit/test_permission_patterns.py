@@ -39,10 +39,14 @@ def detector(tracker, monkeypatch, temp_storage):
     - Consistency: up to +0.05
     - Recency: up to +0.05
 
-    We also change CWD to temp_storage to prevent loading real settings.local.json.
+    We change CWD to temp_storage to prevent loading real settings.local.json,
+    and mock Path.home() to prevent loading real ~/.claude/settings.json.
     """
     # Change CWD to temp directory to prevent loading real settings.local.json
     monkeypatch.chdir(temp_storage)
+
+    # Mock Path.home() to return temp_storage, preventing loading real global settings
+    monkeypatch.setattr(Path, "home", lambda: temp_storage)
 
     return PermissionPatternDetector(
         approval_tracker=tracker,

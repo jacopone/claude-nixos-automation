@@ -30,10 +30,14 @@ def detector(tracker, monkeypatch, temp_storage):
     """Create PermissionPatternDetector.
 
     Uses monkeypatch to change CWD to temp_storage to prevent loading
-    real settings.local.json patterns during tests.
+    real settings.local.json patterns during tests, and mocks Path.home()
+    to prevent loading real ~/.claude/settings.json global patterns.
     """
     # Isolate from real settings.local.json
     monkeypatch.chdir(temp_storage)
+
+    # Mock Path.home() to return temp_storage, preventing loading real global settings
+    monkeypatch.setattr(Path, "home", lambda: temp_storage)
 
     return PermissionPatternDetector(
         approval_tracker=tracker,

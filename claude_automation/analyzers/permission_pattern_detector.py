@@ -250,26 +250,46 @@ class PermissionPatternDetector(BaseAnalyzer):
 
     def _get_existing_patterns(self) -> set[str]:
         """
-        Load existing allowed patterns from settings.local.json.
+        Load existing allowed patterns from both global and local settings.
+
+        Checks:
+        1. ~/.claude/settings.json (global TIER_1_SAFE and cross-folder patterns)
+        2. .claude/settings.local.json (per-project patterns)
 
         Returns:
-            Set of patterns already in the allow list.
+            Set of patterns already in the allow lists.
         """
         existing = set()
-        settings_file = Path.cwd() / ".claude" / "settings.local.json"
 
-        if settings_file.exists():
+        # Check GLOBAL settings first (~/.claude/settings.json)
+        global_settings_file = Path.home() / ".claude" / "settings.json"
+        if global_settings_file.exists():
             try:
-                with open(settings_file, encoding="utf-8") as f:
+                with open(global_settings_file, encoding="utf-8") as f:
                     settings = json.load(f)
                 allow_list = settings.get("permissions", {}).get("allow", [])
-                existing = set(allow_list)
+                existing.update(allow_list)
                 logger.debug(
-                    f"Loaded {len(existing)} existing patterns from settings.local.json"
+                    f"Loaded {len(allow_list)} existing patterns from global settings.json"
                 )
             except (json.JSONDecodeError, KeyError) as e:
-                logger.warning(f"Could not load existing patterns: {e}")
+                logger.warning(f"Could not load global patterns: {e}")
 
+        # Check LOCAL settings (.claude/settings.local.json)
+        local_settings_file = Path.cwd() / ".claude" / "settings.local.json"
+        if local_settings_file.exists():
+            try:
+                with open(local_settings_file, encoding="utf-8") as f:
+                    settings = json.load(f)
+                allow_list = settings.get("permissions", {}).get("allow", [])
+                existing.update(allow_list)
+                logger.debug(
+                    f"Loaded {len(allow_list)} existing patterns from settings.local.json"
+                )
+            except (json.JSONDecodeError, KeyError) as e:
+                logger.warning(f"Could not load local patterns: {e}")
+
+        logger.debug(f"Total existing patterns: {len(existing)}")
         return existing
 
     def _pattern_already_approved(
