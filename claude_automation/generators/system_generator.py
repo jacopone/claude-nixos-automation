@@ -49,7 +49,9 @@ class SystemGenerator(BaseGenerator):
 
             if user_policies_file.exists():
                 try:
-                    user_policies_content = user_policies_file.read_text(encoding="utf-8")
+                    user_policies_content = user_policies_file.read_text(
+                        encoding="utf-8"
+                    )
                     has_user_policies = True
                     logger.info(f"Read user policies from {user_policies_file}")
                 except Exception as e:
@@ -76,10 +78,12 @@ class SystemGenerator(BaseGenerator):
             )
 
             if result.success:
-                result.stats.update({
-                    "has_user_policies": has_user_policies,
-                    "note": "Slim version - MCP-NixOS for package queries",
-                })
+                result.stats.update(
+                    {
+                        "has_user_policies": has_user_policies,
+                        "note": "Slim version - MCP-NixOS for package queries",
+                    }
+                )
                 logger.info("Generated system CLAUDE.md (slim version)")
 
             return result

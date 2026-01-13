@@ -53,7 +53,9 @@ class GlobalPermissionsManager:
             Settings dictionary with at least permissions.allow structure
         """
         if not self.settings_path.exists():
-            logger.info(f"Global settings not found at {self.settings_path}, creating new")
+            logger.info(
+                f"Global settings not found at {self.settings_path}, creating new"
+            )
             return self._create_default_structure()
 
         try:

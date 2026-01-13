@@ -372,7 +372,9 @@ Examples:
         # Print project summary
         if found > 0 or errors > 0:
             status = "✓" if errors == 0 else "✗"
-            print(f"{status} {project_name}: {found} found, {migrated} migrated, {skipped} skipped")
+            print(
+                f"{status} {project_name}: {found} found, {migrated} migrated, {skipped} skipped"
+            )
 
             if args.verbose:
                 if result["rules_migrated"]:

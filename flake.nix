@@ -73,6 +73,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/package-diff";
         };
+        check-reproducibility = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/check-reproducibility";
+        };
       };
 
       # Package the automation tools
@@ -194,6 +198,13 @@ export PYTHONPATH="$out/lib:\$PYTHONPATH"
 exec ${pythonEnv}/bin/python -m claude_automation.analyzers.package_differ "\$@"
 EOF
             chmod +x $out/bin/package-diff
+
+            cat > $out/bin/check-reproducibility <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.check_reproducibility "\$@"
+EOF
+            chmod +x $out/bin/check-reproducibility
 
             cat > $out/bin/setup-user-policies-interactive <<EOF
 #!/usr/bin/env bash

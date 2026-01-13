@@ -177,7 +177,9 @@ class PermissionPatternDetector(BaseAnalyzer):
         },
         # === Shell Utilities ===
         "Shell_utilities": {
-            "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)[\s:]"],
+            "patterns": [
+                r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)[\s:]"
+            ],
             "description": "Shell built-ins and utilities",
             "tier": "TIER_1_SAFE",
         },
@@ -367,7 +369,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                 # BORIS-STYLE: Skip categories already covered by wildcards
                 if self._is_category_covered_by_wildcards(category, existing_patterns):
                     if category not in skipped_categories:
-                        logger.debug(f"⏭ Skipping {category} (already covered by wildcards)")
+                        logger.debug(
+                            f"⏭ Skipping {category} (already covered by wildcards)"
+                        )
                         skipped_categories.add(category)
                     continue
 
@@ -382,7 +386,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                     )
 
         if skipped_categories:
-            logger.info(f"Skipped {len(skipped_categories)} categories (already covered by wildcards)")
+            logger.info(
+                f"Skipped {len(skipped_categories)} categories (already covered by wildcards)"
+            )
 
         # Filter out previously rejected permission patterns
         from .rejection_tracker import RejectionTracker
@@ -437,9 +443,7 @@ class PermissionPatternDetector(BaseAnalyzer):
 
         return suggestions
 
-    def detect_cross_folder_tools(
-        self, days: int = 30
-    ) -> list[PatternSuggestion]:
+    def detect_cross_folder_tools(self, days: int = 30) -> list[PatternSuggestion]:
         """
         Detect tools used across multiple folders and generate tool:* wildcards.
 
@@ -514,10 +518,10 @@ class PermissionPatternDetector(BaseAnalyzer):
         # Filter already-approved patterns
         existing_patterns = self._get_existing_patterns()
         cross_folder_tools = [
-            p for p in cross_folder_tools
+            p
+            for p in cross_folder_tools
             if not self._is_tool_already_approved(
-                p.pattern_type.replace("CrossFolder_", ""),
-                existing_patterns
+                p.pattern_type.replace("CrossFolder_", ""), existing_patterns
             )
         ]
 
@@ -951,7 +955,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                 categorized[tier].append(suggestion)
             else:
                 # Fallback to TIER_2 if unknown tier
-                logger.warning(f"Unknown tier '{tier}' for {suggestion.pattern.pattern_type}, defaulting to TIER_2_MODERATE")
+                logger.warning(
+                    f"Unknown tier '{tier}' for {suggestion.pattern.pattern_type}, defaulting to TIER_2_MODERATE"
+                )
                 categorized["TIER_2_MODERATE"].append(suggestion)
 
         # Log summary

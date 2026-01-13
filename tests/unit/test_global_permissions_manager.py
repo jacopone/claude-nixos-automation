@@ -30,8 +30,14 @@ def temp_home():
 @pytest.fixture
 def manager(temp_home):
     """Create GlobalPermissionsManager with temporary home."""
-    with patch.object(GlobalPermissionsManager, "GLOBAL_SETTINGS_PATH", temp_home / ".claude" / "settings.json"):
-        with patch.object(GlobalPermissionsManager, "BACKUP_DIR", temp_home / ".claude" / ".backups"):
+    with patch.object(
+        GlobalPermissionsManager,
+        "GLOBAL_SETTINGS_PATH",
+        temp_home / ".claude" / "settings.json",
+    ):
+        with patch.object(
+            GlobalPermissionsManager, "BACKUP_DIR", temp_home / ".claude" / ".backups"
+        ):
             yield GlobalPermissionsManager()
 
 
@@ -336,7 +342,9 @@ class TestIntegration:
 
         # Verify final state
         settings = manager.load_settings()
-        total_rules = [r for r in settings["permissions"]["allow"] if not r.startswith("//")]
+        total_rules = [
+            r for r in settings["permissions"]["allow"] if not r.startswith("//")
+        ]
         assert len(total_rules) == 6
 
     def test_cross_folder_promotion(self, manager):

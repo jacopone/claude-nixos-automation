@@ -66,7 +66,7 @@ Never use git commit --no-verify.
         original_content = source_file.read_text()
 
         # Mock Path.home() to return our temp directory
-        with patch.object(Path, 'home', return_value=tmp_path):
+        with patch.object(Path, "home", return_value=tmp_path):
             # Attempting to write to source should raise ValueError
             with pytest.raises(ValueError) as exc_info:
                 generator.write_artifact(source_file, "MALICIOUS OVERWRITE")
@@ -122,7 +122,7 @@ Never use git commit --no-verify.
         output_path = project / "CLAUDE.md"
 
         # Generate (mock home to find policies)
-        with patch.object(Path, 'home', return_value=tmp_path):
+        with patch.object(Path, "home", return_value=tmp_path):
             result = generator.generate(output_path, config_dir=project)
 
         # Should succeed
@@ -158,7 +158,7 @@ Never use git commit --no-verify.
 
         # Generate artifact with mocked home
         output_path = project / "CLAUDE.md"
-        with patch.object(Path, 'home', return_value=tmp_path):
+        with patch.object(Path, "home", return_value=tmp_path):
             result1 = generator.generate(output_path, config_dir=project)
             assert result1.success
 

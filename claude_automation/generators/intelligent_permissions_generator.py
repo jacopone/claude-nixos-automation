@@ -428,7 +428,9 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                 return GenerationResult(
                     success=True,
                     output_path=str(project_settings_file),
-                    warnings=["No patterns detected - continue using Claude Code to build history"],
+                    warnings=[
+                        "No patterns detected - continue using Claude Code to build history"
+                    ],
                     stats={"patterns_detected": 0, "mode": "tier_routing"},
                 )
 
@@ -438,9 +440,13 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
             categorized = self.pattern_detector.categorize_by_tier(patterns)
 
             global_patterns = categorized["TIER_1_SAFE"] + categorized["CROSS_FOLDER"]
-            project_patterns = categorized["TIER_2_MODERATE"] + categorized["TIER_3_RISKY"]
+            project_patterns = (
+                categorized["TIER_2_MODERATE"] + categorized["TIER_3_RISKY"]
+            )
 
-            logger.info(f"  Global (TIER_1_SAFE + CROSS_FOLDER): {len(global_patterns)}")
+            logger.info(
+                f"  Global (TIER_1_SAFE + CROSS_FOLDER): {len(global_patterns)}"
+            )
             logger.info(f"  Project (TIER_2/3): {len(project_patterns)}")
 
             # Step 3: Interactive approval (grouped by destination)
@@ -452,7 +458,9 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                     print("\n" + "=" * 70)
                     print("🌍 GLOBAL PERMISSIONS (apply to ALL projects)")
                     print("=" * 70)
-                    print(f"\nThese {len(global_patterns)} pattern(s) will be added to ~/.claude/settings.json")
+                    print(
+                        f"\nThese {len(global_patterns)} pattern(s) will be added to ~/.claude/settings.json"
+                    )
                     print("Safe read-only tools that should work everywhere.\n")
                     accepted_global = self._prompt_for_patterns(global_patterns)
 
@@ -460,7 +468,9 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                     print("\n" + "=" * 70)
                     print("📁 PROJECT PERMISSIONS (this project only)")
                     print("=" * 70)
-                    print(f"\nThese {len(project_patterns)} pattern(s) will be added to .claude/settings.local.json")
+                    print(
+                        f"\nThese {len(project_patterns)} pattern(s) will be added to .claude/settings.local.json"
+                    )
                     print("Write operations and tools specific to this project.\n")
                     accepted_project = self._prompt_for_patterns(project_patterns)
             else:
@@ -492,13 +502,17 @@ class IntelligentPermissionsGenerator(PermissionsGenerator):
                 logger.info(f"Applied {len(added)} rules to global settings")
 
             if accepted_project:
-                result = self._apply_patterns(project_settings_file, accepted_project, global_mode=False)
+                result = self._apply_patterns(
+                    project_settings_file, accepted_project, global_mode=False
+                )
                 results.append(result)
                 project_stats = {
                     "project_patterns_accepted": len(accepted_project),
                     "project_rules_added": result.stats.get("total_permissions", 0),
                 }
-                logger.info(f"Applied {len(accepted_project)} patterns to project settings")
+                logger.info(
+                    f"Applied {len(accepted_project)} patterns to project settings"
+                )
 
             # Combine stats
             combined_stats = {

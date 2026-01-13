@@ -28,7 +28,7 @@ def get_context_for_path(file_path: str) -> dict:
     if "pipewire" in file_lower or "audio" in file_lower or "wireplumber" in file_lower:
         context["relevant_files"] = [
             "modules/home-manager/audio/pipewire.nix",
-            "hosts/nixos/hardware-configuration.nix"
+            "hosts/nixos/hardware-configuration.nix",
         ]
         context["patterns"].append(
             "WirePlumber: Check bluetooth headset profile switching - "
@@ -63,24 +63,16 @@ def get_context_for_path(file_path: str) -> dict:
 
     # Home Manager context
     if "home-manager" in file_lower:
-        context["patterns"].append(
-            "User programs use programs.<name>.enable pattern"
-        )
-        context["patterns"].append(
-            "User packages go in home.packages"
-        )
+        context["patterns"].append("User programs use programs.<name>.enable pattern")
+        context["patterns"].append("User packages go in home.packages")
 
     # Flake context
     if "flake.nix" in file_lower:
-        context["patterns"].append(
-            "All inputs should follow nixpkgs for consistency"
-        )
+        context["patterns"].append("All inputs should follow nixpkgs for consistency")
         context["patterns"].append(
             "New inputs need to be added to outputs function parameters"
         )
-        context["warnings"].append(
-            "Run 'nix flake check' after modifying flake.nix"
-        )
+        context["warnings"].append("Run 'nix flake check' after modifying flake.nix")
 
     return context
 

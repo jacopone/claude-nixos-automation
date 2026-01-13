@@ -127,8 +127,12 @@ def analyze_and_suggest_permissions(project_path):
         categorized = detector.categorize_by_tier(high_confidence)
 
         # Route to global or project based on tier
-        global_suggestions = categorized.get("TIER_1_SAFE", []) + categorized.get("CROSS_FOLDER", [])
-        project_suggestions = categorized.get("TIER_2_MODERATE", []) + categorized.get("TIER_3_RISKY", [])
+        global_suggestions = categorized.get("TIER_1_SAFE", []) + categorized.get(
+            "CROSS_FOLDER", []
+        )
+        project_suggestions = categorized.get("TIER_2_MODERATE", []) + categorized.get(
+            "TIER_3_RISKY", []
+        )
 
         debug_log(f"Global (TIER_1_SAFE + CROSS_FOLDER): {len(global_suggestions)}")
         debug_log(f"Project (TIER_2/3): {len(project_suggestions)}")
@@ -170,34 +174,34 @@ def is_valid_permission_rule(rule):
     rule = rule.strip()
 
     # CRITICAL: Reject multi-line permissions (heredocs, complex commands)
-    if '\n' in rule or '__NEW_LINE__' in rule:
+    if "\n" in rule or "__NEW_LINE__" in rule:
         debug_log(f"Rejecting multi-line permission: {rule[:50]}...")
         return False
 
     # CRITICAL: Reject heredoc markers
-    if 'EOF' in rule:
+    if "EOF" in rule:
         debug_log(f"Rejecting heredoc permission: {rule[:50]}...")
         return False
 
     # CRITICAL: :* must be at the very end for prefix matching
-    if ':*' in rule and not rule.endswith(':*)'):
+    if ":*" in rule and not rule.endswith(":*)"):
         # For Bash(cmd:*) the rule ends with :*)
-        if rule.startswith('Bash(') and ':*' in rule:
-            inner = rule[5:-1] if rule.endswith(')') else rule[5:]
-            if not inner.endswith(':*'):
+        if rule.startswith("Bash(") and ":*" in rule:
+            inner = rule[5:-1] if rule.endswith(")") else rule[5:]
+            if not inner.endswith(":*"):
                 debug_log(f"Rejecting :* not at end: {rule[:50]}...")
                 return False
 
     # CRITICAL: Reject shell fragments and constructs
-    if rule.startswith('Bash('):
-        inner = rule[5:-1] if rule.endswith(')') else rule[5:]
+    if rule.startswith("Bash("):
+        inner = rule[5:-1] if rule.endswith(")") else rule[5:]
         # Shell fragments (standalone shell keywords)
-        shell_fragments = ['done', 'fi', 'then', 'else', 'do', 'esac', 'in']
+        shell_fragments = ["done", "fi", "then", "else", "do", "esac", "in"]
         if inner.strip() in shell_fragments:
             debug_log(f"Rejecting shell fragment: {rule}")
             return False
         # Shell constructs at start
-        if re.match(r'^(do |for |while |if |export |then )', inner):
+        if re.match(r"^(do |for |while |if |export |then )", inner):
             debug_log(f"Rejecting shell construct: {rule[:50]}...")
             return False
 
@@ -274,13 +278,13 @@ def is_covered_by_existing_pattern(new_rule: str, existing_rules: list) -> bool:
         return False
 
     # Only applies to Bash commands
-    if not new_rule.startswith('Bash('):
+    if not new_rule.startswith("Bash("):
         return False
 
     # Extract the command from the new rule
     # Bash(git status:*) -> "git status"
     # Bash(git -C /path diff:*) -> "git -C /path diff"
-    match = re.match(r'Bash\(([^:]+):?\*?\)', new_rule)
+    match = re.match(r"Bash\(([^:]+):?\*?\)", new_rule)
     if not match:
         return False
 
@@ -364,6 +368,7 @@ def update_global_settings(new_rules):
     except Exception as e:
         debug_log(f"Failed to update global settings: {e}")
         import traceback
+
         debug_log(traceback.format_exc())
         return False, 0
 
@@ -415,13 +420,15 @@ def update_settings_file(project_path, new_rules):
         for rule in new_rules:
             if rule not in existing:
                 # Final safety check - reject any rule with newlines/heredocs
-                if '\n' in rule or 'EOF' in rule or '__NEW_LINE__' in rule:
+                if "\n" in rule or "EOF" in rule or "__NEW_LINE__" in rule:
                     debug_log(f"Final check rejected: {rule[:50]}...")
                     continue
 
                 # Boris Cherny style: skip if covered by broader pattern
                 if is_covered_by_existing_pattern(rule, existing_list):
-                    debug_log(f"Skipping redundant rule (covered by broader pattern): {rule}")
+                    debug_log(
+                        f"Skipping redundant rule (covered by broader pattern): {rule}"
+                    )
                     continue
 
                 settings["permissions"]["allow"].append(rule)
@@ -551,7 +558,9 @@ def main():
             debug_log("No high-confidence suggestions found")
             sys.exit(0)
 
-        debug_log(f"Found {len(global_suggestions)} global + {len(project_suggestions)} project suggestions")
+        debug_log(
+            f"Found {len(global_suggestions)} global + {len(project_suggestions)} project suggestions"
+        )
 
         total_added = 0
         all_suggestions = []
@@ -576,7 +585,9 @@ def main():
                 if success and added_count > 0:
                     total_added += added_count
                     all_suggestions.extend(project_suggestions)
-                    debug_log(f"Added {added_count} rules to .claude/settings.local.json")
+                    debug_log(
+                        f"Added {added_count} rules to .claude/settings.local.json"
+                    )
 
         if total_added > 0:
             debug_log(f"Successfully added {total_added} permission rules total")
