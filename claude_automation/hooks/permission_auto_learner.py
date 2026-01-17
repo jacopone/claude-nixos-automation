@@ -40,6 +40,83 @@ def debug_log(message):
         pass
 
 
+# ============================================================================
+# AUTO-APPROVAL LOGIC (runs on EVERY invocation)
+# This ensures GLOBAL permissions work in ALL projects
+# ============================================================================
+
+def load_global_permissions():
+    """Load permissions.allow from global ~/.claude/settings.json"""
+    settings_path = Path.home() / ".claude" / "settings.json"
+    if not settings_path.exists():
+        return []
+
+    try:
+        with open(settings_path) as f:
+            settings = json.load(f)
+        allow_list = settings.get("permissions", {}).get("allow", [])
+        # Filter out comments
+        return [p for p in allow_list if isinstance(p, str) and not p.strip().startswith("//")]
+    except Exception as e:
+        debug_log(f"Failed to load global permissions: {e}")
+        return []
+
+
+def command_matches_pattern(command: str, pattern: str) -> bool:
+    """
+    Match command against Bash(cmd:*) pattern.
+
+    Pattern format: Bash(prefix:*)
+    Command: "ls -la /home/user/project"
+
+    Match: command starts with prefix + word boundary
+    """
+    if not pattern.startswith("Bash(") or not pattern.endswith(")"):
+        return False
+
+    # Extract: Bash(ls:*) -> "ls" or Bash(git diff:*) -> "git diff"
+    inner = pattern[5:-1]  # Remove Bash( and )
+
+    if inner.endswith(":*"):
+        prefix = inner[:-2]  # Remove :*
+        cmd = command.strip()
+
+        if cmd.startswith(prefix):
+            # Ensure word boundary (not "lsblk" matching "ls")
+            remaining = cmd[len(prefix):]
+            if not remaining or remaining[0] in " \t\n|&;><":
+                return True
+
+    # Exact match (no wildcard)
+    elif inner == command.strip():
+        return True
+
+    return False
+
+
+def check_auto_approval(tool_name: str, tool_input: dict) -> bool:
+    """
+    Check if current command should be auto-approved based on global permissions.
+
+    Returns True if command matches any pattern in permissions.allow.
+    """
+    if tool_name != "Bash":
+        return False
+
+    command = tool_input.get("command", "")
+    if not command:
+        return False
+
+    allowed_patterns = load_global_permissions()
+
+    for pattern in allowed_patterns:
+        if command_matches_pattern(command, pattern):
+            debug_log(f"AUTO-APPROVE: '{command[:50]}...' matched '{pattern}'")
+            return True
+
+    return False
+
+
 def get_invocation_counter(session_id):
     """Get and increment invocation counter for this session."""
     counter_file = Path.home() / ".claude" / f"learner_counter_{session_id}.txt"
@@ -526,16 +603,33 @@ To disable auto-generation, set:
 
 def main():
     """Main hook function."""
-    # Check if auto-learning is enabled
-    auto_learn_enabled = os.environ.get("ENABLE_PERMISSION_AUTO_LEARN", "1")
-
-    if auto_learn_enabled == "0":
-        sys.exit(0)  # Auto-learning disabled
-
     try:
-        # Read input from stdin
+        # Read input from stdin FIRST (need it for both approval and learning)
         raw_input = sys.stdin.read()
         input_data = json.loads(raw_input)
+
+        # Get tool info from input_data (Claude Code passes tool_name here)
+        tool_name = input_data.get("tool_name", "")
+        tool_input = input_data.get("tool_input", {})
+
+        # ============================================================
+        # STEP 1: Check auto-approval (runs on EVERY invocation)
+        # This ensures GLOBAL permissions work in ALL projects
+        # ============================================================
+        if check_auto_approval(tool_name, tool_input):
+            # Output approval decision and exit
+            print(json.dumps({"decision": "approve"}))
+            sys.exit(0)
+
+        # ============================================================
+        # STEP 2: Learning logic (only runs periodically)
+        # ============================================================
+
+        # Check if auto-learning is enabled
+        auto_learn_enabled = os.environ.get("ENABLE_PERMISSION_AUTO_LEARN", "1")
+
+        if auto_learn_enabled == "0":
+            sys.exit(0)  # Auto-learning disabled
 
         session_id = input_data.get("session_id", "default")
         project_path = input_data.get("project_path", "")

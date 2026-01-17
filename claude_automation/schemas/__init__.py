@@ -89,6 +89,15 @@ from claude_automation.schemas.permissions import (
     SuggestionRejectionEntry,
 )
 
+# CLAUDE.md suggestion schemas
+from claude_automation.schemas.suggestions import (
+    ClaudeMdSuggestion,
+    InstructionPattern,
+    SuggestionConfig,
+    SuggestionReport,
+    SuggestionScope,
+)
+
 # Tool usage analytics schemas
 from claude_automation.schemas.tool_usage import (
     ToolCategory as ToolUsageCategory,
@@ -194,4 +203,10 @@ __all__ = [
     "ToolUsageRecommendation",
     "ToolUsageAnalyticsConfig",
     "UsageSource",
+    # CLAUDE.md suggestion schemas
+    "ClaudeMdSuggestion",
+    "InstructionPattern",
+    "SuggestionConfig",
+    "SuggestionReport",
+    "SuggestionScope",
 ]

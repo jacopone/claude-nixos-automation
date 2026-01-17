@@ -1,0 +1,94 @@
+# {{ npm.name if npm else project_name }}
+
+> MCP Server: {{ npm.description if npm and npm.description else "Model Context Protocol server" }}
+
+## Overview
+
+This is a Model Context Protocol (MCP) server that provides tools for Claude to interact with external services.
+
+## Tech Stack
+- **Runtime**: Node.js / TypeScript
+- **MCP SDK**: `@modelcontextprotocol/sdk`
+- **Transport**: stdio (primary), HTTP (optional)
+{% if devenv %}
+- **Environment**: devenv
+{% endif %}
+
+## Quick Start
+
+```bash
+{% if npm and 'dev' in npm.scripts %}
+# Development
+npm run dev
+{% elif devenv and devenv.scripts %}
+# Enter devenv and run
+devenv shell
+{% for script in devenv.scripts[:3] %}
+{{ script }}
+{% endfor %}
+{% else %}
+# Development
+npm install
+npm run dev
+{% endif %}
+
+# Or configure in .mcp.json for Claude Code integration
+```
+
+## Architecture
+
+```
+┌─────────────────┐     ┌──────────────────────┐
+│  Claude Code    │────▶│  {{ project_name }}  │
+│  (.mcp.json)    │stdio│  MCP Server          │
+└─────────────────┘     └──────────────────────┘
+```
+
+## Available Scripts
+{% if npm and npm.scripts %}
+{% for script in npm.scripts %}
+- `npm run {{ script }}`
+{% endfor %}
+{% else %}
+- `npm run dev` - Start development server
+- `npm run build` - Build for production
+- `npm test` - Run tests
+{% endif %}
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `src/index.ts` | Server entry point, tool registration |
+| `src/tools/` | Individual tool implementations |
+| `package.json` | Dependencies and scripts |
+{% if devenv %}
+| `devenv.nix` | Development environment |
+{% endif %}
+
+## Session Management
+
+- **Auth caching**: TTL-based token storage
+- **Rate limiting**: Respects API quotas
+- **Error handling**: Graceful degradation on failures
+
+## Debugging
+
+1. Start server manually: `npm run dev`
+2. Check stdio output for errors
+3. Use MCP Inspector: `npx @anthropics/mcp-inspector`
+
+{% if git and git.recent_commits %}
+## Recent Activity
+
+{% for commit in git.recent_commits[:3] %}
+- {{ commit }}
+{% endfor %}
+{% endif %}
+
+---
+
+## User Memory
+
+<!-- USER_MEMORY_START -->
+<!-- USER_MEMORY_END -->

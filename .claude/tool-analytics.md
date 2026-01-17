@@ -1,100 +1,130 @@
 ---
 status: active
-created: 2025-12-09
-updated: 2025-12-09
+created: 2026-01-17
+updated: 2026-01-17
 type: reference
 lifecycle: persistent
 ---
 
 # System Tool Usage Analytics
 
-**Last Updated**: 2025-12-09 17:03:26
+**Last Updated**: 2026-01-17 08:45:25
 **Analysis Period**: 30 days
-**Total Commands Tracked**: 35
+**Total Commands Tracked**: 604
 
 ## Summary
 
 - **Total Tools Installed**: 0
-- **Tools Used**: 11 (0.0%)
+- **Tools Used**: 20 (0.0%)
 - **Dormant Tools**: 0
-- **Human-Used Tools**: 9
-- **Claude-Used Tools**: 2
+- **Human-Used Tools**: 6
+- **Claude-Used Tools**: 15
 
 ⚠️ **Low adoption rate**: Less than half of installed tools are being used
 
 ## Top Tools by Usage
 
 ### Overall (Human + Claude + Scripts)
-1. **bat**: 11 total
-   - Human: 11 (100%)
-   - Claude: 0 (0%)
-   - Scripts: 0
-   - Last used: 2025-11-18
-2. **bmad-method**: 6 total
-   - Human: 6 (100%)
-   - Claude: 0 (0%)
-   - Scripts: 0
-   - Last used: 2025-11-27
-3. **eza**: 4 total
+1. **rg**: 211 total
    - Human: 0 (0%)
-   - Claude: 4 (100%)
+   - Claude: 211 (100%)
    - Scripts: 0
-   - Last used: 2025-12-09
-4. **glow**: 3 total
-   - Human: 3 (100%)
+   - Last used: 2026-01-16
+2. **fd**: 162 total
+   - Human: 0 (0%)
+   - Claude: 162 (100%)
+   - Scripts: 0
+   - Last used: 2026-01-16
+3. **eza**: 119 total
+   - Human: 1 (1%)
+   - Claude: 118 (99%)
+   - Scripts: 0
+   - Last used: 2026-01-16
+4. **python312Packages.lizard**: 36 total
+   - Human: 0 (0%)
+   - Claude: 36 (100%)
+   - Scripts: 0
+   - Last used: 2026-01-14
+5. **bat**: 18 total
+   - Human: 0 (0%)
+   - Claude: 18 (100%)
+   - Scripts: 0
+   - Last used: 2026-01-16
+6. **file**: 15 total
+   - Human: 0 (0%)
+   - Claude: 15 (100%)
+   - Scripts: 0
+   - Last used: 2026-01-16
+7. **glow**: 15 total
+   - Human: 15 (100%)
    - Claude: 0 (0%)
    - Scripts: 0
-   - Last used: 2025-11-25
-5. **gemini-cli**: 3 total
-   - Human: 3 (100%)
-   - Claude: 0 (0%)
+   - Last used: 2026-01-15
+8. **fish**: 8 total
+   - Human: 0 (0%)
+   - Claude: 8 (100%)
    - Scripts: 0
-   - Last used: 2025-11-28
-6. **fd**: 3 total
+   - Last used: 2026-01-04
+9. **nmap**: 3 total
    - Human: 0 (0%)
    - Claude: 3 (100%)
    - Scripts: 0
-   - Last used: 2025-12-09
-7. **tmux**: 1 total
-   - Human: 1 (100%)
+   - Last used: 2025-12-24
+10. **cursor**: 3 total
+   - Human: 0 (0%)
+   - Claude: 3 (100%)
+   - Scripts: 0
+   - Last used: 2025-12-26
+11. **dust**: 3 total
+   - Human: 0 (0%)
+   - Claude: 3 (100%)
+   - Scripts: 0
+   - Last used: 2026-01-16
+12. **zoxide**: 2 total
+   - Human: 2 (100%)
    - Claude: 0 (0%)
    - Scripts: 0
-   - Last used: 2025-11-11
-8. **bottom**: 1 total
-   - Human: 1 (100%)
-   - Claude: 0 (0%)
+   - Last used: 2025-12-29
+13. **procs**: 2 total
+   - Human: 0 (0%)
+   - Claude: 2 (100%)
    - Scripts: 0
-   - Last used: 2025-11-18
-9. **cursor**: 1 total
-   - Human: 1 (100%)
-   - Claude: 0 (0%)
+   - Last used: 2026-01-16
+14. **strace**: 1 total
+   - Human: 0 (0%)
+   - Claude: 1 (100%)
    - Scripts: 0
-   - Last used: 2025-11-20
-10. **yazi**: 1 total
-   - Human: 1 (100%)
-   - Claude: 0 (0%)
+   - Last used: 2025-12-21
+15. **serena**: 1 total
+   - Human: 0 (0%)
+   - Claude: 1 (100%)
    - Scripts: 0
-   - Last used: 2025-12-06
-11. **google-chrome**: 1 total
-   - Human: 1 (100%)
-   - Claude: 0 (0%)
-   - Scripts: 0
-   - Last used: 2025-12-09
+   - Last used: 2025-12-23
 
 ### Human-Preferred Tools (Top 15)
-1. **bat**: 11 uses
-2. **bmad-method**: 6 uses
-3. **glow**: 3 uses
-4. **gemini-cli**: 3 uses
-5. **tmux**: 1 uses
-6. **bottom**: 1 uses
-7. **cursor**: 1 uses
-8. **yazi**: 1 uses
-9. **google-chrome**: 1 uses
+1. **glow**: 15 uses
+2. **zoxide**: 2 uses
+3. **eza**: 1 uses
+4. **sxiv**: 1 uses
+5. **feh**: 1 uses
+6. **yazi**: 1 uses
 
 ### Claude-Preferred Tools (Top 15)
-1. **eza**: 4 uses
-2. **fd**: 3 uses
+1. **rg**: 211 uses
+2. **fd**: 162 uses
+3. **eza**: 118 uses
+4. **python312Packages.lizard**: 36 uses
+5. **bat**: 18 uses
+6. **file**: 15 uses
+7. **fish**: 8 uses
+8. **nmap**: 3 uses
+9. **cursor**: 3 uses
+10. **dust**: 3 uses
+11. **procs**: 2 uses
+12. **strace**: 1 uses
+13. **serena**: 1 uses
+14. **google-chrome**: 1 uses
+15. **fastfetch**: 1 uses
 
 ## Tool Inventory by Category
 
@@ -103,28 +133,37 @@ lifecycle: persistent
 
 ### Tools Both Use (Shared)
 
-0 tools used by both human and Claude:
+1 tools used by both human and Claude:
+- **eza**: H:1 C:118
 
 ### Human-Only Tools
 
-9 tools used only by humans:
-- **bat**: 11 uses
-- **bmad-method**: 6 uses
-- **glow**: 3 uses
-- **gemini-cli**: 3 uses
-- **tmux**: 1 uses
-- **bottom**: 1 uses
-- **cursor**: 1 uses
+5 tools used only by humans:
+- **glow**: 15 uses
+- **zoxide**: 2 uses
+- **sxiv**: 1 uses
+- **feh**: 1 uses
 - **yazi**: 1 uses
-- **google-chrome**: 1 uses
 
 💡 **Insight**: These tools solve human-specific needs or Claude is not aware of them.
 
 ### Claude-Only Tools
 
-2 tools used only by Claude:
-- **eza**: 4 uses
-- **fd**: 3 uses
+14 tools used only by Claude:
+- **rg**: 211 uses
+- **fd**: 162 uses
+- **python312Packages.lizard**: 36 uses
+- **bat**: 18 uses
+- **file**: 15 uses
+- **fish**: 8 uses
+- **nmap**: 3 uses
+- **cursor**: 3 uses
+- **dust**: 3 uses
+- **procs**: 2 uses
+- **strace**: 1 uses
+- **serena**: 1 uses
+- **google-chrome**: 1 uses
+- **fastfetch**: 1 uses
 
 💡 **Insight**: AI-optimized tools working well for Claude's workflows.
 
@@ -136,25 +175,45 @@ lifecycle: persistent
 
 ## Recommendations
 
-### 🔴 HIGH PRIORITY: bat
+### 💚 LOW PRIORITY: rg
 
-**Type**: Policy Violation
-**Issue**: Claude not using bat (modern cat), but humans use it 11 times
-**Action**: Update CLAUDE.md policy to enforce bat usage
+**Type**: Highlight Value
+**Issue**: Highly used: 211 invocations (human: 0, Claude: 211)
+**Action**: Keep rg - provides excellent value
 
-### 🔴 HIGH PRIORITY: bottom
+### 💚 LOW PRIORITY: fd
 
-**Type**: Policy Violation
-**Issue**: Claude not using bottom (modern top), but humans use it 1 times
-**Action**: Update CLAUDE.md policy to enforce bottom usage
+**Type**: Highlight Value
+**Issue**: Highly used: 162 invocations (human: 0, Claude: 162)
+**Action**: Keep fd - provides excellent value
+
+### 💚 LOW PRIORITY: eza
+
+**Type**: Highlight Value
+**Issue**: Highly used: 119 invocations (human: 1, Claude: 118)
+**Action**: Keep eza - provides excellent value
+
+### 💚 LOW PRIORITY: python312Packages.lizard
+
+**Type**: Highlight Value
+**Issue**: Highly used: 36 invocations (human: 0, Claude: 36)
+**Action**: Keep python312Packages.lizard - provides excellent value
+
+### 💚 LOW PRIORITY: multiple
+
+**Type**: Human Vs Claude Gap
+**Issue**: 5 tools used by Claude but never by humans
+**Action**: AI-optimized tools working well: bat, fd, rg, file, python312Packages.lizard
 
 
 ## Usage Trends by Category
 
-- **Modern Cli**: 22 invocations
-- **Ai Tools**: 10 invocations
-- **System Tools**: 1 invocations
-- **File Management**: 1 invocations
+- **Modern Cli**: 532 invocations
+- **Fonts**: 36 invocations
+- **File Management**: 18 invocations
+- **Dev Tools**: 8 invocations
+- **System Tools**: 5 invocations
+- **Ai Tools**: 4 invocations
 - **Productivity**: 1 invocations
 
 ## Comparison with October 2025 Baseline
@@ -162,19 +221,19 @@ lifecycle: persistent
 
 | Tool | Oct 2025 Baseline | Current | Change | Status |
 |------|-------------------|---------|--------|--------|
-| glow | 32 | 3 | -29 | ⚠️ Declining |
-| zoxide | 20 | 0 | -20 | ⚠️ Declining |
-| eza | 19 | 4 | -15 | ⚠️ Declining |
-| bat | 7 | 11 | +4 | ✅ Growing |
-| fd | 2 | 3 | +1 | ✅ Growing |
-| rg | 1 | 0 | -1 | ⚠️ Declining |
-| dust | 1 | 0 | -1 | ⚠️ Declining |
+| glow | 32 | 15 | -17 | ⚠️ Declining |
+| zoxide | 20 | 2 | -18 | ⚠️ Declining |
+| eza | 19 | 119 | +100 | ✅ Growing |
+| bat | 7 | 18 | +11 | ✅ Growing |
+| fd | 2 | 162 | +160 | ✅ Growing |
+| rg | 1 | 211 | +210 | ✅ Growing |
+| dust | 1 | 3 | +2 | ✅ Growing |
 
 **Baseline study**: `docs/analysis/tool-adoption-baseline-2025-10.md`
 
 ## Next Review
 
-**Scheduled**: 2026-01-08
+**Scheduled**: 2026-02-16
 
 **Action items for next review**:
 1. Check if dormant tools are still unused

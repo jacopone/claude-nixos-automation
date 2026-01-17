@@ -1,0 +1,101 @@
+# {{ project_name }}
+
+> Nix Package: {{ flake.description if flake and flake.description else "Nix flake package" }}
+
+## Overview
+
+This flake provides a Nix package for reproducible installation on NixOS and other Nix-enabled systems.
+
+## Quick Start
+
+```bash
+# Try without installing
+nix run github:{{ git.owner if git and git.owner else "owner" }}/{{ project_name }}
+
+# Install in profile
+nix profile install github:{{ git.owner if git and git.owner else "owner" }}/{{ project_name }}
+
+# Use in flake
+{
+  inputs.{{ project_name | replace("-", "_") }}.url = "github:{{ git.owner if git and git.owner else "owner" }}/{{ project_name }}";
+  inputs.{{ project_name | replace("-", "_") }}.inputs.nixpkgs.follows = "nixpkgs";
+}
+```
+
+## Flake Outputs
+{% if flake %}
+| Output | Available |
+|--------|-----------|
+| `packages` | {{ "✓" if flake.has_packages else "✗" }} |
+| `overlays` | {{ "✓" if flake.has_overlay else "✗" }} |
+| `devShells` | {{ "✓" if flake.has_devshell else "✗" }} |
+{% else %}
+| Output | Description |
+|--------|-------------|
+| `packages.x86_64-linux.default` | Main package |
+{% endif %}
+
+## Updating
+
+```bash
+# Check upstream for new version
+# Update version in package derivation
+
+# Build and test
+nix build
+nix flake check
+
+# If hash mismatch, copy new hash from error
+```
+
+## Key Files
+
+| File | Purpose |
+|------|---------|
+| `flake.nix` | Flake definition, inputs, outputs |
+| `package.nix` | Package derivation (if separate) |
+| `default.nix` | Package derivation (if inline) |
+
+## NixOS Integration
+
+```nix
+# In your configuration
+{ inputs, ... }:
+{
+  nixpkgs.overlays = [ inputs.{{ project_name | replace("-", "_") }}.overlays.default ];
+  environment.systemPackages = [ pkgs.{{ project_name | replace("-", "_") }} ];
+}
+```
+
+## Testing
+
+```bash
+# Build package
+nix build
+
+# Run flake checks
+nix flake check
+
+# Test in shell
+nix shell . -c <binary> --version
+```
+
+## Maintenance Notes
+
+- Uses `inputs.nixpkgs.follows` for consistency with consumer's nixpkgs
+- May require `config.allowUnfree = true` if packaging proprietary software
+
+{% if git and git.recent_commits %}
+## Recent Activity
+
+{% for commit in git.recent_commits[:3] %}
+- {{ commit }}
+{% endfor %}
+{% endif %}
+
+---
+
+## User Memory
+
+<!-- USER_MEMORY_START -->
+<!-- USER_MEMORY_END -->

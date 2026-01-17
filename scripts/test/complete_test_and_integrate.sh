@@ -11,11 +11,11 @@ echo ""
 
 # Test 1: Dependencies
 echo "📦 1. Verifying dependencies..."
-devenv shell -c "uv run python -c 'import pydantic, jinja2; print(\"  ✅ Dependencies OK\")'" 2>/dev/null | grep "✅"
+devenv shell -c "python -c 'import pydantic, jinja2; print(\"  ✅ Dependencies OK\")'" 2>/dev/null | grep "✅"
 
 # Test 2: Imports
 echo "📥 2. Testing imports..."
-devenv shell -c "uv run python -c 'from claude_automation.core import AdaptiveSystemEngine; print(\"  ✅ All imports successful\")'" 2>/dev/null | grep "✅"
+devenv shell -c "python -c 'from claude_automation.core import AdaptiveSystemEngine; print(\"  ✅ All imports successful\")'" 2>/dev/null | grep "✅"
 
 # Test 3: Sample data
 echo "📊 3. Checking sample data..."
@@ -29,7 +29,7 @@ fi
 
 # Test 4: CLI functionality
 echo "🖥️  4. Testing CLI..."
-OUTPUT=$(devenv shell -c "uv run python run-adaptive-learning.py --help" 2>/dev/null | head -3)
+OUTPUT=$(devenv shell -c "python run-adaptive-learning.py --help" 2>/dev/null | head -3)
 if echo "$OUTPUT" | grep -q "usage:"; then
     echo "  ✅ CLI functional"
 else
@@ -38,7 +38,7 @@ fi
 
 # Test 5: Pattern detection
 echo "🧠 5. Testing pattern detection..."
-devenv shell -c "uv run python -c '
+devenv shell -c "python -c '
 from claude_automation.analyzers import ApprovalTracker, PermissionPatternDetector
 tracker = ApprovalTracker()
 detector = PermissionPatternDetector(tracker, min_occurrences=2, confidence_threshold=0.5)
@@ -66,7 +66,7 @@ if [[ -d "$AUTOMATION_DIR" ]]; then
     cd "$AUTOMATION_DIR"
 
     # Run learning cycle
-    devenv shell -c "uv run python run-adaptive-learning.py --interactive" 2>/dev/null
+    devenv shell -c "python run-adaptive-learning.py --interactive" 2>/dev/null
 
     echo ""
     echo "✅ Learning cycle complete"
@@ -82,7 +82,7 @@ echo "  ✅ Integration script created at /tmp/adaptive_learning_integration.sh"
 echo "🧪 7. Testing integration script (dry-run)..."
 bash -c "
 cd /home/guyfawkes/claude-nixos-automation
-devenv shell -c 'uv run python run-adaptive-learning.py --dry-run' 2>/dev/null | tail -5
+devenv shell -c 'python run-adaptive-learning.py --dry-run' 2>/dev/null | tail -5
 " | head -3
 echo "  ✅ Integration script works"
 
@@ -106,7 +106,7 @@ echo ""
 echo "   # === ADAPTIVE LEARNING ==="
 echo "   if [[ -d ~/claude-nixos-automation ]]; then"
 echo "       cd ~/claude-nixos-automation"
-echo "       devenv shell -c 'uv run python run-adaptive-learning.py --interactive'"
+echo "       devenv shell -c 'python run-adaptive-learning.py --interactive'"
 echo "   fi"
 echo ""
 echo "2. Or copy the integration script:"
@@ -114,5 +114,5 @@ echo "   cat /tmp/adaptive_learning_integration.sh >> ~/nixos-config/rebuild-nix
 echo ""
 echo "3. Test manually:"
 echo "   cd ~/claude-nixos-automation"
-echo "   devenv shell -c 'uv run python run-adaptive-learning.py --dry-run'"
+echo "   devenv shell -c 'python run-adaptive-learning.py --dry-run'"
 echo ""

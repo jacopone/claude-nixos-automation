@@ -77,6 +77,10 @@
           type = "app";
           program = "${self.packages.${system}.claude-automation}/bin/check-reproducibility";
         };
+        suggest-claude-md = {
+          type = "app";
+          program = "${self.packages.${system}.claude-automation}/bin/suggest-claude-md";
+        };
       };
 
       # Package the automation tools
@@ -90,6 +94,7 @@
             requests
             beautifulsoup4
             questionary
+            anthropic
           ]);
         in
         {
@@ -205,6 +210,13 @@ export PYTHONPATH="$out/lib:\$PYTHONPATH"
 exec ${pythonEnv}/bin/python -m claude_automation.cli.check_reproducibility "\$@"
 EOF
             chmod +x $out/bin/check-reproducibility
+
+            cat > $out/bin/suggest-claude-md <<EOF
+#!/usr/bin/env bash
+export PYTHONPATH="$out/lib:\$PYTHONPATH"
+exec ${pythonEnv}/bin/python -m claude_automation.cli.suggest_claude_md "\$@"
+EOF
+            chmod +x $out/bin/suggest-claude-md
 
             cat > $out/bin/setup-user-policies-interactive <<EOF
 #!/usr/bin/env bash

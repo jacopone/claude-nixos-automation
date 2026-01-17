@@ -12,15 +12,17 @@
   # Fix dotenv integration warning
   dotenv.disableHint = true;
 
-  # Packages for CLAUDE.md automation
+  # Packages for CLAUDE.md automation (pure Nix - no uv/venv)
   packages = with pkgs; [
-    # Modern Python setup with uv (2025 standard)
-    uv
     python313
     python313Packages.pip
     python313Packages.jinja2
     python313Packages.pydantic
     python313Packages.pytest
+    python313Packages.requests
+    python313Packages.beautifulsoup4
+    python313Packages.questionary
+    python313Packages.anthropic  # Claude API client
     # Code quality tools
     python313Packages.black
     python313Packages.mypy
@@ -29,26 +31,21 @@
     git
   ];
 
-  # Languages configuration following account harmony pattern
-  languages.python = {
-    enable = true;
-    uv.enable = true;
-    uv.sync.enable = true;
-  };
+  # Languages configuration (pure Nix - packages managed above)
+  languages.python.enable = true;
 
   # Scripts for automation
   scripts = {
     hello.exec = ''
       echo "🤖 Welcome to CLAUDE.md Automation System!"
       echo "Python: $(python --version)"
-      echo "uv: $(uv --version)"
       echo "Git: $(git --version)"
       echo ""
       echo "🔧 Available Tools:"
       echo "   - Template-based CLAUDE.md generation"
       echo "   - Robust Nix configuration parsing"
       echo "   - Automatic content validation"
-      echo "   - Modern dependency management with uv"
+      echo "   - Pure Nix dependency management"
     '';
 
     update-system-claude.exec = ''
@@ -70,12 +67,12 @@
 
     test-automation.exec = ''
       echo "🧪 Running CLAUDE.md automation tests..."
-      uv run python -m pytest tests/ -v
+      python -m pytest tests/ -v
     '';
 
     validate-claude-files.exec = ''
       echo "🔍 Validating existing CLAUDE.md files..."
-      uv run python -c "
+      python -c "
 from claude_automation.validators.content_validator import ContentValidator
 from pathlib import Path
 
@@ -104,36 +101,26 @@ else:
     '';
 
     setup-claude-automation.exec = ''
-      echo "🚀 Setting up CLAUDE.md automation environment..."
-
-      # Initialize Python project with uv if pyproject.toml doesn't exist
-      if [ ! -f pyproject.toml ]; then
-        echo "Initializing Python project with uv..."
-        uv init --no-readme --python 3.13
-      fi
-
-      # Install required packages with uv
-      echo "Installing automation packages with uv..."
-      uv add jinja2 pydantic pytest
-
-      echo "✅ CLAUDE.md automation environment ready!"
+      echo "🚀 CLAUDE.md automation environment ready!"
       echo "📋 Available commands:"
       echo "   update-system-claude    # Update ~/.claude/CLAUDE.md (v2)"
       echo "   update-project-claude   # Update ./CLAUDE.md (v2)"
       echo "   update-claude-configs   # Update both files (v2)"
       echo "   validate-claude-files   # Validate existing files"
       echo "   test-automation         # Run test suite"
+      echo ""
+      echo "ℹ️  Dependencies managed by Nix (no setup needed)"
     '';
 
-    # Development quality scripts (new for self-improving system)
+    # Development quality scripts
     test.exec = ''
       echo "🧪 Running full test suite..."
-      uv run python -m pytest tests/ -v --tb=short
+      python -m pytest tests/ -v --tb=short
     '';
 
     test-fast.exec = ''
       echo "⚡ Running fast tests (unit tests only)..."
-      uv run python -m pytest tests/unit/ -v --tb=line -x
+      python -m pytest tests/unit/ -v --tb=line -x
     '';
 
     lint.exec = ''

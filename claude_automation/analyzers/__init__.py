@@ -4,6 +4,7 @@ Analyzers for project analysis and detection.
 
 from .approval_tracker import ApprovalTracker
 from .base_analyzer import BaseAnalyzer
+from .claude_md_suggester import ClaudeMdSuggester
 from .context_optimizer import ContextOptimizer, ContextUsageTracker
 from .directory_analyzer import DirectoryAnalyzer
 from .global_mcp_analyzer import GlobalMCPAnalyzer
@@ -35,4 +36,5 @@ __all__ = [
     "UsageTracker",
     "WorkflowAnalyzer",
     "WorkflowDetector",
+    "ClaudeMdSuggester",
 ]

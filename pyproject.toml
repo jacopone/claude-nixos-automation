@@ -10,6 +10,7 @@ dependencies = [
     "requests>=2.31.0",  # Web scraping
     "beautifulsoup4>=4.12.0",  # HTML parsing
     "questionary>=2.0.0",  # Interactive CLI wizard
+    "anthropic>=0.40.0",  # Claude API client
 ]
 
 [build-system]

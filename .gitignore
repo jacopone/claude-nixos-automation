@@ -15,8 +15,9 @@ __pycache__/
 result
 result-*
 
-# UV
+# UV (no longer used - pure Nix now)
 .venv/
+uv.lock
 
 # IDE
 .vscode/
