@@ -159,11 +159,41 @@ class ProjectGenerator(BaseGenerator):
             config_dir = self._get_repo_root()
 
         context = self.detect_project_context(config_dir)
+
+        # Count packages (from various sources)
+        package_count = 0
+        if context.get("npm"):
+            package_count += len(context["npm"].get("dependencies", []))
+            package_count += len(context["npm"].get("dev_dependencies", []))
+
+        # Count fish abbreviations if this is a NixOS config
+        fish_abbreviation_count = 0
+        fish_files = list(config_dir.glob("**/fish*.nix")) + list(
+            config_dir.glob("**/shell/*.nix")
+        )
+        for f in fish_files:
+            try:
+                content = f.read_text(encoding="utf-8")
+                # Count shellAbbrs entries
+                abbrs = re.findall(r"shellAbbrs\s*=\s*\{([^}]+)\}", content, re.DOTALL)
+                for abbr_block in abbrs:
+                    fish_abbreviation_count += len(re.findall(r"(\w+)\s*=", abbr_block))
+            except Exception:
+                pass
+
+        # Git status summary
+        git_context = context.get("git", {})
+        git_status = "active" if git_context.get("commit_count", 0) > 0 else "empty"
+
         return {
             "project_type": context.get("project_type", "generic"),
             "detected_context": bool(context.get("npm") or context.get("devenv") or context.get("flake")),
             "template": self._select_template(context),
             "timestamp": datetime.now().isoformat(),
+            # Expected by CLI
+            "package_count": package_count,
+            "fish_abbreviation_count": fish_abbreviation_count,
+            "git_status": git_status,
         }
 
     # =========================================================================

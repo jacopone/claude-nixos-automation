@@ -103,9 +103,29 @@ class SystemGenerator(BaseGenerator):
         """Get summary statistics without generating the full file."""
         user_policies_file = Path.home() / ".claude" / "CLAUDE-USER-POLICIES.md"
 
+        # Count fish abbreviations if config_dir is provided
+        abbreviation_count = 0
+        if config_dir:
+            fish_files = list(config_dir.glob("**/fish*.nix")) + list(
+                config_dir.glob("**/shell/*.nix")
+            )
+            for f in fish_files:
+                try:
+                    content = f.read_text(encoding="utf-8")
+                    # Count shellAbbrs entries
+                    import re
+
+                    abbrs = re.findall(r"(\w+)\s*=\s*[\"']", content)
+                    abbreviation_count += len(abbrs)
+                except Exception:
+                    pass
+
         return {
             "status": "slim_version",
             "has_user_policies": user_policies_file.exists(),
             "note": "Tool extraction removed - use MCP-NixOS for queries",
             "timestamp": datetime.now().isoformat(),
+            # Expected by CLI - return 0 since we no longer extract tools
+            "total_tools": 0,
+            "abbreviation_count": abbreviation_count,
         }
