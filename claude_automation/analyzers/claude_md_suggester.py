@@ -421,13 +421,24 @@ Respond ONLY with the JSON array, no other text."""
                     else f"{projects[0]}/CLAUDE.md" if projects else "./CLAUDE.md"
                 )
 
+                # Calculate occurrences: Claude's instruction differs from raw_text,
+                # so look up all projects mentioned and count their occurrences
+                occurrences = 0
+                for _key, items in grouped.items():
+                    # Check if any grouped key matches (fuzzy match by project overlap)
+                    key_projects = {c["project_path"] for c in items}
+                    if key_projects & set(projects):  # If projects overlap
+                        occurrences += len(items)
+                # Ensure at least 1 occurrence (suggestion exists, so it was seen)
+                occurrences = max(1, occurrences)
+
                 suggestions.append(
                     ClaudeMdSuggestion(
                         instruction=item.get("instruction", ""),
                         scope=scope,
                         target_file=target_file,
                         suggested_section=item.get("suggested_section", "## Development Conventions"),
-                        occurrences=len(grouped.get(item.get("instruction", "")[:50], [])),
+                        occurrences=occurrences,
                         projects=projects,
                         confidence=confidence,
                         source_sessions=[],  # Not tracked through Claude analysis
