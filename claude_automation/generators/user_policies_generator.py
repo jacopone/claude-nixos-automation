@@ -102,6 +102,21 @@ class UserPoliciesGenerator(BaseGenerator):
                 stats={},
             )
 
+    def generate(self) -> GenerationResult:
+        """
+        Generate user policies files (implements abstract method).
+
+        Updates the example template (always) and creates initial user
+        policies file if it doesn't exist.
+
+        Returns:
+            GenerationResult from the user policies file generation
+        """
+        results = self.update_both_files()
+        # Return the user_file result as the primary result
+        # since that's what callers typically care about
+        return results["user_file"]
+
     def update_both_files(self) -> dict[str, GenerationResult]:
         """Update both example template and user policies (if needed)."""
         results = {}
