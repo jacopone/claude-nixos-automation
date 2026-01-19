@@ -213,6 +213,31 @@ def display_report(report):
     print(f"\n{Colors.DIM}Run with --apply to interactively add suggestions{Colors.END}")
 
 
+def is_suggestion_already_applied(suggestion) -> bool:
+    """Check if a suggestion (or similar) already exists in the target file."""
+    try:
+        target_path = Path(suggestion.target_file.replace("~", str(Path.home())))
+        if not target_path.exists():
+            return False
+
+        content = target_path.read_text(encoding="utf-8").lower()
+        instruction_lower = suggestion.instruction.lower()
+
+        # Extract key words (4+ chars) for fuzzy matching
+        key_words = [w for w in instruction_lower.split() if len(w) >= 4]
+
+        # If 70%+ of key words are present, consider it already applied
+        if key_words:
+            matches = sum(1 for w in key_words if w in content)
+            match_ratio = matches / len(key_words)
+            if match_ratio >= 0.7:
+                return True
+
+        return False
+    except (OSError, UnicodeDecodeError):
+        return False
+
+
 def interactive_apply(report):
     """Interactive mode to apply suggestions one by one."""
     if not report.has_suggestions:
@@ -225,8 +250,14 @@ def interactive_apply(report):
     all_suggestions = report.get_all_suggestions()
     applied_count = 0
     skipped_count = 0
+    already_applied_count = 0
 
     for i, s in enumerate(all_suggestions, 1):
+        # Check if already applied (deduplication)
+        if is_suggestion_already_applied(s):
+            already_applied_count += 1
+            continue
+
         scope_color = Colors.GREEN if s.scope == SuggestionScope.GLOBAL else Colors.YELLOW
         scope_label = "GLOBAL" if s.scope == SuggestionScope.GLOBAL else "PROJECT"
 
@@ -237,7 +268,7 @@ def interactive_apply(report):
         print(f"  {Colors.DIM}Confidence: {s.confidence:.0%}{Colors.END}")
 
         while True:
-            response = input(f"\n  {Colors.CYAN}[a]dd / [s]kip / [v]iew details / [q]uit: {Colors.END}").strip().lower()
+            response = input(f"{Colors.CYAN}[a]dd / [e]dit / [s]kip / [v]iew / [q]uit: {Colors.END}").strip().lower()
 
             if response == "a":
                 if apply_suggestion(s):
@@ -245,6 +276,23 @@ def interactive_apply(report):
                     print(f"  {Colors.GREEN}✓ Added to {s.target_file}{Colors.END}")
                 else:
                     print(f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}")
+                break
+
+            elif response == "e":
+                print(f"  {Colors.DIM}Edit instruction (Enter to keep current, or type new):{Colors.END}")
+                try:
+                    edited = input("  > ").strip()
+                    if edited:
+                        s.instruction = edited
+                    if apply_suggestion(s):
+                        applied_count += 1
+                        label = "(edited) " if edited else ""
+                        print(f"  {Colors.GREEN}✓ Added {label}to {s.target_file}{Colors.END}")
+                    else:
+                        print(f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}")
+                except (EOFError, KeyboardInterrupt):
+                    print(f"\n  {Colors.DIM}Edit cancelled{Colors.END}")
+                    continue
                 break
 
             elif response == "s":
@@ -264,9 +312,12 @@ def interactive_apply(report):
                 return
 
             else:
-                print(f"  {Colors.DIM}Invalid option. Use a/s/v/q.{Colors.END}")
+                print(f"  {Colors.DIM}Invalid option. Use a/e/s/v/q.{Colors.END}")
 
-    print(f"\n{Colors.GREEN}Done!{Colors.END} Applied {applied_count}, skipped {skipped_count}.")
+    # Summary
+    if already_applied_count > 0:
+        print(f"\n{Colors.DIM}Skipped {already_applied_count} already-applied suggestion(s).{Colors.END}")
+    print(f"{Colors.GREEN}Done!{Colors.END} Applied {applied_count}, skipped {skipped_count}.")
 
 
 def apply_suggestion(suggestion) -> bool:
