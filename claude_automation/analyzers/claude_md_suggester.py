@@ -253,11 +253,67 @@ class ClaudeMdSuggester(BaseAnalyzer):
         return ""
 
     def _get_project_from_session_path(self, session_file: Path) -> str:
-        """Extract project path from session file location."""
+        """
+        Extract project path from session file location.
+
+        Claude Code encodes paths by replacing / with -, so:
+        /home/user/my-project -> -home-user-my-project
+
+        The challenge: hyphens in actual folder names (e.g., my-project)
+        become indistinguishable from path separators. We solve this by
+        verifying the decoded path exists, trying different interpretations.
+        """
         parent_name = session_file.parent.name
-        if parent_name.startswith("-"):
-            return parent_name.replace("-", "/")
-        return parent_name
+        if not parent_name.startswith("-"):
+            return parent_name
+
+        # Remove leading dash and try naive decode first
+        encoded = parent_name[1:]
+        naive_decode = "/" + encoded.replace("-", "/")
+
+        # If naive decode exists, use it
+        if Path(naive_decode).exists():
+            return naive_decode
+
+        # Otherwise, try to find existing path by keeping hyphens in folder names
+        segments = encoded.split("-")
+        return self._find_existing_path(segments) or naive_decode
+
+    def _find_existing_path(self, segments: list[str]) -> str | None:
+        """
+        Recursively find an existing path by trying different hyphenation patterns.
+
+        For segments ["home", "user", "my", "project"], tries:
+        - /home/user/my/project (all separate)
+        - /home/user/my-project (last two joined)
+        - /home/user-my/project (middle two joined)
+        - etc.
+        """
+        if not segments:
+            return None
+
+        def try_combinations(current: Path, remaining: list[str]) -> Path | None:
+            if not remaining:
+                return current if current.exists() else None
+
+            # Try taking 1, 2, 3... segments joined with hyphens
+            for take in range(1, len(remaining) + 1):
+                folder_name = "-".join(remaining[:take])
+                candidate = current / folder_name
+
+                if candidate.exists():
+                    # Found a match, recurse with remaining segments
+                    result = try_combinations(candidate, remaining[take:])
+                    if result is not None:
+                        return result
+                elif take == 1 and not remaining[take:]:
+                    # Last segment, doesn't need to exist (might be a deleted project)
+                    return current / folder_name
+
+            return None
+
+        result = try_combinations(Path("/"), segments)
+        return str(result) if result else None
 
     def _analyze_with_claude(
         self, candidates: list[dict[str, Any]]
