@@ -8,13 +8,13 @@ This analyzer:
 4. Identifies dormant tools and policy violations
 """
 
-import json
 import logging
 import re
 from collections import defaultdict
-from datetime import UTC, datetime, timedelta
 from pathlib import Path
 
+from claude_automation.analyzers.recommendations import ToolRecommendationBuilder
+from claude_automation.analyzers.sessions import FishLogParser
 from claude_automation.schemas.tool_usage import (
     ToolCategory,
     ToolInfo,
@@ -23,11 +23,6 @@ from claude_automation.schemas.tool_usage import (
     ToolUsageStats,
 )
 from claude_automation.tool_categories import (
-    ALL_CATEGORIZED_TOOLS,
-    DORMANCY_THRESHOLD_DAYS,
-    MIN_USAGE_FOR_ADOPTION,
-    MODERN_VS_TRADITIONAL,
-    get_canonical_tool_name,
     get_tool_category,
 )
 
@@ -199,7 +194,7 @@ class ToolUsageAnalyzer:
         self, tool_inventory: list[ToolInfo], days: int
     ) -> dict[str, ToolUsageStats]:
         """
-        Analyze Fish command logs for tool usage.
+        Analyze Fish command logs for tool usage using FishLogParser.
 
         Args:
             tool_inventory: List of installed tools
@@ -208,117 +203,27 @@ class ToolUsageAnalyzer:
         Returns:
             Dict mapping tool name to usage stats
         """
-        if not self.fish_log_path.exists():
-            logger.warning(f"Fish command log not found: {self.fish_log_path}")
-            return {}
-
         # Build set of tool names for fast lookup
         tool_names = {tool.name for tool in tool_inventory}
 
-        # Initialize usage tracking
-        usage_data = defaultdict(
-            lambda: {
-                "tool_name": "",
-                "total": 0,
-                "human": 0,
-                "claude": 0,
-                "script": 0,
-                "first_used": None,
-                "last_used": None,
-            }
-        )
+        # Parse logs using extracted FishLogParser
+        parser = FishLogParser(self.fish_log_path)
+        usage_data = parser.parse(tool_names, days)
 
-        # Calculate cutoff date
-        cutoff_date = datetime.now(UTC) - timedelta(days=days)
-        cutoff_timestamp = int(cutoff_date.timestamp())
-
-        # Parse JSONL log
-        with open(self.fish_log_path) as f:
-            for line_num, line in enumerate(f, 1):
-                try:
-                    if not line.strip():
-                        continue
-
-                    data = json.loads(line)
-
-                    # Extract fields
-                    timestamp = data.get("ts", 0)
-                    cmd = data.get("cmd", "")
-                    source = data.get("src", "human")
-
-                    # Skip if outside analysis period
-                    if timestamp < cutoff_timestamp:
-                        continue
-
-                    # Extract tool name from command (first token)
-                    if not cmd:
-                        continue
-
-                    # Get first token (command name)
-                    first_token = cmd.split()[0] if cmd.split() else ""
-                    if not first_token:
-                        continue
-
-                    # Handle path prefixes (e.g., /usr/bin/git → git)
-                    command_name = Path(first_token).name
-
-                    # Get canonical tool name
-                    tool_name = get_canonical_tool_name(command_name)
-
-                    # Skip if not an installed tool
-                    if (
-                        tool_name not in tool_names
-                        and tool_name not in ALL_CATEGORIZED_TOOLS
-                    ):
-                        continue
-
-                    # Initialize if first time seeing this tool
-                    if usage_data[tool_name]["tool_name"] == "":
-                        usage_data[tool_name]["tool_name"] = tool_name
-
-                    # Update counts
-                    usage_data[tool_name]["total"] += 1
-
-                    if source == "human":
-                        usage_data[tool_name]["human"] += 1
-                    elif source == "claude-code":
-                        usage_data[tool_name]["claude"] += 1
-                    elif source in ("script", "bash-script", "python-script"):
-                        usage_data[tool_name]["script"] += 1
-
-                    # Update timestamps
-                    ts_datetime = datetime.fromtimestamp(timestamp, tz=UTC)
-                    if (
-                        usage_data[tool_name]["first_used"] is None
-                        or ts_datetime < usage_data[tool_name]["first_used"]
-                    ):
-                        usage_data[tool_name]["first_used"] = ts_datetime
-                    if (
-                        usage_data[tool_name]["last_used"] is None
-                        or ts_datetime > usage_data[tool_name]["last_used"]
-                    ):
-                        usage_data[tool_name]["last_used"] = ts_datetime
-
-                except json.JSONDecodeError as e:
-                    logger.debug(f"Failed to parse JSON at line {line_num}: {e}")
-                except Exception as e:
-                    logger.debug(f"Error processing line {line_num}: {e}")
-
-        # Convert to ToolUsageStats objects
+        # Convert FishToolUsageData to ToolUsageStats schema objects
         usage_stats = {}
         for tool_name, data in usage_data.items():
-            if data["total"] > 0:
+            if data.total > 0:
                 usage_stats[tool_name] = ToolUsageStats(
-                    tool_name=data["tool_name"],
-                    total_invocations=data["total"],
-                    human_invocations=data["human"],
-                    claude_invocations=data["claude"],
-                    script_invocations=data["script"],
-                    first_used=data["first_used"],
-                    last_used=data["last_used"],
+                    tool_name=data.tool_name,
+                    total_invocations=data.total,
+                    human_invocations=data.human,
+                    claude_invocations=data.claude,
+                    script_invocations=data.script,
+                    first_used=data.first_used,
+                    last_used=data.last_used,
                 )
 
-        logger.info(f"Found usage data for {len(usage_stats)} tools")
         return usage_stats
 
     def _classify_tools(
@@ -369,112 +274,9 @@ class ToolUsageAnalyzer:
         usage_stats: dict[str, ToolUsageStats],
         dormant_tools: list[ToolInfo],
     ) -> list[ToolUsageRecommendation]:
-        """
-        Generate actionable recommendations.
-
-        Args:
-            tool_inventory: All installed tools
-            usage_stats: Usage statistics
-            dormant_tools: Tools with no usage
-
-        Returns:
-            List of recommendations
-        """
-        recommendations = []
-
-        # Recommendation 1: Dormant tools (candidates for removal)
-        if len(dormant_tools) > 10:
-            # Group by category
-            dormant_by_category = defaultdict(list)
-            for tool in dormant_tools:
-                dormant_by_category[tool.category].append(tool.name)
-
-            for category, tools in dormant_by_category.items():
-                if len(tools) >= 3:
-                    tools_str = ", ".join(tools[:5])
-                    if len(tools) > 5:
-                        tools_str += f", and {len(tools) - 5} more"
-
-                    recommendations.append(
-                        ToolUsageRecommendation(
-                            tool_name=f"{category.value} tools",
-                            recommendation_type="remove_dormant",
-                            reason=f"{len(tools)} {category.value} tools unused in last {DORMANCY_THRESHOLD_DAYS} days",
-                            action=f"Consider removing: {tools_str}",
-                            priority=2 if len(tools) > 10 else 3,
-                        )
-                    )
-
-        # Recommendation 2: High-value tools (frequently used)
-        high_value_tools = [
-            (name, stats)
-            for name, stats in usage_stats.items()
-            if stats.total_invocations >= MIN_USAGE_FOR_ADOPTION * 5
-        ]
-        high_value_tools.sort(key=lambda x: x[1].total_invocations, reverse=True)
-
-        for tool_name, stats in high_value_tools[:5]:
-            recommendations.append(
-                ToolUsageRecommendation(
-                    tool_name=tool_name,
-                    recommendation_type="highlight_value",
-                    reason=f"Highly used: {stats.total_invocations} invocations (human: {stats.human_invocations}, Claude: {stats.claude_invocations})",
-                    action=f"Keep {tool_name} - provides excellent value",
-                    priority=3,
-                )
-            )
-
-        # Recommendation 3: Claude not using modern tools
-        for modern_tool, traditional_tool in MODERN_VS_TRADITIONAL.items():
-            if modern_tool in usage_stats:
-                stats = usage_stats[modern_tool]
-                if stats.claude_invocations == 0 and stats.human_invocations > 0:
-                    recommendations.append(
-                        ToolUsageRecommendation(
-                            tool_name=modern_tool,
-                            recommendation_type="policy_violation",
-                            reason=f"Claude not using {modern_tool} (modern {traditional_tool}), but humans use it {stats.human_invocations} times",
-                            action=f"Update CLAUDE.md policy to enforce {modern_tool} usage",
-                            priority=1,
-                        )
-                    )
-
-        # Recommendation 4: Human vs Claude gaps
-        human_only_tools = [
-            (name, stats)
-            for name, stats in usage_stats.items()
-            if stats.human_invocations >= 10 and stats.claude_invocations == 0
-        ]
-        if len(human_only_tools) > 5:
-            tools_str = ", ".join([name for name, _ in human_only_tools[:10]])
-            recommendations.append(
-                ToolUsageRecommendation(
-                    tool_name="multiple",
-                    recommendation_type="human_vs_claude_gap",
-                    reason=f"{len(human_only_tools)} tools used frequently by humans but never by Claude",
-                    action=f"Consider documenting usage in CLAUDE.md for: {tools_str}",
-                    priority=2,
-                )
-            )
-
-        claude_only_tools = [
-            (name, stats)
-            for name, stats in usage_stats.items()
-            if stats.claude_invocations >= 10 and stats.human_invocations == 0
-        ]
-        if len(claude_only_tools) > 3:
-            tools_str = ", ".join([name for name, _ in claude_only_tools[:10]])
-            recommendations.append(
-                ToolUsageRecommendation(
-                    tool_name="multiple",
-                    recommendation_type="human_vs_claude_gap",
-                    reason=f"{len(claude_only_tools)} tools used by Claude but never by humans",
-                    action=f"AI-optimized tools working well: {tools_str}",
-                    priority=3,
-                )
-            )
-
-        # Sort by priority
-        recommendations.sort(key=lambda r: r.priority)
-
-        return recommendations
+        """Generate actionable recommendations using ToolRecommendationBuilder."""
+        return ToolRecommendationBuilder(
+            tool_inventory=tool_inventory,
+            usage_stats=usage_stats,
+            dormant_tools=dormant_tools,
+        ).build_all()

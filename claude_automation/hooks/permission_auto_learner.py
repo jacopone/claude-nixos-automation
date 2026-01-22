@@ -26,6 +26,8 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
+from claude_automation.validators.permission_validator import is_valid_permission
+
 # Debug log file
 DEBUG_LOG_FILE = "/tmp/permission-auto-learner-log.txt"
 
@@ -227,112 +229,6 @@ def analyze_and_suggest_permissions(project_path):
         return {"global": [], "project": []}
 
 
-def is_valid_permission_rule(rule):
-    """
-    Validate a permission rule follows Claude Code conventions.
-
-    Checks:
-    1. Not empty
-    2. Not a bare pattern type (e.g., "file_write_operations")
-    3. Tool names start with uppercase (e.g., "Bash", "Write", not "bash")
-    4. No newlines (multi-line commands are invalid)
-    5. No heredoc markers (EOF)
-    6. :* wildcard must be at the very end
-
-    Args:
-        rule: Permission rule string to validate
-
-    Returns:
-        bool: True if valid
-    """
-    if not rule or not rule.strip():
-        return False
-
-    rule = rule.strip()
-
-    # CRITICAL: Reject multi-line permissions (heredocs, complex commands)
-    if "\n" in rule or "__NEW_LINE__" in rule:
-        debug_log(f"Rejecting multi-line permission: {rule[:50]}...")
-        return False
-
-    # CRITICAL: Reject heredoc markers
-    if "EOF" in rule:
-        debug_log(f"Rejecting heredoc permission: {rule[:50]}...")
-        return False
-
-    # CRITICAL: :* must be at the very end for prefix matching
-    if ":*" in rule and not rule.endswith(":*)"):
-        # For Bash(cmd:*) the rule ends with :*)
-        if rule.startswith("Bash(") and ":*" in rule:
-            inner = rule[5:-1] if rule.endswith(")") else rule[5:]
-            if not inner.endswith(":*"):
-                debug_log(f"Rejecting :* not at end: {rule[:50]}...")
-                return False
-
-    # CRITICAL: Reject shell fragments and constructs
-    if rule.startswith("Bash("):
-        inner = rule[5:-1] if rule.endswith(")") else rule[5:]
-        # Shell fragments (standalone shell keywords)
-        shell_fragments = ["done", "fi", "then", "else", "do", "esac", "in"]
-        if inner.strip() in shell_fragments:
-            debug_log(f"Rejecting shell fragment: {rule}")
-            return False
-        # Shell constructs at start
-        if re.match(r"^(do |for |while |if |export |then )", inner):
-            debug_log(f"Rejecting shell construct: {rule[:50]}...")
-            return False
-
-    # Reject bare pattern types (internal category names)
-    bare_pattern_types = {
-        "file_write_operations",
-        "file_operations",
-        "git_workflow",
-        "git_read_only",
-        "git_destructive",
-        "test_execution",
-        "modern_cli",
-        "project_full_access",
-        "github_cli",
-        "cloud_cli",
-        "package_managers",
-        "nix_tools",
-        "database_cli",
-        "network_tools",
-        "runtime_tools",
-        "posix_filesystem",
-        "posix_search",
-        "posix_read",
-        "shell_utilities",
-        "dangerous_operations",
-        "pytest",
-        "ruff",
-    }
-    if rule.lower() in bare_pattern_types:
-        debug_log(f"Rejecting bare pattern type: {rule}")
-        return False
-
-    # MCP tools are valid (mcp__server__tool format)
-    if rule.startswith("mcp__"):
-        return True
-
-    # WebFetch/WebSearch have special format
-    if rule.startswith("WebFetch(") or rule.startswith("WebSearch"):
-        return True
-
-    # Standard tools must follow Tool(args) format with uppercase start
-    tool_match = re.match(r"^([A-Za-z_]+)\(", rule)
-    if tool_match:
-        tool_name = tool_match.group(1)
-        if not tool_name[0].isupper():
-            debug_log(f"Rejecting lowercase tool name: {rule}")
-            return False
-        return True
-
-    # Unrecognized format - likely invalid
-    debug_log(f"Rejecting unrecognized format: {rule}")
-    return False
-
-
 def is_covered_by_existing_pattern(new_rule: str, existing_rules: list) -> bool:
     """
     Check if new_rule is already covered by a broader pattern in existing_rules.
@@ -406,7 +302,7 @@ def generate_permission_rules(suggestions):
         # Validate each rule before adding
         for r in individual_rules:
             r = r.strip()
-            if is_valid_permission_rule(r):
+            if is_valid_permission(r):
                 rules.append(r)
             else:
                 debug_log(f"Skipping invalid rule: {r}")

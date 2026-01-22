@@ -1,5 +1,7 @@
 """
 Robust Nix configuration parser with multiple parsing strategies and error recovery.
+
+Refactored: Tool categorization moved to data/tool_categories.py
 """
 
 import logging
@@ -7,6 +9,7 @@ import re
 from abc import ABC, abstractmethod
 from pathlib import Path
 
+from ..data import categorize_tool_by_keywords
 from ..schemas import ParsingResult, ToolCategory, ToolInfo
 
 logger = logging.getLogger(__name__)
@@ -27,156 +30,13 @@ class BaseNixParser(ABC):
         pass
 
     def _categorize_tool(self, pkg_name: str, description: str) -> ToolCategory:
-        """Categorize a tool based on its name and description."""
-        desc_lower = (pkg_name + " " + description).lower()
+        """
+        Categorize a tool based on its name and description.
 
-        # AI & MCP tools (check first - highest priority for showcase)
-        if any(
-            word in desc_lower
-            for word in [
-                "mcp",
-                "agent",
-                "ai ",
-                "claude",
-                "gpt",
-                "gemini",
-                "anthropic",
-                "serena",
-                "aider",
-                "plandex",
-                "jules",
-                "coding agent",
-                "semantic",
-                "model context",
-            ]
-        ):
-            return ToolCategory.AI_MCP_TOOLS
-
-        # System packages (fonts, python packages, build tools without CLI)
-        elif (
-            any(
-                pattern in desc_lower
-                for pattern in [
-                    "font",
-                    "typeface",
-                    "python312packages",
-                    "pythonpackages",
-                ]
-            )
-            or pkg_name.endswith("_fonts")
-            or "Packages." in pkg_name
-        ):
-            return ToolCategory.SYSTEM_PACKAGES
-
-        # Modern CLI tools (replacements for POSIX commands)
-        elif any(
-            word in desc_lower
-            for word in [
-                "modern",
-                "replacement",
-                "alternative",
-                "instead of",
-                "better than",
-                "faster than",
-            ]
-        ) or pkg_name in [
-            "fd",
-            "rg",
-            "ripgrep",
-            "bat",
-            "eza",
-            "dust",
-            "duf",
-            "procs",
-            "bottom",
-            "choose",
-        ]:
-            return ToolCategory.CLI_TOOLS
-
-        # Development tools
-        elif any(
-            word in desc_lower
-            for word in [
-                "git",
-                "code",
-                "editor",
-                "develop",
-                "compile",
-                "build",
-                "debug",
-                "lsp",
-                "language",
-                "programming",
-                "ide",
-                "vim",
-                "emacs",
-                "lint",
-                "format",
-                "test",
-            ]
-        ):
-            return ToolCategory.DEVELOPMENT
-
-        # File management tools
-        elif any(
-            word in desc_lower
-            for word in [
-                "file",
-                "find",
-                "search",
-                "grep",
-                "ls",
-                "cat",
-                "tree",
-                "manager",
-                "archive",
-                "compress",
-                "extract",
-                "preview",
-                "thumbnail",
-            ]
-        ):
-            return ToolCategory.FILE_MANAGEMENT
-
-        # System monitoring tools
-        elif any(
-            word in desc_lower
-            for word in [
-                "system",
-                "process",
-                "monitor",
-                "htop",
-                "disk",
-                "memory",
-                "performance",
-                "benchmark",
-                "stats",
-                "usage",
-            ]
-        ):
-            return ToolCategory.SYSTEM_MONITORING
-
-        # Network and security tools
-        elif any(
-            word in desc_lower
-            for word in [
-                "network",
-                "http",
-                "wget",
-                "curl",
-                "nmap",
-                "security",
-                "firewall",
-                "scan",
-                "proxy",
-                "ssl",
-                "tls",
-            ]
-        ):
-            return ToolCategory.NETWORK_SECURITY
-
-        else:
-            return ToolCategory.OTHER
+        Delegates to data-driven categorization in data/tool_categories.py.
+        Reduces CCN from 18 to 1.
+        """
+        return categorize_tool_by_keywords(pkg_name, description)
 
     def _extract_url_from_comment(self, comment: str) -> str | None:
         """Extract URL from comment if present."""

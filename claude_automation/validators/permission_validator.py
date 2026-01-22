@@ -6,6 +6,7 @@ Ensures permissions are syntactically valid and safe.
 import re
 from typing import Literal
 
+from ..data.validation_patterns import BARE_PATTERN_TYPES
 from ..schemas import ValidationResult
 
 # Singleton validator instance for convenience functions
@@ -83,32 +84,8 @@ class PermissionValidator:
         r"<<-",  # Indented heredoc
     ]
 
-    # Bare pattern types that should NEVER be used as permissions directly
+    # Bare pattern types imported from centralized data module
     # These are internal pattern category names, not valid Claude Code permissions
-    BARE_PATTERN_TYPES = {
-        "file_write_operations",
-        "file_operations",
-        "git_workflow",
-        "git_read_only",
-        "git_destructive",
-        "test_execution",
-        "modern_cli",
-        "project_full_access",
-        "github_cli",
-        "cloud_cli",
-        "package_managers",
-        "nix_tools",
-        "database_cli",
-        "network_tools",
-        "runtime_tools",
-        "posix_filesystem",
-        "posix_search",
-        "posix_read",
-        "shell_utilities",
-        "dangerous_operations",
-        "pytest",
-        "ruff",
-    }
 
     def validate(self, permission: str) -> ValidationResult:
         """
@@ -332,8 +309,8 @@ class PermissionValidator:
         # Normalize to lowercase for comparison
         permission_lower = permission.lower().strip()
 
-        # Check against known bare pattern types
-        return permission_lower in self.BARE_PATTERN_TYPES
+        # Check against known bare pattern types (imported from data module)
+        return permission_lower in BARE_PATTERN_TYPES
 
     def _has_valid_tool_casing(self, permission: str) -> bool:
         """
