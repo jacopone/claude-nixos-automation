@@ -26,7 +26,15 @@ import sys
 from datetime import datetime
 from pathlib import Path
 
-from claude_automation.validators.permission_validator import is_valid_permission
+# Ensure the project root is in sys.path so claude_automation can be imported
+# without relying on PYTHONPATH (which conflicts with NixOS Python wrappers)
+_project_root = str(Path(__file__).resolve().parent.parent.parent)
+if _project_root not in sys.path:
+    sys.path.insert(0, _project_root)
+
+from claude_automation.validators.permission_validator import (  # noqa: E402
+    is_valid_permission,
+)
 
 # Debug log file
 DEBUG_LOG_FILE = "/tmp/permission-auto-learner-log.txt"
