@@ -191,13 +191,17 @@ class PermissionPatternDetector(BaseAnalyzer):
                     )
 
         if skipped_categories:
-            logger.info(f"Skipped {len(skipped_categories)} categories (already covered)")
+            logger.info(
+                f"Skipped {len(skipped_categories)} categories (already covered)"
+            )
 
         # Filter rejected patterns
         from .rejection_tracker import RejectionTracker
 
         tracker = RejectionTracker()
-        rejections = tracker.get_recent_rejections(days=90, suggestion_type="permission")
+        rejections = tracker.get_recent_rejections(
+            days=90, suggestion_type="permission"
+        )
         rejected_fingerprints = {r.suggestion_fingerprint for r in rejections}
         detected_patterns = [
             p for p in detected_patterns if p.pattern_type not in rejected_fingerprints
@@ -216,7 +220,9 @@ class PermissionPatternDetector(BaseAnalyzer):
                 logger.info(f"Filtered {filtered} patterns (already approved)")
 
         # Create suggestions from category patterns
-        approvals = self.tracker.get_recent_approvals(days=days, project_path=project_path)
+        approvals = self.tracker.get_recent_approvals(
+            days=days, project_path=project_path
+        )
         suggestions = [
             self._create_suggestion(pattern, approvals)
             for pattern in detected_patterns
@@ -261,7 +267,9 @@ class PermissionPatternDetector(BaseAnalyzer):
         min_occurrences: int | None = None,
     ) -> PermissionPattern | None:
         """Detect a specific category pattern."""
-        min_occ = min_occurrences if min_occurrences is not None else self.min_occurrences
+        min_occ = (
+            min_occurrences if min_occurrences is not None else self.min_occurrences
+        )
 
         matching_approvals = []
         patterns_regex = rules["patterns"]

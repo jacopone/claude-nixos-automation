@@ -60,7 +60,9 @@ class CrossFolderDetector:
         tool_usage = self._extract_tool_usage(approvals)
 
         # Find tools used across multiple folders
-        cross_folder_patterns = self._find_cross_folder_tools(tool_usage, approvals, days)
+        cross_folder_patterns = self._find_cross_folder_tools(
+            tool_usage, approvals, days
+        )
 
         # Filter already-approved patterns
         filtered_patterns = [
@@ -118,7 +120,9 @@ class CrossFolderDetector:
                 and total_approvals >= self.config["min_total_approvals"]
             ):
                 # Calculate confidence with cross-folder boost
-                base_confidence = self.confidence.calculate(tool_approvals, all_approvals)
+                base_confidence = self.confidence.calculate(
+                    tool_approvals, all_approvals
+                )
                 boosted_confidence = min(
                     1.0, base_confidence + self.config["confidence_boost"]
                 )

@@ -154,9 +154,7 @@ PATTERN_CATEGORIES: dict[str, PatternRule] = {
     },
     # === Shell Utilities ===
     "Shell_utilities": {
-        "patterns": [
-            r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)[\s:]"
-        ],
+        "patterns": [r"Bash\((echo|printf|sleep|true|false|which|type|cd|pwd)[\s:]"],
         "description": "Shell built-ins and utilities",
         "tier": "TIER_1_SAFE",
     },

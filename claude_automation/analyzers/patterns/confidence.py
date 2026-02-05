@@ -64,7 +64,9 @@ class ConfidenceCalculator:
     ) -> float:
         """Calculate bonus for patterns appearing across multiple sessions."""
         unique_sessions = len({a.session_id for a in matching_approvals})
-        return min(self.MAX_SESSION_BONUS, (unique_sessions / 5) * self.MAX_SESSION_BONUS)
+        return min(
+            self.MAX_SESSION_BONUS, (unique_sessions / 5) * self.MAX_SESSION_BONUS
+        )
 
     def _project_spread_bonus(
         self, matching_approvals: list[PermissionApprovalEntry]

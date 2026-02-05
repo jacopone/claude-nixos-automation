@@ -133,7 +133,9 @@ class ClaudeMdSuggester(BaseAnalyzer):
         logger.info(f"Stage 2: Claude identified {len(suggestions)} valid suggestions")
 
         # Separate into global and project-specific
-        global_suggestions = [s for s in suggestions if s.scope == SuggestionScope.GLOBAL]
+        global_suggestions = [
+            s for s in suggestions if s.scope == SuggestionScope.GLOBAL
+        ]
         project_suggestions: dict[str, list[ClaudeMdSuggestion]] = defaultdict(list)
         for s in suggestions:
             if s.scope == SuggestionScope.PROJECT and s.projects:
@@ -205,13 +207,17 @@ class ClaudeMdSuggester(BaseAnalyzer):
                         matches = re.findall(pattern, text_lower, re.IGNORECASE)
                         for match in matches:
                             if len(match.strip()) >= 15:  # Minimum viable instruction
-                                candidates.append({
-                                    "raw_text": match.strip(),
-                                    "full_message": text[:500],  # Context (truncated)
-                                    "project_path": project_path,
-                                    "session_id": session_id,
-                                    "message_index": msg_idx,
-                                })
+                                candidates.append(
+                                    {
+                                        "raw_text": match.strip(),
+                                        "full_message": text[
+                                            :500
+                                        ],  # Context (truncated)
+                                        "project_path": project_path,
+                                        "session_id": session_id,
+                                        "message_index": msg_idx,
+                                    }
+                                )
 
         except (OSError, UnicodeDecodeError):
             logger.warning(f"Failed to read session {session_file}: e")
@@ -378,7 +384,7 @@ class ClaudeMdSuggester(BaseAnalyzer):
 ### Candidate {i}
 - **Pattern**: "{key}"
 - **Occurrences**: {len(items)}
-- **Projects**: {', '.join(projects)}
+- **Projects**: {", ".join(projects)}
 - **Example context**: "{example_context}..."
 """)
 
@@ -474,7 +480,9 @@ Respond ONLY with the JSON array, no other text."""
                 target_file = (
                     "~/.claude/CLAUDE-USER-POLICIES.md"
                     if scope == SuggestionScope.GLOBAL
-                    else f"{projects[0]}/CLAUDE.md" if projects else "./CLAUDE.md"
+                    else f"{projects[0]}/CLAUDE.md"
+                    if projects
+                    else "./CLAUDE.md"
                 )
 
                 # Calculate occurrences: Claude's instruction differs from raw_text,
@@ -493,7 +501,9 @@ Respond ONLY with the JSON array, no other text."""
                         instruction=item.get("instruction", ""),
                         scope=scope,
                         target_file=target_file,
-                        suggested_section=item.get("suggested_section", "## Development Conventions"),
+                        suggested_section=item.get(
+                            "suggested_section", "## Development Conventions"
+                        ),
                         occurrences=occurrences,
                         projects=projects,
                         confidence=confidence,

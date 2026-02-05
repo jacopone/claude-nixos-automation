@@ -31,7 +31,13 @@ class ProjectGenerator(BaseGenerator):
     """
 
     # Project type detection priority
-    PROJECT_TYPES = ["mcp_server", "nix_package", "python_devenv", "typescript", "generic"]
+    PROJECT_TYPES = [
+        "mcp_server",
+        "nix_package",
+        "python_devenv",
+        "typescript",
+        "generic",
+    ]
 
     def __init__(self, template_dir: Path = None):
         super().__init__(template_dir)
@@ -57,7 +63,9 @@ class ProjectGenerator(BaseGenerator):
             if auto_detect:
                 context = self.detect_project_context(config_dir)
                 template_name = self._select_template(context)
-                logger.info(f"Auto-detected project type: {context.get('project_type', 'generic')}")
+                logger.info(
+                    f"Auto-detected project type: {context.get('project_type', 'generic')}"
+                )
             else:
                 context = {"timestamp": datetime.now()}
                 template_name = "project-claude.j2"
@@ -187,7 +195,9 @@ class ProjectGenerator(BaseGenerator):
 
         return {
             "project_type": context.get("project_type", "generic"),
-            "detected_context": bool(context.get("npm") or context.get("devenv") or context.get("flake")),
+            "detected_context": bool(
+                context.get("npm") or context.get("devenv") or context.get("flake")
+            ),
             "template": self._select_template(context),
             "timestamp": datetime.now().isoformat(),
             # Expected by CLI
@@ -340,7 +350,9 @@ class ProjectGenerator(BaseGenerator):
 
             # Check if this is a NixOS config vs a package
             context["is_nixos_config"] = "nixosConfigurations" in content
-            context["is_package"] = context["has_packages"] and not context["is_nixos_config"]
+            context["is_package"] = (
+                context["has_packages"] and not context["is_nixos_config"]
+            )
 
             return context
 
@@ -411,7 +423,9 @@ class ProjectGenerator(BaseGenerator):
                 cwd=project_path,
             )
 
-            last_commit_date = date_result.stdout.strip() if date_result.returncode == 0 else ""
+            last_commit_date = (
+                date_result.stdout.strip() if date_result.returncode == 0 else ""
+            )
 
             return {
                 "recent_commits": commits[:5],

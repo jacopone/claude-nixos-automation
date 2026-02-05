@@ -128,9 +128,7 @@ TOOL_NAME_MAPPING: dict[str, ToolCategory] = {
 }
 
 
-def categorize_tool_by_keywords(
-    pkg_name: str, description: str = ""
-) -> ToolCategory:
+def categorize_tool_by_keywords(pkg_name: str, description: str = "") -> ToolCategory:
     """
     Categorize a tool based on its name and description.
 

@@ -267,7 +267,9 @@ class MCPUsageAnalyzer:
         # Parse session logs using extracted SessionParser
         for log_file in log_files:
             try:
-                session_parser.parse_log_file(log_file, cutoff_date, usage_data, session_data)
+                session_parser.parse_log_file(
+                    log_file, cutoff_date, usage_data, session_data
+                )
             except Exception as e:
                 logger.warning(f"Failed to parse log file {log_file}: {e}")
 

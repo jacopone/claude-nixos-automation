@@ -77,8 +77,8 @@ class InstructionPattern(BaseModel):
     """A detected instruction pattern from session analysis."""
 
     text: str = Field(..., description="The instruction text")
-    pattern_type: Literal["always", "never", "remember", "correction", "preference"] = Field(
-        ..., description="Type of instruction pattern"
+    pattern_type: Literal["always", "never", "remember", "correction", "preference"] = (
+        Field(..., description="Type of instruction pattern")
     )
     session_id: str = Field(..., description="Session where detected")
     project_path: str = Field(..., description="Project path")
@@ -128,9 +128,7 @@ class SuggestionConfig(BaseModel):
     confidence_threshold: float = Field(
         0.6, ge=0.0, le=1.0, description="Minimum confidence for suggestions"
     )
-    max_suggestions: int = Field(
-        10, ge=1, description="Maximum suggestions to return"
-    )
+    max_suggestions: int = Field(10, ge=1, description="Maximum suggestions to return")
     exclude_patterns: list[str] = Field(
         default_factory=lambda: [
             r"^(yes|no|ok|thanks|thank you)$",

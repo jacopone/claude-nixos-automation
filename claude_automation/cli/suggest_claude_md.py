@@ -105,7 +105,8 @@ How it works:
     )
 
     parser.add_argument(
-        "--verbose", "-v",
+        "--verbose",
+        "-v",
         action="store_true",
         help="Show verbose output including Stage 1/2 progress",
     )
@@ -131,10 +132,16 @@ How it works:
     # Check for API key
     if not os.environ.get("ANTHROPIC_API_KEY"):
         if args.skip_if_no_key:
-            print(f"{Colors.DIM}⏭️  Skipping CLAUDE.md suggestions (ANTHROPIC_API_KEY not set){Colors.END}")
+            print(
+                f"{Colors.DIM}⏭️  Skipping CLAUDE.md suggestions (ANTHROPIC_API_KEY not set){Colors.END}"
+            )
             sys.exit(0)
-        print(f"{Colors.RED}Error: ANTHROPIC_API_KEY environment variable required{Colors.END}")
-        print("\nThe suggestion engine uses Claude API to analyze and filter candidates.")
+        print(
+            f"{Colors.RED}Error: ANTHROPIC_API_KEY environment variable required{Colors.END}"
+        )
+        print(
+            "\nThe suggestion engine uses Claude API to analyze and filter candidates."
+        )
         print("Set your API key: export ANTHROPIC_API_KEY=sk-ant-...")
         sys.exit(1)
 
@@ -149,7 +156,9 @@ How it works:
     suggester = ClaudeMdSuggester(claude_dir=args.claude_dir, config=config)
 
     if args.verbose:
-        print(f"{Colors.CYAN}Stage 1: Extracting candidate patterns from session logs...{Colors.END}")
+        print(
+            f"{Colors.CYAN}Stage 1: Extracting candidate patterns from session logs...{Colors.END}"
+        )
 
     try:
         report = suggester.analyze_sessions(days=args.days)
@@ -173,7 +182,9 @@ def display_report(report):
     """Display suggestions in human-readable format."""
     if not report.has_suggestions:
         print(f"\n{Colors.DIM}No CLAUDE.md suggestions found.{Colors.END}")
-        print(f"Analyzed {report.sessions_analyzed} sessions from the last {report.analysis_period_days} days.")
+        print(
+            f"Analyzed {report.sessions_analyzed} sessions from the last {report.analysis_period_days} days."
+        )
         print(f"\n{Colors.DIM}This could mean:{Colors.END}")
         print("  • No instruction patterns detected in conversations")
         print("  • Claude filtered all candidates as noise")
@@ -181,16 +192,26 @@ def display_report(report):
         return
 
     print(f"\n{Colors.BOLD}{Colors.CYAN}📝 CLAUDE.md Suggestions{Colors.END}")
-    print(f"{Colors.DIM}Based on {report.sessions_analyzed} sessions from the last {report.analysis_period_days} days{Colors.END}")
-    print(f"{Colors.DIM}(Two-stage analysis: regex extraction → Claude filtering){Colors.END}\n")
+    print(
+        f"{Colors.DIM}Based on {report.sessions_analyzed} sessions from the last {report.analysis_period_days} days{Colors.END}"
+    )
+    print(
+        f"{Colors.DIM}(Two-stage analysis: regex extraction → Claude filtering){Colors.END}\n"
+    )
 
     # Global suggestions
     if report.global_suggestions:
-        print(f"{Colors.BOLD}{Colors.GREEN}GLOBAL{Colors.END} (add to ~/.claude/CLAUDE-USER-POLICIES.md):")
+        print(
+            f"{Colors.BOLD}{Colors.GREEN}GLOBAL{Colors.END} (add to ~/.claude/CLAUDE-USER-POLICIES.md):"
+        )
         print()
         for i, s in enumerate(report.global_suggestions, 1):
-            print(f"  {Colors.BOLD}{i}.{Colors.END} {Colors.GREEN}\"{s.instruction}\"{Colors.END}")
-            print(f"     {Colors.DIM}Projects: {', '.join(s.projects[:3])}{'...' if len(s.projects) > 3 else ''}{Colors.END}")
+            print(
+                f'  {Colors.BOLD}{i}.{Colors.END} {Colors.GREEN}"{s.instruction}"{Colors.END}'
+            )
+            print(
+                f"     {Colors.DIM}Projects: {', '.join(s.projects[:3])}{'...' if len(s.projects) > 3 else ''}{Colors.END}"
+            )
             print(f"     {Colors.DIM}→ Section: {s.suggested_section}{Colors.END}")
             print(f"     {Colors.DIM}Confidence: {s.confidence:.0%}{Colors.END}")
             print()
@@ -200,17 +221,25 @@ def display_report(report):
         for project_path, suggestions in report.project_suggestions.items():
             # Clean up project path for display
             display_path = project_path.replace("/home/", "~/")
-            print(f"{Colors.BOLD}{Colors.YELLOW}PROJECT-SPECIFIC{Colors.END} ({display_path}/CLAUDE.md):")
+            print(
+                f"{Colors.BOLD}{Colors.YELLOW}PROJECT-SPECIFIC{Colors.END} ({display_path}/CLAUDE.md):"
+            )
             print()
             for i, s in enumerate(suggestions, 1):
-                print(f"  {Colors.BOLD}{i}.{Colors.END} {Colors.YELLOW}\"{s.instruction}\"{Colors.END}")
-                print(f"     {Colors.DIM}Seen: {s.occurrences} times in this project{Colors.END}")
+                print(
+                    f'  {Colors.BOLD}{i}.{Colors.END} {Colors.YELLOW}"{s.instruction}"{Colors.END}'
+                )
+                print(
+                    f"     {Colors.DIM}Seen: {s.occurrences} times in this project{Colors.END}"
+                )
                 print(f"     {Colors.DIM}→ Section: {s.suggested_section}{Colors.END}")
                 print(f"     {Colors.DIM}Confidence: {s.confidence:.0%}{Colors.END}")
                 print()
 
     print(f"{Colors.DIM}Total suggestions: {report.total_suggestions}{Colors.END}")
-    print(f"\n{Colors.DIM}Run with --apply to interactively add suggestions{Colors.END}")
+    print(
+        f"\n{Colors.DIM}Run with --apply to interactively add suggestions{Colors.END}"
+    )
 
 
 def is_suggestion_already_applied(suggestion) -> bool:
@@ -244,8 +273,12 @@ def interactive_apply(report):
         print(f"\n{Colors.DIM}No suggestions to apply.{Colors.END}")
         return
 
-    print(f"\n{Colors.BOLD}{Colors.CYAN}📝 CLAUDE.md Suggestion Engine - Interactive Mode{Colors.END}")
-    print(f"{Colors.DIM}(Claude-analyzed suggestions from your session history){Colors.END}\n")
+    print(
+        f"\n{Colors.BOLD}{Colors.CYAN}📝 CLAUDE.md Suggestion Engine - Interactive Mode{Colors.END}"
+    )
+    print(
+        f"{Colors.DIM}(Claude-analyzed suggestions from your session history){Colors.END}\n"
+    )
 
     all_suggestions = report.get_all_suggestions()
     applied_count = 0
@@ -258,28 +291,42 @@ def interactive_apply(report):
             already_applied_count += 1
             continue
 
-        scope_color = Colors.GREEN if s.scope == SuggestionScope.GLOBAL else Colors.YELLOW
+        scope_color = (
+            Colors.GREEN if s.scope == SuggestionScope.GLOBAL else Colors.YELLOW
+        )
         scope_label = "GLOBAL" if s.scope == SuggestionScope.GLOBAL else "PROJECT"
 
-        print(f"\n{Colors.BOLD}[{i}/{len(all_suggestions)}]{Colors.END} {scope_color}[{scope_label}]{Colors.END}")
+        print(
+            f"\n{Colors.BOLD}[{i}/{len(all_suggestions)}]{Colors.END} {scope_color}[{scope_label}]{Colors.END}"
+        )
         print(f"  {Colors.BOLD}{s.instruction}{Colors.END}")
         print(f"  {Colors.DIM}Target: {s.target_file}{Colors.END}")
         print(f"  {Colors.DIM}Section: {s.suggested_section}{Colors.END}")
         print(f"  {Colors.DIM}Confidence: {s.confidence:.0%}{Colors.END}")
 
         while True:
-            response = input(f"{Colors.CYAN}[a]dd / [e]dit / [s]kip / [v]iew / [q]uit: {Colors.END}").strip().lower()
+            response = (
+                input(
+                    f"{Colors.CYAN}[a]dd / [e]dit / [s]kip / [v]iew / [q]uit: {Colors.END}"
+                )
+                .strip()
+                .lower()
+            )
 
             if response == "a":
                 if apply_suggestion(s):
                     applied_count += 1
                     print(f"  {Colors.GREEN}✓ Added to {s.target_file}{Colors.END}")
                 else:
-                    print(f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}")
+                    print(
+                        f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}"
+                    )
                 break
 
             elif response == "e":
-                print(f"  {Colors.DIM}Edit instruction (Enter to keep current, or type new):{Colors.END}")
+                print(
+                    f"  {Colors.DIM}Edit instruction (Enter to keep current, or type new):{Colors.END}"
+                )
                 try:
                     edited = input("  > ").strip()
                     if edited:
@@ -287,9 +334,13 @@ def interactive_apply(report):
                     if apply_suggestion(s):
                         applied_count += 1
                         label = "(edited) " if edited else ""
-                        print(f"  {Colors.GREEN}✓ Added {label}to {s.target_file}{Colors.END}")
+                        print(
+                            f"  {Colors.GREEN}✓ Added {label}to {s.target_file}{Colors.END}"
+                        )
                     else:
-                        print(f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}")
+                        print(
+                            f"  {Colors.RED}✗ Failed to apply (file may not exist){Colors.END}"
+                        )
                 except (EOFError, KeyboardInterrupt):
                     print(f"\n  {Colors.DIM}Edit cancelled{Colors.END}")
                     continue
@@ -308,7 +359,9 @@ def interactive_apply(report):
                 print(f"    Target file: {s.target_file}")
 
             elif response == "q":
-                print(f"\n{Colors.DIM}Quit. Applied {applied_count}, skipped {skipped_count}.{Colors.END}")
+                print(
+                    f"\n{Colors.DIM}Quit. Applied {applied_count}, skipped {skipped_count}.{Colors.END}"
+                )
                 return
 
             else:
@@ -316,8 +369,12 @@ def interactive_apply(report):
 
     # Summary
     if already_applied_count > 0:
-        print(f"\n{Colors.DIM}Skipped {already_applied_count} already-applied suggestion(s).{Colors.END}")
-    print(f"{Colors.GREEN}Done!{Colors.END} Applied {applied_count}, skipped {skipped_count}.")
+        print(
+            f"\n{Colors.DIM}Skipped {already_applied_count} already-applied suggestion(s).{Colors.END}"
+        )
+    print(
+        f"{Colors.GREEN}Done!{Colors.END} Applied {applied_count}, skipped {skipped_count}."
+    )
 
 
 def apply_suggestion(suggestion) -> bool:
@@ -344,9 +401,9 @@ def apply_suggestion(suggestion) -> bool:
             if newline_idx != -1:
                 # Insert the instruction after the section header
                 content = (
-                    content[:newline_idx + 1]
+                    content[: newline_idx + 1]
                     + f"{instruction}\n"
-                    + content[newline_idx + 1:]
+                    + content[newline_idx + 1 :]
                 )
         else:
             # Add new section before the last --- divider or at end

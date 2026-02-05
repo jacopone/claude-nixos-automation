@@ -90,7 +90,9 @@ class FishLogParser:
 
             # Initialize if first time seeing this tool
             if entry.tool_name not in usage_data:
-                usage_data[entry.tool_name] = FishToolUsageData(tool_name=entry.tool_name)
+                usage_data[entry.tool_name] = FishToolUsageData(
+                    tool_name=entry.tool_name
+                )
 
             # Update stats
             self._update_stats(usage_data[entry.tool_name], entry)

@@ -55,6 +55,7 @@ def debug_log(message):
 # This ensures GLOBAL permissions work in ALL projects
 # ============================================================================
 
+
 def load_global_permissions():
     """Load permissions.allow from global ~/.claude/settings.json"""
     settings_path = Path.home() / ".claude" / "settings.json"
@@ -66,7 +67,11 @@ def load_global_permissions():
             settings = json.load(f)
         allow_list = settings.get("permissions", {}).get("allow", [])
         # Filter out comments
-        return [p for p in allow_list if isinstance(p, str) and not p.strip().startswith("//")]
+        return [
+            p
+            for p in allow_list
+            if isinstance(p, str) and not p.strip().startswith("//")
+        ]
     except Exception as e:
         debug_log(f"Failed to load global permissions: {e}")
         return []
@@ -93,7 +98,7 @@ def command_matches_pattern(command: str, pattern: str) -> bool:
 
         if cmd.startswith(prefix):
             # Ensure word boundary (not "lsblk" matching "ls")
-            remaining = cmd[len(prefix):]
+            remaining = cmd[len(prefix) :]
             if not remaining or remaining[0] in " \t\n|&;><":
                 return True
 

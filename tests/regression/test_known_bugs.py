@@ -168,7 +168,11 @@ class TestDictAccessPatterns:
         expected_system_keys = ["total_tools", "status", "timestamp"]
 
         # Expected keys for project generator
-        expected_project_keys = ["package_count", "fish_abbreviation_count", "git_status"]
+        expected_project_keys = [
+            "package_count",
+            "fish_abbreviation_count",
+            "git_status",
+        ]
 
         # Verify we can access them safely
         system_stats = dict.fromkeys(expected_system_keys)
