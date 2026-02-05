@@ -70,26 +70,19 @@ class TestGeneratorStatsCompleteness:
             assert "total_tools" in stats
             assert isinstance(stats["total_tools"], int)
 
-    def test_project_generator_stats_has_package_count(self):
+    def test_project_generator_stats_has_package_count(self, tmp_path):
         """ProjectGenerator stats must include package_count key."""
         from claude_automation.generators.project_generator import ProjectGenerator
 
-        with patch.object(ProjectGenerator, "__init__", lambda x: None):
-            generator = ProjectGenerator()
-            generator.project_root = Path("/tmp/test")
-            generator.template_dir = None  # Required by BaseGenerator
+        # Use a real temp directory to avoid mock issues with Path operations
+        generator = ProjectGenerator()
 
-            # Mock required attributes
-            generator._parsed_devenv = None
-            generator._git_status = None
+        # Pass config_dir explicitly to use the temp dir instead of repo root
+        stats = generator.get_summary_stats(config_dir=tmp_path)
 
-            with patch.object(Path, "exists", return_value=False):
-                # Pass config_dir explicitly to avoid _get_repo_root() call
-                stats = generator.get_summary_stats(config_dir=Path("/tmp/test"))
-
-            assert "package_count" in stats
-            assert "fish_abbreviation_count" in stats
-            assert "git_status" in stats
+        assert "package_count" in stats
+        assert "fish_abbreviation_count" in stats
+        assert "git_status" in stats
 
 
 class TestClaudeMdSuggesterOccurrences:
