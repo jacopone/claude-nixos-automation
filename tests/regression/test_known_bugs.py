@@ -31,7 +31,7 @@ class TestUserPoliciesGeneratorAbstractMethod:
         )
 
         # Should not raise TypeError about abstract method
-        generator = UserPoliciesGenerator(project_root=Path("/tmp"))
+        generator = UserPoliciesGenerator(template_dir=Path("/tmp"))
         assert generator is not None
 
     def test_user_policies_generator_has_generate_method(self):
@@ -40,7 +40,7 @@ class TestUserPoliciesGeneratorAbstractMethod:
             UserPoliciesGenerator,
         )
 
-        generator = UserPoliciesGenerator(project_root=Path("/tmp"))
+        generator = UserPoliciesGenerator(template_dir=Path("/tmp"))
         assert hasattr(generator, "generate")
         assert callable(generator.generate)
 
@@ -77,6 +77,7 @@ class TestGeneratorStatsCompleteness:
         with patch.object(ProjectGenerator, "__init__", lambda x: None):
             generator = ProjectGenerator()
             generator.project_root = Path("/tmp/test")
+            generator.template_dir = None  # Required by BaseGenerator
 
             # Mock required attributes
             generator._parsed_devenv = None
