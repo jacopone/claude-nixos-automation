@@ -84,7 +84,8 @@ class TestGeneratorStatsCompleteness:
             generator._git_status = None
 
             with patch.object(Path, "exists", return_value=False):
-                stats = generator.get_summary_stats()
+                # Pass config_dir explicitly to avoid _get_repo_root() call
+                stats = generator.get_summary_stats(config_dir=Path("/tmp/test"))
 
             assert "package_count" in stats
             assert "fish_abbreviation_count" in stats
