@@ -339,6 +339,9 @@ EOF
           python313Packages.jinja2
           python313Packages.pydantic
           python313Packages.pytest
+          python313Packages.anthropic
+          python313Packages.beautifulsoup4
+          python313Packages.requests
           ruff
         ];
 
