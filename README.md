@@ -1,18 +1,18 @@
 ---
-status: active
+status: archived
 created: 2024-01-01
-updated: 2026-01-12
+updated: 2026-02-12
 type: reference
 lifecycle: persistent
 ---
 
-# Claude NixOS Automation
+# Claude NixOS Automation (Archived)
 
-> The permission learning engine for Claude Code on NixOS
+> **This project is archived.** Claude Code configs are now hand-maintained.
+> Two hooks (`timestamp_injector.sh`, `claude_tool_tracker.py`) still run from this local clone.
 
 [![Python 3.13](https://img.shields.io/badge/python-3.13-blue.svg)](https://www.python.org/)
 [![NixOS](https://img.shields.io/badge/nixos-unstable-blue.svg)](https://nixos.org/)
-[![Tests](https://img.shields.io/badge/tests-212%20passing-brightgreen.svg)](TESTING.md)
 [![License: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
 ## What This Does
